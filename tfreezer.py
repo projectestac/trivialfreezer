@@ -12,7 +12,7 @@
 #the Free Software Foundation, either version 3 of the License, or
 #(at your option) any later version.
 
-#Image Haunter is distributed in the hope that it will be useful,
+#Trivial Freezer is distributed in the hope that it will be useful,
 #but WITHOUT ANY WARRANTY; without even the implied warranty of
 #MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #GNU General Public License for more details.
@@ -34,6 +34,12 @@ import copy
 from xml.dom import minidom
 import xml.dom.minidom
 from xml.dom.minidom import Document
+
+import gettext
+gettext.bindtextdomain('tfreezer', 'locale')
+gettext.textdomain('tfreezer')
+_ = gettext.gettext
+
 
 #Converts an string to boolean
 def str2bool(v):
@@ -442,12 +448,13 @@ class tfreezer:
 		self.window.add_accel_group(accelgroup)
 
 		# Create an ActionGroup
-				# Create an ActionGroup
+		# Create an ActionGroup
 		actiongroup = gtk.ActionGroup('UIManagertFreezer')
 		self.actiongroup = actiongroup
 
+		### Menu options
 		# Create actions
-		actiongroup.add_actions([('NewDesktop', gtk.STOCK_NEW, '_New Desktop Profile...', None,
+		actiongroup.add_actions([('NewDesktop', gtk.STOCK_NEW, _('_New Desktop Profile...'), None,
 								  'Creates a New Desktop Profile', self.desktop.ui),
 								  ('NewFreeze', gtk.STOCK_NEW, 'New _Freeze Profile...', '<control>f',
 								  'Creates a New Freeze Profile', self.freeze.ui),
@@ -459,7 +466,7 @@ class tfreezer:
 								  'Save a Desktop Profile', self.desktop.save),
 								  ('SaveFreeze', gtk.STOCK_SAVE, 'Save Fr_eeze Profile...', '<control>e',
 								  'Save a Freeze Profile', self.freeze.save),
-								  ('Quit', gtk.STOCK_QUIT, '_Quit', None,
+								  ('Quit', gtk.STOCK_QUIT, _('_Quit'), None,
 								  'Quit the Program', gtk.main_quit),
 								  ('Home', gtk.STOCK_HOME, '_Home', None,
 								  'Go home', self.ui_home),
