@@ -12,7 +12,7 @@
 #the Free Software Foundation, either version 3 of the License, or
 #(at your option) any later version.
 
-#Trivial Freezer is distributed in the hope that it will be useful,
+#Image Haunter is distributed in the hope that it will be useful,
 #but WITHOUT ANY WARRANTY; without even the implied warranty of
 #MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #GNU General Public License for more details.
@@ -36,10 +36,11 @@ import xml.dom.minidom
 from xml.dom.minidom import Document
 
 import gettext
-gettext.bindtextdomain('tfreezer', 'locale')
+gettext.bindtextdomain('tfreezer', './locale')
 gettext.textdomain('tfreezer')
 _ = gettext.gettext
 
+config_dir = "config"
 
 #Converts an string to boolean
 def str2bool(v):
@@ -64,33 +65,33 @@ class desktop:
 		
 		table = gtk.Table()
 		
-		label = gtk.Label("Desktop profile name")
+		label = gtk.Label(_("Desktop profile name"))
 		label.show()
 		table.attach(label,0,1,0,1)
 		
 		self.Ename = gtk.Entry()
 		self.Ename.show()
-		table.attach(self.Ename,1,2,0,1,gtk.EXPAND|gtk.FILL,gtk.EXPAND)
+		table.attach(self.Ename,1,2,0,1,gtk.EXPAND|gtk.FILL,gtk.EXPAND|gtk.FILL)
 		
 		table.show()		
 		self.parent.mainBox.pack_start(table, False)
 	
 		#Config Files
-		frame = gtk.Frame("Save these files")
+		frame = gtk.Frame(_("Save these files"))
 		
 		config = gtk.VBox()
 		
-		self.CBBfiles = gtk.CheckButton("Normal files: docs and images")
+		self.CBBfiles = gtk.CheckButton(_("Normal files: docs and images"))
 		self.CBBfiles.show()
 		self.CBBfiles.set_active(True)
 		config.add(self.CBBfiles)
 		
-		self.CBBbackground = gtk.CheckButton("Background")
+		self.CBBbackground = gtk.CheckButton(_("Background"))
 		self.CBBbackground.show()
 		self.CBBbackground.set_active(True)
 		config.add(self.CBBbackground)
 		
-		self.CBBfirefox = gtk.CheckButton("Firefox Configuration")
+		self.CBBfirefox = gtk.CheckButton(_("Firefox Configuration"))
 		self.CBBfirefox.show()
 		self.CBBfirefox.set_active(True)
 		config.add(self.CBBfirefox)
@@ -109,11 +110,11 @@ class desktop:
 	def load(self, widget, data=None):
 		self.parent.push_status('Desktop:load')
 		
-		dialog = gtk.FileChooserDialog("Open...",None,gtk.FILE_CHOOSER_ACTION_OPEN,(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+		dialog = gtk.FileChooserDialog(_("Open..."),None,gtk.FILE_CHOOSER_ACTION_OPEN,(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,gtk.STOCK_OPEN, gtk.RESPONSE_OK))
 		dialog.set_default_response(gtk.RESPONSE_OK)
 	   
 		filter = gtk.FileFilter()
-		filter.set_name("Text files")
+		filter.set_name(_("Text files"))
 		filter.add_mime_type("text/plain")
 		filter.add_pattern("*.tfd")
 		dialog.add_filter(filter)
@@ -142,17 +143,17 @@ class desktop:
 			self.CBBfirefox.set_active(str2bool(value))
 				
 		elif response == gtk.RESPONSE_CANCEL:
-			self.parent.push_status('No files selected')
+			self.parent.push_status(_('No files selected'))
 		dialog.destroy()
 	
 	def save(self, widget, data=None):
 		self.parent.push_status('Desktop:save')
 		
-		dialog = gtk.FileChooserDialog("Save As...",None,gtk.FILE_CHOOSER_ACTION_SAVE,(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE, gtk.RESPONSE_OK))
+		dialog = gtk.FileChooserDialog(_("Save As..."),None,gtk.FILE_CHOOSER_ACTION_SAVE,(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE, gtk.RESPONSE_OK))
 		dialog.set_default_response(gtk.RESPONSE_OK)
 	   
 		filter = gtk.FileFilter()
-		filter.set_name("Text files")
+		filter.set_name(_("Text files"))
 		filter.add_mime_type("text/plain")
 		filter.add_pattern("*.tfd")
 		dialog.add_filter(filter)
@@ -189,10 +190,10 @@ class desktop:
 			self.fitxer.write(doc.toxml())#toxml()toprettyxml(indent="  ")
 			self.fitxer.close()
 			
-			self.parent.push_status('File saved')
+			self.parent.push_status(_('File saved'))
 			
 		elif response == gtk.RESPONSE_CANCEL:
-			self.parent.push_status('No files selected')
+			self.parent.push_status(_('No files selected'))
 		dialog.destroy()
 		
 		
@@ -213,15 +214,15 @@ class freeze:
 		
 		table = gtk.Table()
 		
-		label = gtk.Label("Freeze profile name")
+		label = gtk.Label(_("Freeze profile name"))
 		label.show()
 		table.attach(label,0,1,0,1)
 		
 		self.Ename = gtk.Entry()
 		self.Ename.show()
-		table.attach(self.Ename,1,2,0,1,gtk.EXPAND|gtk.FILL,gtk.EXPAND)
+		table.attach(self.Ename,1,2,0,1,gtk.EXPAND|gtk.FILL,gtk.EXPAND|gtk.FILL)
 		
-		label = gtk.Label("Files")
+		label = gtk.Label(_("Files"))
 		label.show()
 		table.attach(label,0,1,1,2)
 		
@@ -230,24 +231,24 @@ class freeze:
 		self.CBfiles.show()
 		table.attach(self.CBfiles,1,2,1,2,gtk.EXPAND|gtk.FILL,gtk.EXPAND)
 		
-		label = gtk.Label("All configuration")
+		label = gtk.Label(_("All configuration"))
 		label.show()
 		table.attach(label,0,1,2,3)
 		
 		self.CBconfig = gtk.combo_box_new_text()
-		self.CBconfig.append_text("Individual configuration")
-		self.CBconfig.append_text("Restore all")
-		self.CBconfig.append_text("Block all")
+		self.CBconfig.append_text(_("Individual configuration"))
+		self.CBconfig.append_text(_("Restore all"))
+		self.CBconfig.append_text(_("Block all"))
 		self.CBconfig.set_active(0)
 		self.CBconfig.show()
 		table.attach(self.CBconfig,1,2,2,3,gtk.EXPAND|gtk.FILL,gtk.EXPAND)
 		
 		#Config Files
-		frame = gtk.Frame("Configuration files")
+		frame = gtk.Frame(_("Configuration files"))
 		
 		config = gtk.Table()
 		
-		label = gtk.Label("Background")
+		label = gtk.Label(_("Background"))
 		label.show()
 		config.attach(label,0,1,0,1)
 		
@@ -255,7 +256,7 @@ class freeze:
 		self.CBbackground.show()
 		config.attach(self.CBbackground,1,2,0,1,gtk.EXPAND|gtk.FILL,gtk.EXPAND)
 		
-		label = gtk.Label("Firefox")
+		label = gtk.Label(_("Firefox"))
 		label.show()
 		config.attach(label,0,1,1,2)
 		
@@ -279,20 +280,20 @@ class freeze:
 		
 	def get_config_actions(self):
 		comboOptions = gtk.combo_box_new_text()
-		comboOptions.append_text("Don't do nothing")
-		comboOptions.append_text("Restore")
-		comboOptions.append_text("Block")
+		comboOptions.append_text(_("Don't do nothing"))
+		comboOptions.append_text(_("Restore"))
+		comboOptions.append_text(_("Block"))
 		comboOptions.set_active(0)
 		return comboOptions
 	
 	def load(self, widget, data=None):
 		self.parent.push_status('Freeze:load')
 		
-		dialog = gtk.FileChooserDialog("Open...",None,gtk.FILE_CHOOSER_ACTION_OPEN,(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,gtk.STOCK_OPEN, gtk.RESPONSE_OK))
+		dialog = gtk.FileChooserDialog(_("Open..."),None,gtk.FILE_CHOOSER_ACTION_OPEN,(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,gtk.STOCK_OPEN, gtk.RESPONSE_OK))
 		dialog.set_default_response(gtk.RESPONSE_OK)
 	   
 		filter = gtk.FileFilter()
-		filter.set_name("Text files")
+		filter.set_name(_("Text files"))
 		filter.add_mime_type("text/plain")
 		filter.add_pattern("*.tff")
 		dialog.add_filter(filter)
@@ -323,17 +324,17 @@ class freeze:
 			self.CBfirefox.set_active(int(value))
 				
 		elif response == gtk.RESPONSE_CANCEL:
-			self.parent.push_status('No files selected')
+			self.parent.push_status(_('No files selected'))
 		dialog.destroy()
 	
 	def save(self, widget, data=None):
 		self.parent.push_status('Freeze:save')
 		
-		dialog = gtk.FileChooserDialog("Save As...",None,gtk.FILE_CHOOSER_ACTION_SAVE,(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE, gtk.RESPONSE_OK))
+		dialog = gtk.FileChooserDialog(_("Save As..."),None,gtk.FILE_CHOOSER_ACTION_SAVE,(gtk.STOCK_CANCEL, gtk.RESPONSE_CANCEL,gtk.STOCK_SAVE, gtk.RESPONSE_OK))
 		dialog.set_default_response(gtk.RESPONSE_OK)
 	   
 		filter = gtk.FileFilter()
-		filter.set_name("Text files")
+		filter.set_name(_("Text files"))
 		filter.add_mime_type("text/plain")
 		filter.add_pattern("*.tff")
 		dialog.add_filter(filter)
@@ -373,11 +374,125 @@ class freeze:
 			self.fitxer.write(doc.toxml())#toxml()toprettyxml(indent="  ")
 			self.fitxer.close()
 			
-			self.parent.push_status('File saved')
+			self.parent.push_status(_('File saved'))
 			
 		elif response == gtk.RESPONSE_CANCEL:
-			self.parent.push_status('No files selected')
+			self.parent.push_status(_('No files selected'))
 		dialog.destroy()
+
+class home:
+	def __init__(self,parent):
+		self.parent = parent
+	
+	def ui(self, widget, data=None):
+		self.parent.push_status('Home:ui')
+		
+		#Preparar la UI
+		self.parent.vbox.remove(self.parent.mainBox)
+		self.parent.mainBox = gtk.VBox()
+		
+		self.table = gtk.Table()
+		
+		label = gtk.Label(_("Home"))
+		label.show()
+		self.table.attach(label,0,5,0,1)
+		
+		label = gtk.Label(_("Desktop"))
+		label.show()
+		self.table.attach(label,0,1,1,2)
+		
+		label = gtk.Label(_("Freeze"))
+		label.show()
+		self.table.attach(label,1,2,1,2)
+		
+		label = gtk.Label(_("Users/Groups"))
+		label.show()
+		self.table.attach(label,2,3,1,2)
+		
+		label = gtk.Label(_("Time"))
+		label.show()
+		self.table.attach(label,3,4,1,2)	
+				
+		but = gtk.Button(_("Add"),gtk.STOCK_ADD)
+		but.show()
+		but.connect("clicked", self.add)
+		self.table.attach(but,0,1,8,9)	
+		
+		self.table.show()
+		self.parent.mainBox.pack_start(self.table, False)
+	
+		self.parent.mainBox.show()
+		self.parent.vbox.pack_start(self.parent.mainBox, True, True)
+		
+		self.i = 2
+	
+	def get_desktop_drop(self):
+		cb = gtk.combo_box_new_text()
+		dirList=os.listdir(config_dir)
+		cwd = os.getcwd() + "/" + config_dir + "/"
+		#TODO: Guardar una llista indexada de fitxers per nom del perfil
+		for fname in dirList:
+			xmldoc = minidom.parse(cwd + fname)
+			if xmldoc.getElementsByTagName("desktop") :
+				value = xmldoc.getElementsByTagName("desktop")[0].getAttribute("name")
+				cb.append_text(value)
+		cb.show()
+		return cb
+		
+	def get_freeze_drop(self):
+		cb = gtk.combo_box_new_text()
+		dirList=os.listdir(config_dir)
+		cwd = os.getcwd() + "/" + config_dir + "/"
+		#TODO: Guardar una llista indexada de fitxers per nom del perfil
+		for fname in dirList:
+			xmldoc = minidom.parse(cwd + fname)
+			if xmldoc.getElementsByTagName("freeze") :
+				value = xmldoc.getElementsByTagName("freeze")[0].getAttribute("name")
+				cb.append_text(value)
+		cb.show()
+		return cb
+		
+	#TODO
+	def get_users_groups_drop(self):
+		cb = gtk.combo_box_new_text()
+		cb.append_text("Usuari")
+		cb.show()
+		return cb
+
+	def get_time_drop(self):
+		cb = gtk.combo_box_new_text()
+		cb.append_text(_("Never"))
+		cb.append_text(_("Every Session (at the start)"))
+		cb.append_text(_("Every Session (at the end)"))
+		cb.append_text(_("Everyday"))
+		cb.append_text(_("Every month"))
+		cb.append_text(_("Every year"))
+		cb.set_active(0)
+		cb.show()
+		return cb
+
+	
+	def add(self, widget, data=None):
+		cb = self.get_desktop_drop()
+		self.table.attach(cb,0,1,self.i,self.i+1)
+		
+		cb = self.get_freeze_drop()
+		self.table.attach(cb,1,2,self.i,self.i+1)
+		
+		cb = self.get_users_groups_drop()
+		self.table.attach(cb,2,3,self.i,self.i+1)
+		
+		cb = self.get_time_drop()
+		self.table.attach(cb,3,4,self.i,self.i+1)
+		
+		but = gtk.Button()
+		image = gtk.Image()
+		image.set_from_stock(gtk.STOCK_REMOVE,gtk.ICON_SIZE_SMALL_TOOLBAR)
+		but.set_image(image)
+		but.show()
+		self.table.attach(but,4,5,self.i,self.i+1)
+		
+		self.i = self.i + 1
 
 class tfreezer:
 
@@ -385,17 +500,18 @@ class tfreezer:
 		self.window = gtk.Window(gtk.WINDOW_TOPLEVEL)
 		self.window.set_title("Trivial Freezer v0.1")
 		self.window.connect("destroy", lambda w: gtk.main_quit())
-   		self.window.set_size_request(500, 500)
+   		self.window.set_size_request(600, 500)
 
    		self.vbox = gtk.VBox()
 		self.vbox.show()
 		
 		self.desktop = desktop(self)
 		self.freeze = freeze(self)
+		self.home = home(self)
 		
 		#MenuBar
 		self.get_main_menu()
-		self.ui_home(None)
+		self.home.ui(None)
 
 		self.window.add(self.vbox)
 		self.window.show()	
@@ -455,23 +571,23 @@ class tfreezer:
 		### Menu options
 		# Create actions
 		actiongroup.add_actions([('NewDesktop', gtk.STOCK_NEW, _('_New Desktop Profile...'), None,
-								  'Creates a New Desktop Profile', self.desktop.ui),
-								  ('NewFreeze', gtk.STOCK_NEW, 'New _Freeze Profile...', '<control>f',
-								  'Creates a New Freeze Profile', self.freeze.ui),
-								  ('OpenDesktop', gtk.STOCK_OPEN, '_Open Desktop Profile...', None,
-								  'Open a Desktop Profile', self.desktop.load),
-								  ('OpenFreeze', gtk.STOCK_OPEN, 'Open F_reeze Profile...', '<control>r',
-								  'Open a Freeze Profile', self.freeze.load),
-								  ('SaveDesktop', gtk.STOCK_SAVE, 'Save Desktop Profile...', None,
-								  'Save a Desktop Profile', self.desktop.save),
-								  ('SaveFreeze', gtk.STOCK_SAVE, 'Save Fr_eeze Profile...', '<control>e',
-								  'Save a Freeze Profile', self.freeze.save),
+								  _('Creates a New Desktop Profile'), self.desktop.ui),
+								  ('NewFreeze', gtk.STOCK_NEW, _('New _Freeze Profile...'), '<control>f',
+								  _('Creates a New Freeze Profile'), self.freeze.ui),
+								  ('OpenDesktop', gtk.STOCK_OPEN, _('_Open Desktop Profile...'), None,
+								  _('Open a Desktop Profile'), self.desktop.load),
+								  ('OpenFreeze', gtk.STOCK_OPEN, _('Open F_reeze Profile...'), '<control>r',
+								  _('Open a Freeze Profile'), self.freeze.load),
+								  ('SaveDesktop', gtk.STOCK_SAVE, _('Save Desktop Profile...'), None,
+								  _('Save a Desktop Profile'), self.desktop.save),
+								  ('SaveFreeze', gtk.STOCK_SAVE, _('Save Fr_eeze Profile...'), '<control>e',
+								  _('Save a Freeze Profile'), self.freeze.save),
 								  ('Quit', gtk.STOCK_QUIT, _('_Quit'), None,
-								  'Quit the Program', gtk.main_quit),
+								  _('Quit the Program'), gtk.main_quit),
 								  ('Home', gtk.STOCK_HOME, '_Home', None,
-								  'Go home', self.ui_home),
+								  _('Go home'), self.home.ui),
 								 ('File', None, '_File')])
-		actiongroup.get_action('Home').set_property('short-label', '_Home')
+		actiongroup.get_action('Home').set_property('short-label', _('_Home'))
 
 		# Add the actiongroup to the uimanager
 		uimanager.insert_action_group(actiongroup, 0)
@@ -491,20 +607,6 @@ class tfreezer:
 		self.statusbar = gtk.Statusbar()
 		self.statusbar.show()
 		self.vbox.pack_end(self.statusbar, False)
-	
-	def ui_home(self, widget, data=None):
-		self.push_status('Home:ui')
-		
-		#read data
-		self.vbox.remove(self.mainBox)
-		self.mainBox = gtk.VBox()
-	
-		label = gtk.Label("Home")
-		label.show()	
-		self.mainBox.pack_start(label, False)
-	
-		self.mainBox.show()
-		self.vbox.pack_start(self.mainBox, True, True)
 
 
 class terminal:
