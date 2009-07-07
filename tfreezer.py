@@ -1322,7 +1322,7 @@ class tfreezer:
         for user in pwd.getpwall():
             uid = user.pw_uid
             if uid >= minUID and uid < maxUID:
-                self.LSusers.append([user.pw_name,user.pw_uid,icon.get_pixbuf(),_("None"),FREEZE_NONE,False])
+                self.LSusers.append([user.pw_name,user.pw_uid,icon.get_pixbuf(),_("Total Unfrozen"),FREEZE_NONE,False])
                 
         #TODO: ldap
         try:
@@ -1338,7 +1338,7 @@ class tfreezer:
                 home = person[1]['homeDirectory'][0]
                 uid = person[1]['uidNumber'][0]
                 #if uid >= minUID and uid < maxUID:
-                self.LSusers.append([usern,uid,icon.get_pixbuf(),_("None"),FREEZE_NONE,True])
+                self.LSusers.append([usern,uid,icon.get_pixbuf(),_("Total Unfrozen"),FREEZE_NONE,True])
                     
         except ldap.LDAPError, e:
             print e
@@ -1352,11 +1352,17 @@ class tfreezer:
         self.TSusers = self.TVusers.get_selection()
         self.TSusers.set_mode(gtk.SELECTION_MULTIPLE)
 
+
+        cell = gtk.CellRendererToggle()
+        tv = gtk.TreeViewColumn(_("LDAP"),cell,active=5)
+        self.TVusers.append_column(tv)
+        tv.set_sort_column_id(0)
+        
         # Camps d'usuari
         cell = gtk.CellRendererText()
         tv = gtk.TreeViewColumn(_("User"),cell,text=0)
         self.TVusers.append_column(tv)
-        tv.set_sort_column_id(0)
+        tv.set_sort_column_id(1)
         
         cellpb = gtk.CellRendererPixbuf()
                
@@ -1376,14 +1382,10 @@ class tfreezer:
         cell.connect('changed', self.Cuser_changed)
         
         self.TVusers.append_column(tv)
-        tv.set_sort_column_id(1)
-        
-        cell = gtk.CellRendererToggle()
-        tv = gtk.TreeViewColumn(_("LDAP"),cell,active=5)
-        self.TVusers.append_column(tv)
+        tv.set_sort_column_id(2)
         
         # make treeview searchable
-        self.TVusers.set_search_column(0)
+        self.TVusers.set_search_column(1)
         self.TVusers.show()
         
         scroll = gtk.ScrolledWindow()
@@ -1403,12 +1405,12 @@ class tfreezer:
         self.CBusers.set_sensitive(False)
         self.table.attach(self.CBusers, 0, 1, 6, 7, gtk.EXPAND | gtk.FILL, gtk.SHRINK)
            
-        self.Ball_users = gtk.Button(_("Apply to all"))
+        self.Ball_users = gtk.Button(_("Apply all"))
         self.Ball_users.set_sensitive(False)
         self.Ball_users.connect("clicked", self.Ball_users_clicked)
         self.table.attach(self.Ball_users, 1, 2, 6, 7, gtk.FILL, gtk.SHRINK)
         
-        self.Bsel_users = gtk.Button(_("Apply to selected"))
+        self.Bsel_users = gtk.Button(_("Apply selected"))
         self.Bsel_users.set_sensitive(False)
         self.Bsel_users.connect("clicked", self.Bsel_users_clicked)
         self.table.attach(self.Bsel_users, 2, 3, 6, 7, gtk.FILL, gtk.SHRINK)
@@ -1424,7 +1426,7 @@ class tfreezer:
         for group in grp.getgrall():
             gid = group.gr_gid
             if gid >= minUID and gid < maxUID:
-                self.LSgroups.append([group.gr_name,group.gr_gid,icon.get_pixbuf(),_("None"),FREEZE_NONE,False])
+                self.LSgroups.append([group.gr_name,group.gr_gid,icon.get_pixbuf(),_("Total Unfrozen"),FREEZE_NONE,False])
 
                         
         #TODO: ldap
@@ -1440,7 +1442,7 @@ class tfreezer:
                 groupn = person[1]['cn'][0]
                 gid = person[1]['gidNumber'][0]
                 #if gid >= minUID and gid < maxUID:
-                self.LSgroups.append([groupn,gid,icon.get_pixbuf(),_("None"),FREEZE_NONE,True])
+                self.LSgroups.append([groupn,gid,icon.get_pixbuf(),_("Total Unfrozen"),FREEZE_NONE,True])
                     
         except ldap.LDAPError, e:
             print e
@@ -1452,12 +1454,17 @@ class tfreezer:
         self.TMgroups = self.TVgroups.get_model()
         self.TSgroups = self.TVgroups.get_selection()
         self.TSgroups.set_mode(gtk.SELECTION_MULTIPLE)
+                
+        cell = gtk.CellRendererToggle()
+        tv = gtk.TreeViewColumn(_("LDAP"),cell,active=5)
+        self.TVgroups.append_column(tv)
+        tv.set_sort_column_id(0)
         
         # Camps de grup
         cell = gtk.CellRendererText()
         tv = gtk.TreeViewColumn(_("Group"),cell,text=0)
         self.TVgroups.append_column(tv)
-        tv.set_sort_column_id(0)
+        tv.set_sort_column_id(1)
         
         cellpb = gtk.CellRendererPixbuf()
                
@@ -1477,14 +1484,10 @@ class tfreezer:
         cell.connect('changed', self.Cgroup_changed)
         
         self.TVgroups.append_column(tv)
-        tv.set_sort_column_id(1)
-        
-        cell = gtk.CellRendererToggle()
-        tv = gtk.TreeViewColumn(_("LDAP"),cell,active=5)
-        self.TVgroups.append_column(tv)
+        tv.set_sort_column_id(2)
         
         # make treeview searchable
-        self.TVgroups.set_search_column(0)
+        self.TVgroups.set_search_column(1)
         
         scroll = gtk.ScrolledWindow()
         scroll.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
@@ -1503,12 +1506,12 @@ class tfreezer:
         self.CBgroups.set_sensitive(False)
         self.table.attach(self.CBgroups, 0, 1, 10, 11, gtk.EXPAND | gtk.FILL, gtk.SHRINK)
            
-        self.Ball_groups = gtk.Button(_("Apply to all"))
+        self.Ball_groups = gtk.Button(_("Apply all"))
         self.Ball_groups.set_sensitive(False)
         self.Ball_groups.connect("clicked", self.Ball_groups_clicked)
         self.table.attach(self.Ball_groups, 1, 2, 10, 11, gtk.FILL, gtk.SHRINK)
         
-        self.Bsel_groups = gtk.Button(_("Apply to selected"))
+        self.Bsel_groups = gtk.Button(_("Apply selected"))
         self.Bsel_groups.set_sensitive(False)
         self.Bsel_groups.connect("clicked", self.Bsel_groups_clicked)
         self.table.attach(self.Bsel_groups, 2, 3, 10, 11, gtk.FILL, gtk.SHRINK) 
@@ -2133,7 +2136,27 @@ class tar_list:
                 newConf.gid = user.pw_gid
                 
                 self.freeze.append(newConf)
-        
+                
+        #TODO: ldap
+        try:
+            con = ldap.initialize("ldap://localhost")
+            base_dn = 'ou=people,dc=iescopernic,dc=com'
+            filter = '(objectclass=person)'
+            attrs = ['uid','homeDirectory','gidNumber','uidNumber']
+         
+            result = con.search_s(base_dn, ldap.SCOPE_SUBTREE, filter, attrs)
+            for person in result:
+                newConf = config.copy()
+                newConf.username = person[1]['uid'][0]
+                newConf.homedir = person[1]['homeDirectory'][0]
+                newConf.uid = person[1]['uidNumber'][0]
+                newConf.gid = person[1]['gidNumber'][0]
+            
+                self.freeze.append(newConf)
+                
+        except ldap.LDAPError, e:
+            print e
+            exit
         return
     
     def get_user_frozen(self, config, uid):
@@ -2153,6 +2176,29 @@ class tar_list:
             newConf.gid = user.pw_gid
             
             self.freeze.append(newConf)
+            return
+        
+        #If not found, try ldap
+        #TODO: ldap
+        try:
+            con = ldap.initialize("ldap://localhost")
+            base_dn = 'ou=people,dc=iescopernic,dc=com'
+            filter = '(&(objectclass=person)(uidNumber='+str(uid)+'))'
+            attrs = ['uid','homeDirectory','gidNumber','uidNumber']
+            result = con.search_s(base_dn, ldap.SCOPE_SUBTREE, filter, attrs)
+            if len(result) > 0:
+                newConf = config.copy()
+                newConf.username = result[0][1]['uid'][0]
+                newConf.homedir = result[0][1]['homeDirectory'][0]
+                newConf.uid = result[0][1]['uidNumber'][0]
+                newConf.gid = result[0][1]['gidNumber'][0]
+            
+                self.freeze.append(newConf)
+                return
+                
+        except ldap.LDAPError, e:
+            print e
+            exit
 
         return
     
@@ -2196,6 +2242,41 @@ class tar_list:
                         newConf.gid = user.pw_gid
                         
                         self.freeze.append(newConf)
+        
+        #TODO: if not in local
+        #TODO: ldap
+        #FIXME: No funciona...       
+        try:
+            con = ldap.initialize("ldap://localhost")
+            base_dn = 'ou=groups,dc=iescopernic,dc=com'
+            filter = '(&(objectclass=posixGroup)(gidNumber='+str(gid)+'))'
+            attrs = ['cn','gidNumber']
+         
+            result = con.search_s(base_dn, ldap.SCOPE_SUBTREE, filter, attrs)
+            if len(result) > 0:
+                cn = result[0][1]['cn'][0]
+                    
+                con = ldap.initialize("ldap://localhost")
+                base_dn = 'ou=people,dc=iescopernic,dc=com'
+                filter = '(objectclass=person,(memberOf=CN='+cn+',ou=groups,dc=iescopernic,dc=com))'
+                attrs = ['uid','homeDirectory','gidNumber','uidNumber']
+                result = con.search_s(base_dn, ldap.SCOPE_SUBTREE, filter, attrs)
+                print len(result)
+                for person in result:
+                    if int(person[1]['uidNumber'][0]) == uid:
+                        newConf = config.copy()
+                        newConf.username = person[1]['uid'][0]
+                        newConf.homedir = person[1]['homeDirectory'][0]
+                        newConf.uid = person[1]['uidNumber'][0]
+                        newConf.gid = person[1]['gidNumber'][0]
+        
+                        self.freeze.append(newConf)
+                
+        except ldap.LDAPError, e:
+            print e
+            exit
+            
+        
         return
                 
 class terminal:
