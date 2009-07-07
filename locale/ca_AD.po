@@ -1,0 +1,168 @@
+# Trivial Freezer
+# Copyright (C) 2009 Pau Ferrer Ocaña
+# This file is distributed under the same license as the Trivial Freezer package.
+# Pau Ferrer Ocaña <pau.ferrer@ubuntu.cat>, 2009.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: PACKAGE VERSION\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2009-04-28 09:53+0200\n"
+"PO-Revision-Date: 2009-04-28 09:54+0200\n"
+"Last-Translator: Pau Ferrer Ocaña <pau.ferrer@ubuntu.cat>\n"
+"Language-Team: Catalan\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+
+#: tfreezer.py:67
+msgid "Desktop profile name"
+msgstr "Nom del perfil d'escriptori"
+
+#: tfreezer.py:79
+msgid "Save these files"
+msgstr "Desa aquests fitxers"
+
+#: tfreezer.py:83
+msgid "Normal files: docs and images"
+msgstr "Fitxers normals: documents i imatges"
+
+#: tfreezer.py:88 tfreezer.py:250
+msgid "Background"
+msgstr ""
+
+#: tfreezer.py:93
+msgid "Firefox Configuration"
+msgstr ""
+
+#: tfreezer.py:112 tfreezer.py:291
+msgid "Open..."
+msgstr ""
+
+#: tfreezer.py:116 tfreezer.py:155 tfreezer.py:295 tfreezer.py:336
+msgid "Text files"
+msgstr ""
+
+#: tfreezer.py:145 tfreezer.py:195 tfreezer.py:326 tfreezer.py:379
+msgid "No files selected"
+msgstr ""
+
+#: tfreezer.py:151 tfreezer.py:332
+msgid "Save As..."
+msgstr ""
+
+#: tfreezer.py:192 tfreezer.py:376
+msgid "File saved"
+msgstr ""
+
+#: tfreezer.py:216
+msgid "Freeze profile name"
+msgstr ""
+
+#: tfreezer.py:224
+msgid "Files"
+msgstr ""
+
+#: tfreezer.py:233
+msgid "All configuration"
+msgstr ""
+
+#: tfreezer.py:238
+msgid "Individual configuration"
+msgstr ""
+
+#: tfreezer.py:239
+msgid "Restore all"
+msgstr ""
+
+#: tfreezer.py:240
+msgid "Block all"
+msgstr ""
+
+#: tfreezer.py:246
+msgid "Configuration files"
+msgstr ""
+
+#: tfreezer.py:258
+msgid "Firefox"
+msgstr ""
+
+#: tfreezer.py:282
+msgid "Don't do nothing"
+msgstr ""
+
+#: tfreezer.py:283
+msgid "Restore"
+msgstr ""
+
+#: tfreezer.py:284
+msgid "Block"
+msgstr ""
+
+#: tfreezer.py:457
+msgid "_New Desktop Profile..."
+msgstr ""
+
+#: tfreezer.py:458
+msgid "Creates a New Desktop Profile"
+msgstr ""
+
+#: tfreezer.py:459
+msgid "New _Freeze Profile..."
+msgstr ""
+
+#: tfreezer.py:460
+msgid "Creates a New Freeze Profile"
+msgstr ""
+
+#: tfreezer.py:461
+msgid "_Open Desktop Profile..."
+msgstr ""
+
+#: tfreezer.py:462
+msgid "Open a Desktop Profile"
+msgstr ""
+
+#: tfreezer.py:463
+msgid "Open F_reeze Profile..."
+msgstr ""
+
+#: tfreezer.py:464
+msgid "Open a Freeze Profile"
+msgstr ""
+
+#: tfreezer.py:465
+msgid "Save Desktop Profile..."
+msgstr ""
+
+#: tfreezer.py:466
+msgid "Save a Desktop Profile"
+msgstr ""
+
+#: tfreezer.py:467
+msgid "Save Fr_eeze Profile..."
+msgstr ""
+
+#: tfreezer.py:468
+msgid "Save a Freeze Profile"
+msgstr ""
+
+#: tfreezer.py:469
+msgid "_Quit"
+msgstr ""
+
+#: tfreezer.py:470
+msgid "Quit the Program"
+msgstr ""
+
+#: tfreezer.py:472
+msgid "Go home"
+msgstr ""
+
+#: tfreezer.py:474
+msgid "_Home"
+msgstr ""
+
+#: tfreezer.py:502
+msgid "Home"
+msgstr ""
