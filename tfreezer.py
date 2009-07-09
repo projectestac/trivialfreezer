@@ -55,6 +55,10 @@ gettext.textdomain('tfreezer')
 _ = gettext.gettext
 
 
+ldap_host = 'ldap://localhost'
+ldap_dn = 'dc=iescopernic,dc=com'
+
+
 ################## CONSTANTS ##################
 
 VERSION = "v0.5"
@@ -1220,6 +1224,7 @@ class tfreezer:
         try:   
             os.makedirs(CONFIG_DIRECTORY,0755)
         except OSError as (errno, strerror):
+            #TODO: treure warning
             print_error(CONFIG_DIRECTORY + " " + strerror,WARNING)
             
         try:
@@ -1326,12 +1331,11 @@ class tfreezer:
                 
         #TODO: ldap
         try:
-            con = ldap.initialize("ldap://localhost")
-            base_dn = 'ou=people,dc=iescopernic,dc=com'
-            filter = '(objectclass=person)'
+            con = ldap.initialize(ldap_host)
+            filter = '(objectclass=posixAccount)'
             attrs = ['uid','homeDirectory','gidNumber','uidNumber']
          
-            result = con.search_s(base_dn, ldap.SCOPE_SUBTREE, filter, attrs)
+            result = con.search_s(ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
             for person in result:
                 usern = person[1]['uid'][0]
                 gid = person[1]['gidNumber'][0]
@@ -1431,12 +1435,11 @@ class tfreezer:
                         
         #TODO: ldap
         try:
-            con = ldap.initialize("ldap://localhost")
-            base_dn = 'ou=groups,dc=iescopernic,dc=com'
+            con = ldap.initialize(ldap_host)
             filter = '(objectclass=posixGroup)'
             attrs = ['cn','gidNumber']
          
-            result = con.search_s(base_dn, ldap.SCOPE_SUBTREE, filter, attrs)
+            result = con.search_s(ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
             print len(result)
             for person in result:
                 groupn = person[1]['cn'][0]
@@ -2139,12 +2142,11 @@ class tar_list:
                 
         #TODO: ldap
         try:
-            con = ldap.initialize("ldap://localhost")
-            base_dn = 'ou=people,dc=iescopernic,dc=com'
-            filter = '(objectclass=person)'
+            con = ldap.initialize(ldap_host)
+            filter = '(objectclass=posixAccount)'
             attrs = ['uid','homeDirectory','gidNumber','uidNumber']
          
-            result = con.search_s(base_dn, ldap.SCOPE_SUBTREE, filter, attrs)
+            result = con.search_s(ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
             for person in result:
                 newConf = config.copy()
                 newConf.username = person[1]['uid'][0]
@@ -2181,11 +2183,10 @@ class tar_list:
         #If not found, try ldap
         #TODO: ldap
         try:
-            con = ldap.initialize("ldap://localhost")
-            base_dn = 'ou=people,dc=iescopernic,dc=com'
-            filter = '(&(objectclass=person)(uidNumber='+str(uid)+'))'
+            con = ldap.initialize(ldap_host)
+            filter = '(&(objectclass=posixAccount)(uidNumber='+str(uid)+'))'
             attrs = ['uid','homeDirectory','gidNumber','uidNumber']
-            result = con.search_s(base_dn, ldap.SCOPE_SUBTREE, filter, attrs)
+            result = con.search_s(ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
             if len(result) > 0:
                 newConf = config.copy()
                 newConf.username = result[0][1]['uid'][0]
@@ -2245,40 +2246,45 @@ class tar_list:
         
         #TODO: if not in local
         #TODO: ldap
-        #FIXME: No funciona...       
+        #Primary and secontaries group user
         try:
-            con = ldap.initialize("ldap://localhost")
-            base_dn = 'ou=groups,dc=iescopernic,dc=com'
+            con = ldap.initialize(ldap_host)
             filter = '(&(objectclass=posixGroup)(gidNumber='+str(gid)+'))'
-            attrs = ['cn','gidNumber']
+            attrs = ['memberUid']
          
-            result = con.search_s(base_dn, ldap.SCOPE_SUBTREE, filter, attrs)
+            result = con.search_s(ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
+            print len(result)
+            
+            secondaries = ''
             if len(result) > 0:
-                cn = result[0][1]['cn'][0]
-                    
-                con = ldap.initialize("ldap://localhost")
-                base_dn = 'ou=people,dc=iescopernic,dc=com'
-                filter = '(objectclass=person,(memberOf=CN='+cn+',ou=groups,dc=iescopernic,dc=com))'
-                attrs = ['uid','homeDirectory','gidNumber','uidNumber']
-                result = con.search_s(base_dn, ldap.SCOPE_SUBTREE, filter, attrs)
-                print len(result)
-                for person in result:
-                    if int(person[1]['uidNumber'][0]) == uid:
-                        newConf = config.copy()
-                        newConf.username = person[1]['uid'][0]
-                        newConf.homedir = person[1]['homeDirectory'][0]
-                        newConf.uid = person[1]['uidNumber'][0]
-                        newConf.gid = person[1]['gidNumber'][0]
-        
-                        self.freeze.append(newConf)
+                try:
+                    secondaries = '(&(objectclass=posixAccount)(|'
+                    for uid in result[0][1]['memberUid']:
+                        secondaries = secondaries + '(uid='+uid+')'
+                    secondaries = secondaries + '))'
+                except:
+                    secondaries = ''
                 
+            con = ldap.initialize(ldap_host)
+            filter = '(|(&(objectclass=posixAccount)(gidNumber='+str(gid)+'))'+secondaries+')'
+            attrs = ['uid','homeDirectory','gidNumber','uidNumber']
+         
+            result = con.search_s(ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
+            for person in result:
+                newConf = config.copy()
+                newConf.username = person['uid'][0]
+                newConf.homedir = person['homeDirectory'][0]
+                newConf.uid = person['uidNumber'][0]
+                newConf.gid = person['gidNumber'][0]
+
+                self.freeze.append(newConf)
+                    
         except ldap.LDAPError, e:
             print e
-            exit
-            
+            return
         
         return
-                
+
 class terminal:
 
     def print_config(self):
