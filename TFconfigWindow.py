@@ -40,8 +40,75 @@ class configWindow(gtk.Window):
         self.set_icon_from_file(NORMAL_ICONS[FREEZE_ADV])
         
         self.mainWin = mainWin
-        self.mainBox = gtk.VBox()
+        self.mainBox = gtk.HBox()
+        
+        toolbar = gtk.Toolbar()
+        toolbar.set_orientation(gtk.ORIENTATION_VERTICAL)
+        
+        iconw = gtk.Image() # icon widget
+        iconw.set_from_file(NORMAL_ICONS[1])
+        iconw.show()
+        item = gtk.RadioToolButton()
+        item.set_icon_widget(iconw)
+        item.set_label(_('Profiles'))
+        item.set_tooltip_text(_('Configure profiles'))
+        item.set_is_important(True)
+        item.connect("toggled",self.show_hide_profiles)
+        item.show()
+        toolbar.insert(item,0)
+        
+        iconw = gtk.Image() # icon widget
+        iconw.set_from_file(NORMAL_ICONS[0])
+        iconw.show()
+        item = gtk.RadioToolButton(item)
+        item.set_icon_widget(iconw)
+        item.set_label(_('Sources'))
+        item.set_tooltip_text(_('Configure sources'))
+        item.set_is_important(True)
+        item.connect("toggled",self.show_hide_sources)
+        item.show()
+        toolbar.insert(item,1)
+        
+        iconw = gtk.Image() # icon widget
+        iconw.set_from_file(NORMAL_ICONS[2])
+        iconw.show()
+        item = gtk.RadioToolButton(item)
+        item.set_icon_widget(iconw)
+        item.set_label(_('LDAP'))
+        item.set_tooltip_text(_('Configure LDAP'))
+        item.set_is_important(True)
+        item.connect("toggled",self.show_hide_ldap)
+        item.show()
+        toolbar.insert(item,2)
+        
+        item = gtk.ToolItem()
+        item.set_expand(True)
+        toolbar.insert(item,3)
+        
+        item = gtk.ToolButton(gtk.STOCK_CLOSE)
+        item.set_is_important(True)
+        item.connect("clicked",self.close)
+        toolbar.insert(item,4)
+        
+        toolbar.show_all()
+        
+        self.mainBox.pack_start(toolbar, False)
         self.add(self.mainBox)
+        
+        self.init_profiles()
+        self.mainBox.pack_start(self.profiles, True)
+        self.profiles.show_all()
+        
+        self.init_sources()
+        self.mainBox.pack_start(self.sources, True)
+        
+        self.init_ldap()
+        self.mainBox.pack_start(self.ldap, True)
+        
+        self.mainBox.show()
+    
+    def init_profiles(self):
+        self.profiles = gtk.VBox()
         
         #ToolBar
         toolbar = gtk.Toolbar()
@@ -62,44 +129,14 @@ class configWindow(gtk.Window):
         item.connect("clicked",self.remove_tab)
         toolbar.insert(item,1)
         
-        item = gtk.SeparatorToolItem()
-        toolbar.insert(item,2)
-        
-        item = gtk.ToggleToolButton(gtk.STOCK_EDIT)
-        item.set_label(_('Manage sources'))
-        item.set_tooltip_text(_('Add/Remove sources from repository'))
-        item.set_is_important(True)
-        item.connect("toggled",self.show_hide_sources)
-        toolbar.insert(item,3)
-        
-        item = gtk.ToolItem()
-        item.set_expand(True)
-        toolbar.insert(item,4)
-        
-        item = gtk.ToolButton(gtk.STOCK_CLOSE)
-        item.set_is_important(True)
-        item.connect("clicked",self.close)
-        toolbar.insert(item,5)
-        
-        self.mainBox.pack_start(toolbar, False)
-        
-        panes = gtk.HPaned()
-        self.mainBox.pack_start(panes, True)
+        self.profiles.pack_start(toolbar, False)
         
         #Config tabs
         self.tabs = gtk.Notebook()
         self.tabs.set_scrollable(True)
-        panes.pack1(self.tabs, True,False)
-        
-        self.init_repository()
-        panes.pack2(self.sources, True,False)
-        
-        self.mainBox.show()
-        panes.show()
-        self.tabs.show_all()
-        toolbar.show_all()
-        
-    def init_repository(self):
+        self.profiles.pack_start(self.tabs, True)
+    
+    def init_sources(self):
         self.sources = gtk.VBox()
         self.sources.set_spacing(5)
         self.sources.set_border_width(5)
@@ -159,6 +196,15 @@ class configWindow(gtk.Window):
         button.connect("clicked", self.remove_source)
         self.sources.pack_start(button,False)
         
+    def init_ldap(self):
+        self.ldap = gtk.VBox()
+        self.ldap.set_spacing(5)
+        self.ldap.set_border_width(5)
+
+        label = gtk.Label("<b>"+_("LDAP configuration")+"</b>")
+        label.set_use_markup(True)
+        self.ldap.pack_start(label,False)
+        
     def close(self, widget=None, data=None):
         self.hide()
         return True
@@ -191,6 +237,18 @@ class configWindow(gtk.Window):
         else:
             self.sources.hide_all()
             
+    def show_hide_profiles(self,widget):
+        if widget.get_active():
+            self.profiles.show_all()
+        else:
+            self.profiles.hide_all()
+    
+    def show_hide_ldap(self,widget):
+        if widget.get_active():
+            self.ldap.show_all()
+        else:
+            self.ldap.hide_all()
+    
     def Cname_edited(self,cellrenderertext, path, new_text):
         self.LSsources[path][0] = new_text
     
