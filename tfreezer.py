@@ -28,43 +28,6 @@ from TFglobals import *
 from TFmainWindow import *
 from TFconfig import *
 
-import tarfile
-import re
-import shutil
-
-
-def move(src,dst):
-    
-    auxPath = 0 
-        
-    dstComplete = dst
-    
-    while os.path.exists(dst):
-        dstComplete = dst + "_" + str(auxPath)
-        auxPath = auxPath + 1
-
-    shutil.move(src, dstComplete)
-    return dst
-
-#COPY A FILE TO A DIRECTORY WITHOUT OVERWRITTING THEM
-def copy(src,dst):
-    
-    auxPath = 0
-    fileName = os.path.basename(src)
-    (file,extension) = fileName.split(".",1)
-                 
-    dstComplete = os.path.join (dst, fileName)     
-    while os.path.exists(dstComplete):
-        fileName = file + "_" + str(auxPath) + "." + extension
-        dstComplete = os.path.join (dst, fileName)
-        auxPath = auxPath + 1     
-        
-    shutil.copy(src, dstComplete)
-    return fileName
-
-    
-##############
-        
 def check_root():
     if os.geteuid() != 0:
         print_error("You don't have enough privileges to run this program.")
@@ -77,17 +40,18 @@ def do_restore(time = TIME_INDEFFERENT, username = ""):
     print "===================="
     
     cfg = config()
-    tars = cfg.get_frozen_users()
+    cfg.load()
+    fu = cfg.get_frozen_users()
     
-    if len(tars) > 0:
+    if len(fu) > 0:
         debug(" RESTORE",DEBUG_LOW)
         if len(username) == 0:
             debug("  SYSTEM or MANUAL",DEBUG_LOW)
-            for froze in tars:
+            for froze in fu:
                 froze.restore_tar()
         elif time == TIME_SESSION:
             debug("  SESSION",DEBUG_LOW)
-            for froze in tars:
+            for froze in fu:
                 if username == froze.username:
                     froze.restore_tar()
                     break
@@ -197,7 +161,7 @@ def main(argv, args):
             show_window()
         else:
             show_help = True
-    else:
+    elif not show_config:
         show_help = True
         
     if show_help:

@@ -1,16 +1,45 @@
+#-*- coding: utf-8 -*-
+#@authors: Pau Ferrer Ocaña
+
+#This file is part of Trivial Freezer.
+
+#Trivial Freezer is an easy freezer for user profiles and desktop in linux.
+#Copyright (C) 2009  Pau Ferrer Ocaña
+
+#Trivial Freezer free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+
+#Image Haunter is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+
+#You should have received a copy of the GNU General Public License
+#along with Trivial Freezer.  If not, see <http://www.gnu.org/licenses/>.
+
 import threading
+import os
+import tarfile
+import re
+import shutil
+
+def move(src,dst):
+    
+    auxPath = 0 
+        
+    dstComplete = dst
+    
+    while os.path.exists(dst):
+        dstComplete = dst + "_" + str(auxPath)
+        auxPath = auxPath + 1
+
+    shutil.move(src, dstComplete)
+    return dst
 
 class user_frozen ( threading.Thread ):
             
-    name = ""
-    filters = []
-    username = ""
-    homedir = ""
-    network = ""
-    source = ""
-    deposit = ""
-    uid = 0
-    gid = 0
     def __init__(self):
         self.name = ""
         self.filters = []
@@ -22,19 +51,6 @@ class user_frozen ( threading.Thread ):
         self.uid = 0
         self.gid = 0
         
-    def copy(self):
-        newCopy = user_frozen()
-        newCopy.name = self.name
-        newCopy.filters = self.filters
-        newCopy.username = self.username
-        newCopy.network = self.network
-        newCopy.source = self.source
-        newCopy.deposit = self.deposit
-        newCopy.uid = self.uid
-        newCopy.gid = self.gid
-        
-        return newCopy
-    
     def create_tar(self):
         debug("Entering profile.create_tar",DEBUG_LOW)
         debug("User " + self.username + ":" + self.name + ":" + self.homedir + ":" + self.source,DEBUG_LOW)
@@ -104,13 +120,14 @@ class user_frozen ( threading.Thread ):
             
             #Apply user permissions for extracted files
             for file in to_extract:
-                name = path.join(self.homedir,file.name)
+                name = os.path.join(self.homedir,file.name)
                 os.chown(name, self.uid, self.gid)
             
     def exclude_from_tar(self, path):
         path = path[len(self.homedir)+1:]
         
-        if len(path) < 1 or len(self.filters) < 1: return False
+        if len(path) < 1 or len(self.filters) < 1:
+            return False
         
         excludeMatch = False
         exclude = False
@@ -203,3 +220,4 @@ class user_frozen ( threading.Thread ):
                 if len(os.listdir(dirname)) == 0:
                     debug('Removing directory: ' + dirname,DEBUG_HIGH)
                     os.rmdir(dirname)
+                    

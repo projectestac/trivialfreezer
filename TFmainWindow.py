@@ -1,3 +1,24 @@
+#-*- coding: utf-8 -*-
+#@authors: Pau Ferrer Ocaña
+
+#This file is part of Trivial Freezer.
+
+#Trivial Freezer is an easy freezer for user profiles and desktop in linux.
+#Copyright (C) 2009  Pau Ferrer Ocaña
+
+#Trivial Freezer free software: you can redistribute it and/or modify
+#it under the terms of the GNU General Public License as published by
+#the Free Software Foundation, either version 3 of the License, or
+#(at your option) any later version.
+
+#Image Haunter is distributed in the hope that it will be useful,
+#but WITHOUT ANY WARRANTY; without even the implied warranty of
+#MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+#GNU General Public License for more details.
+
+#You should have received a copy of the GNU General Public License
+#along with Trivial Freezer.  If not, see <http://www.gnu.org/licenses/>.
+
 from TFglobals import *
 from TFconfigWindow import *
 from TFconfig import *
@@ -11,15 +32,31 @@ import pwd, grp
 
 import ldap
 
-from xml.dom import minidom
+import shutil
 
-from datetime import datetime
+import os
 
 import gettext
 gettext.bindtextdomain('tfreezer', './locale')
 gettext.textdomain('tfreezer')
 _ = gettext.gettext
 
+
+#COPY A FILE TO A DIRECTORY WITHOUT OVERWRITTING THEM
+def copy(src,dst):
+    
+    auxPath = 0
+    fileName = os.path.basename(src)
+    (file,extension) = fileName.split(".",1)
+                 
+    dstComplete = os.path.join (dst, fileName)     
+    while os.path.exists(dstComplete):
+        fileName = file + "_" + str(auxPath) + "." + extension
+        dstComplete = os.path.join (dst, fileName)
+        auxPath = auxPath + 1     
+        
+    shutil.copy(src, dstComplete)
+    return fileName
 
 def recursive_delete(dirname):
     if not os.path.exists(dirname):
@@ -91,7 +128,7 @@ class mainWindow:
         self.Hbuttons.show()
                 
         self.Bapply = gtk.Button(_("Apply"), gtk.STOCK_APPLY)
-        self.Bapply.connect("clicked", self.save_file)
+        self.Bapply.connect("clicked", self.save_config)
         self.Hbuttons.pack_start(self.Bapply, True)
         
         self.Brestore = gtk.Button(_("Restore"), gtk.STOCK_REVERT_TO_SAVED)
@@ -107,6 +144,8 @@ class mainWindow:
         
         self.sources_to_erase = []
         
+        self.config = config()
+        self.config.load()
         self.load_config()
         
         self.window.add(self.mainBox)
@@ -118,7 +157,6 @@ class mainWindow:
         gtk.main()
     
     def close(self, widget=None, data=None):
-        
         try:
             self.TTtar.kill()
         except:
@@ -141,13 +179,12 @@ class mainWindow:
         
         self.configW.LSsources.clear()
         
-        cfg = config()
-        
         sources = self.configW.LSsources
-        for source in cfg.sources:
+        for source in self.config.sources:
+            print source.name
             sources.append([source.name,source.file])
         
-        for profile in cfg.profiles:
+        for profile in self.config.profiles:
             newTab = self.configW.add_tab(data = profile.title)
             newTab.set_sensitive(profile.edited)
             newTab.Edeposit.set_text(profile.deposit)
@@ -167,19 +204,19 @@ class mainWindow:
                     newTab.LSactions[rule.action][1],
                     rule.action])
         
-        self.CBtime.set_active(cfg.time)
+        self.CBtime.set_active(self.config.time)
         
-        self.RBall.set_active(cfg.option == OPTION_ALL)
-        self.RBusers.set_active(cfg.option == OPTION_USERS)
-        self.RBgroups.set_active(cfg.option == OPTION_GROUPS)
-        self.CBall.set_active(cfg.all)
+        self.RBall.set_active(self.config.option == OPTION_ALL)
+        self.RBusers.set_active(self.config.option == OPTION_USERS)
+        self.RBgroups.set_active(self.config.option == OPTION_GROUPS)
+        self.CBall.set_active(self.config.all)
             
         #ACTIVATE THE TOOLBAR BUTTON
-        if(cfg.option == OPTION_ALL):
-            if (cfg.all == FREEZE_NONE):
+        if(self.config.option == OPTION_ALL):
+            if (self.config.all == FREEZE_NONE):
                 self.RTBnone.set_active(True)
                 self.set_freeze_all(data = FREEZE_NONE, save = False)
-            elif (cfg.all == FREEZE_ALL and time == TIME_SESSION):
+            elif (self.config.all == FREEZE_ALL and time == TIME_SESSION):
                 self.RTBall.set_active(True)
                 self.set_freeze_all(data = FREEZE_ALL, save = False)
             else:
@@ -189,12 +226,12 @@ class mainWindow:
             self.RTBadvanced.set_active(True)
             self.set_freeze_all(data = FREEZE_ADV, save = False)
             
-        for user in cfg.users:
+        for user in self.config.users:
             for path, row in enumerate(self.LSusers):
                 if row[1] == user.id:
                     self.set_state(self.TMusers, path, None, user.profile)
         
-        for group in cfg.groups:
+        for group in self.config.groups:
             for path, row in enumerate(self.LSgroups):
                 if row[1] == group.id:
                     self.set_state(self.TMgroups, path, None, group.profile)
@@ -206,104 +243,58 @@ class mainWindow:
         
         self.set_enabled_to_load(True)
     
-    def save_file(self, widget=None, data=None):
+    def save_config(self, widget=None, data=None):
         debug("Entering tfreezer.save_file",DEBUG_LOW)
         
-        #DESAR EN XML
-        #Create the minidom document
-        xdoc = minidom.Document()
+        del self.config
+        self.config = config()
         
-        xtf = xdoc.createElement("tfreezer")
-        xtf.setAttribute("date", str(datetime.now()))
-        xdoc.appendChild(xtf)
+        self.config.time = self.CBtime.get_active()
+        if self.RBall.get_active():
+            self.config.option = OPTION_ALL
+        elif self.RBusers.get_active():
+            self.config.option = OPTION_USERS
+        elif self.RBgroups.get_active():
+            self.config.option = OPTION_GROUPS
         
-        xFreeze = xdoc.createElement("freeze")
-        xFreeze.setAttribute("time", str(self.CBtime.get_active()))
+        self.config.all = self.CBall.get_active()
         
-        xall = xdoc.createElement("all")
-        xall.setAttribute("active", str(self.RBall.get_active()))  
-        xall.setAttribute("value", str(self.CBall.get_active()))
-        xFreeze.appendChild(xall)
-        
-        xusers = xdoc.createElement("users")
-        xusers.setAttribute("active", str(self.RBusers.get_active()))
         for row in self.LSusers:
-            xuser = xdoc.createElement("user")
-            xuser.setAttribute("uid", str(row[1]))
-            xuser.setAttribute("value", str(row[4])) 
-            xusers.appendChild(xuser)
-        xFreeze.appendChild(xusers)
-        
-        xgroups = xdoc.createElement("groups")
-        xgroups.setAttribute("active", str(self.RBgroups.get_active()))
+            u = user_group(row[1],row[4])
+            self.config.users.append(u)
+            
         for row in self.LSgroups:
-            xgroup = xdoc.createElement("group")
-            xgroup.setAttribute("gid", str(row[1]))
-            xgroup.setAttribute("value", str(row[4])) 
-            xgroups.appendChild(xgroup) 
-        xFreeze.appendChild(xgroups)
+            g = user_group(row[1],row[4])
+            self.config.groups.append(g)
         
-        xtf.appendChild(xFreeze)
-        
-        xProfiles = xdoc.createElement("profiles")
         numProfiles = self.configW.tabs.get_n_pages()
-        xProfiles.setAttribute("numProfiles", str(numProfiles))
-        xtf.appendChild(xProfiles) 
-        
         for i in range(numProfiles):
             tab = self.configW.tabs.get_nth_page(i)
-            xProfile = xdoc.createElement("profile")
-            xProfile.setAttribute("profileNum", str(i))
-            xProfile.setAttribute("name", tab.Ename.get_text())
-                        
-            xsource = xdoc.createElement("source")
-            xsource.setAttribute("active", str(tab.RBfile.get_active()))
-            xsource.setAttribute("value", tab.get_source())
-            xProfile.appendChild(xsource)
+            p = profile()
+            p.title = tab.Ename.get_text()
+            p.saved_source = tab.RBfile.get_active()
+            p.source = tab.get_source()
+            p.deposit = tab.Edeposit.get_text()
             
-            xdeposit = xdoc.createElement("deposit")
-            xdeposit.setAttribute("value", tab.Edeposit.get_text())
-            xProfile.appendChild(xdeposit)
-            
-            xexclude = xdoc.createElement("rules")
-              
             for row in tab.LSfilter:
-                xchild = xdoc.createElement("rule")
-                xchild.setAttribute("title", str(row[0]))
-                xchild.setAttribute("pattern", str(row[1]))
-                xchild.setAttribute("value", str(row[4]))
-                xexclude.appendChild(xchild)
+                r = rule(row[0], row[2], row[4])
+                p.rules.append(r)
             
-            xProfile.appendChild(xexclude)
-            
-            
-            xProfiles.appendChild(xProfile)
+            self.config.profiles.append(p)
         
-        xSource = xdoc.createElement("sources")
         for row in self.configW.LSsources:
-            xchild = xdoc.createElement("source")
-            xchild.setAttribute("title", str(row[0]))
-            xchild.setAttribute("file", str(row[1]))
-            xSource.appendChild(xchild)
-        xtf.appendChild(xSource)
+            s = source()
+            s.name = row[0]
+            s.file = row[1]
+            self.config.sources.append(s)
         
         for path in self.sources_to_erase:
             os.unlink(path)
         del self.sources_to_erase[:]
 
-         
         try:   
-            os.makedirs(CONFIG_DIRECTORY,0755)
-        except OSError as (errno, strerror):
-            #TODO: treure warning
-            print_error(CONFIG_DIRECTORY + " " + strerror,WARNING)
-            
-        try:
-            fitxer = open(os.path.join (CONFIG_DIRECTORY, CONFIG_FILE), "w")
-            fitxer.write(xdoc.toxml())
-            fitxer.close()
+            self.config.save()
         except:
-            print_error("Can't save the configuration file")
             self.PBprogress.set_text(_('WARNING: Errors in the fridge'))
         else:
             self.make_tars()        
@@ -312,7 +303,7 @@ class mainWindow:
     def make_tars(self):
         debug("Entering tfreezer.make_tars",DEBUG_LOW)
         
-        tars = config().get_frozen_users()
+        fu = self.config.get_frozen_users()
         
         dir = os.path.join (TAR_DIRECTORY, TAR_HOMES)
         recursive_delete(dir)
@@ -323,7 +314,7 @@ class mainWindow:
             print_error(dir + " " + strerror,WARNING)
         
         #TOERASE 2
-        for froze in tars:
+        for froze in fu:
             debug(froze.username,DEBUG_LOW)
             
         self.PBprogress.set_fraction(0.0)
@@ -334,7 +325,7 @@ class mainWindow:
         self.TBtoolbar.set_sensitive(False)
         self.Hbuttons.set_sensitive(False)
 
-        self.TTtar = tar_thread(tars,self)
+        self.TTtar = tar_thread(fu,self)
         self.TTtar.start()
         
         return
@@ -511,7 +502,6 @@ class mainWindow:
             attrs = ['cn','gidNumber']
          
             result = con.search_s(ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
-            print len(result)
             for person in result:
                 groupn = person[1]['cn'][0]
                 gid = person[1]['gidNumber'][0]
@@ -827,7 +817,7 @@ class mainWindow:
                 
                 if save:
                     #Save file
-                    self.save_file()
+                    self.save_config()
                     
     def set_enabled_to_load(self,enable):
         if enable:
@@ -838,3 +828,4 @@ class mainWindow:
             self.RTBall.disconnect(self.Sall)
             self.RTBnone.disconnect(self.Snone)
             self.RTBadvanced.disconnect(self.Sadv)
+            
