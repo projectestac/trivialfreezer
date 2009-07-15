@@ -25,6 +25,8 @@ import gtk
 
 import os
 
+import tarfile
+
 import gettext
 gettext.bindtextdomain('tfreezer', './locale')
 gettext.textdomain('tfreezer')
@@ -44,6 +46,7 @@ class configWindow(gtk.Window):
         
         toolbar = gtk.Toolbar()
         toolbar.set_orientation(gtk.ORIENTATION_VERTICAL)
+        toolbar.set_style(gtk.TOOLBAR_BOTH)
         
         iconw = gtk.Image() # icon widget
         iconw.set_from_file(NORMAL_ICONS[1])
@@ -197,13 +200,32 @@ class configWindow(gtk.Window):
         self.sources.pack_start(button,False)
         
     def init_ldap(self):
-        self.ldap = gtk.VBox()
-        self.ldap.set_spacing(5)
+        self.ldap = gtk.Table()
+        self.ldap.set_row_spacings(5)
+        self.ldap.set_col_spacings(5)
         self.ldap.set_border_width(5)
-
+        
         label = gtk.Label("<b>"+_("LDAP configuration")+"</b>")
         label.set_use_markup(True)
-        self.ldap.pack_start(label,False)
+        self.ldap.attach(label, 0, 3, 0, 1, gtk.FILL, gtk.FILL)
+        
+        self.CBldapenable = gtk.CheckButton(_("Enable LDAP support"))
+        self.CBldapenable.connect("toggled",self.CBldapenable_toggled)
+        self.ldap.attach(self.CBldapenable, 0, 3, 1, 2, gtk.FILL, gtk.SHRINK)
+        
+        label = gtk.Label(_("LDAP Server"))
+        self.ldap.attach(label, 0, 1, 2, 3, gtk.FILL, gtk.FILL)
+        
+        self.Eserver = gtk.Entry()
+        self.Eserver.set_sensitive(False)
+        self.ldap.attach(self.Eserver, 1, 3, 2, 3, gtk.EXPAND | gtk.FILL, gtk.FILL)
+        
+        label = gtk.Label(_("Distinguished Name (dn)"))
+        self.ldap.attach(label, 0, 1, 3, 4, gtk.FILL, gtk.FILL)
+        
+        self.Edn = gtk.Entry()
+        self.Edn.set_sensitive(False)
+        self.ldap.attach(self.Edn, 1, 3, 3, 4, gtk.EXPAND | gtk.FILL, gtk.FILL)
         
     def close(self, widget=None, data=None):
         self.hide()
@@ -270,7 +292,7 @@ class configWindow(gtk.Window):
             try:   
                 os.makedirs(repo,0755)
             except OSError as (errno, strerror):
-                print_error(repo + " " + strerror,WARNING)
+                debug(repo + " " + strerror,DEBUG_HIGH)
                 
             while os.path.exists(dst):
                 fileName = dir + "_" + str(auxPath) + TAR_EXTENSION
@@ -315,7 +337,7 @@ class configWindow(gtk.Window):
             try:   
                 os.makedirs(repo,0755)
             except OSError as (errno, strerror):
-                print_error(repo + " " + strerror,WARNING)
+                debug(repo + " " + strerror,DEBUG_HIGH)
                 
             try:
                 tar = tarfile.open(sourcefile,'r')
@@ -350,34 +372,96 @@ class configWindow(gtk.Window):
             self.mainWin.sources_to_erase.append(file)
             
             self.LSsources.remove(iter)
+            
+    def CBldapenable_toggled(self, widget=None):
+        self.Eserver.set_sensitive(widget.get_active())
+        self.Edn.set_sensitive(widget.get_active())
 
-    #TO ERASE
-    def load_non_saved_sources(self):
-        dirname = os.path.join (TAR_DIRECTORY, TAR_REPOSITORY)
-        
-        try:   
-            os.makedirs(dirname,0755)
-        except OSError as (errno, strerror):
-            print_error(dirname + " " + strerror,WARNING)
-        
-        files = os.listdir(dirname)
-        for file in files:
-            path = os.path.join (dirname, file)
-            if not os.path.isdir(path) or os.path.islink(path):
-                trobat = False
+    #TOFIX: no es necessita
+    #self.Eserver = gtk.Entry()
+    #self.Eserver.set_text('0.0.0.0')
+    #self.Eserver.connect("key-press-event", self.Eserver_key_pressed)
+    #self.ldap.attach(self.Eserver, 1, 3, 1, 2, gtk.EXPAND | gtk.FILL, gtk.FILL)
+    def Eserver_key_pressed(self,widget,event):
+        #up, down, left, right, backspace, delete
+        permited_key_vals = [65362, 65364, 65361, 65363, 65288, 65535]
+        #Tab keys
+        tabs = [65289, 65056]
+
+        if event.string.isdigit():
+            
+            text = widget.get_text()
+            selection = widget.get_selection_bounds()
+            
+            #Replace selection
+            if len(selection) == 2:
+                pos = selection[0]
+                end = selection[1]
+                text = text[0:pos] + event.string + text[end:]
+            else:
+                pos = widget.get_position()
+                end = text.find('.',pos)
                 
-                for nameAux, fileAux in self.LSsources:
-                    if file == fileAux:
-                        trobat = True
-                        break
-                
-                if not trobat:
-                    try:
-                        tar = tarfile.open(path,'r')
-                        tar.close()
-                    except:
-                        print_error(_("Unreadable tar file"), WARNING)
+                #DOT NOT FOUND (FINAL NUMBER)
+                if end == -1:
+                    if text[pos:].isdigit():
+                        text = text[0:pos] + event.string
                     else:
-                        name = file.split(".",1)[0]
-                        self.LSsources.append([name,file])
+                        text = text[0:pos] + event.string + text[pos:]
+                else:
+                    if not text[pos:end].isdigit():
+                        end = pos
+                    text = text[0:pos] + event.string + text[end:]
+                    
+            pos = pos + 1
+            
+            #SPLIT IN FOUR NUMBERS
+            numbers = text.split('.',4)
+            for i in range(4 - len(numbers)):
+                numbers.append('0')
+                
+            off = -1
+            for i, number in enumerate(numbers):
+                if not number.isdigit():
+                    if off >= 0:
+                        num = off
+                        pos = pos + 1
+                        off = -1
+                    else:
+                        num = 0
+                else:
+                    num = int(number)
+                    if off >= 0:
+                        if num > 0:
+                            num = int(str(off) + number)
+                        else:
+                            num = off
+                        pos = pos + 1
+                        off = -1
+                        number = str(num)
+                    if num > 999:
+                        num = int(number[0:3])
+                        if len(text) > pos and text[pos] == '.':
+                            off = int(number[3])
+                    if num > 255:
+                        num = 255
+                numbers[i] = str(num)
+            
+            text = ".".join(numbers)
+            widget.set_text(text)
+            widget.set_position(pos)
+
         
+        elif event.keyval in permited_key_vals:
+            return False
+        #Tab or dot
+        elif event.keyval in tabs or event.string == '.':
+            
+            #Set cursor position
+            pos = widget.get_position()
+            start = widget.get_text().find('.',pos) + 1
+            if start > -1:
+                end = widget.get_text().find('.',start)
+                widget.select_region(start, end)
+        
+        return True

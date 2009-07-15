@@ -381,36 +381,11 @@ class mainWindow:
         self.RBusers.connect("toggled",self.RBusers_toggled)
         self.table.attach(self.RBusers, 0, 3, 3, 4, gtk.EXPAND | gtk.FILL, gtk.SHRINK)
         
-        icon = gtk.Image()
-        icon.set_from_file(SMALL_ICONS[0])
         
         #LOAD USERS
         self.LSusers = gtk.ListStore(str,str,gtk.gdk.Pixbuf,str,int,bool)
-        for user in pwd.getpwall():
-            uid = user.pw_uid
-            if uid >= minUID and uid < maxUID:
-                self.LSusers.append([user.pw_name,user.pw_uid,icon.get_pixbuf(),_("Total Unfrozen"),FREEZE_NONE,False])
-                
-        #TODO: ldap
-        try:
-            con = ldap.initialize(ldap_host)
-            filter = '(objectclass=posixAccount)'
-            attrs = ['uid','homeDirectory','gidNumber','uidNumber']
-         
-            result = con.search_s(ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
-            for person in result:
-                usern = person[1]['uid'][0]
-                gid = person[1]['gidNumber'][0]
-                home = person[1]['homeDirectory'][0]
-                uid = person[1]['uidNumber'][0]
-                #if uid >= minUID and uid < maxUID:
-                self.LSusers.append([usern,uid,icon.get_pixbuf(),_("Total Unfrozen"),FREEZE_NONE,True])
-                    
-        except ldap.LDAPError, e:
-            print e
-            exit
+        self.load_users()
             
-        #DIRECTORI_PERSONAL=$(ldapsearch -x uid=$USER homeDirectory |grep homeDirectory: |cut -d ":" -f 2 | sed 's/^ //g')
         # Create the TreeView using liststore
         self.TVusers = gtk.TreeView(self.LSusers)
         self.TVusers.set_sensitive(False)
@@ -448,7 +423,6 @@ class mainWindow:
         cell.connect('changed', self.Cuser_changed)
         
         self.TVusers.append_column(tv)
-        tv.set_sort_column_id(2)
         
         # make treeview searchable
         self.TVusers.set_search_column(1)
@@ -480,7 +454,6 @@ class mainWindow:
         self.Bsel_users.set_sensitive(False)
         self.Bsel_users.connect("clicked", self.Bsel_users_clicked)
         self.table.attach(self.Bsel_users, 2, 3, 6, 7, gtk.FILL, gtk.SHRINK)
-
         
         #GROUPS
         self.RBgroups = gtk.RadioButton(self.RBall, _("Freeze by group"))
@@ -489,28 +462,7 @@ class mainWindow:
        
         #LOAD GROUPS
         self.LSgroups = gtk.ListStore(str,str,gtk.gdk.Pixbuf,str,int,bool)
-        for group in grp.getgrall():
-            gid = group.gr_gid
-            if gid >= minUID and gid < maxUID:
-                self.LSgroups.append([group.gr_name,group.gr_gid,icon.get_pixbuf(),_("Total Unfrozen"),FREEZE_NONE,False])
-
-                        
-        #TODO: ldap
-        try:
-            con = ldap.initialize(ldap_host)
-            filter = '(objectclass=posixGroup)'
-            attrs = ['cn','gidNumber']
-         
-            result = con.search_s(ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
-            for person in result:
-                groupn = person[1]['cn'][0]
-                gid = person[1]['gidNumber'][0]
-                #if gid >= minUID and gid < maxUID:
-                self.LSgroups.append([groupn,gid,icon.get_pixbuf(),_("Total Unfrozen"),FREEZE_NONE,True])
-                    
-        except ldap.LDAPError, e:
-            print e
-            exit
+        self.load_groups()
 
         # create the TreeView using liststore
         self.TVgroups = gtk.TreeView(self.LSgroups)
@@ -548,7 +500,6 @@ class mainWindow:
         cell.connect('changed', self.Cgroup_changed)
         
         self.TVgroups.append_column(tv)
-        tv.set_sort_column_id(2)
         
         # make treeview searchable
         self.TVgroups.set_search_column(1)
@@ -829,3 +780,59 @@ class mainWindow:
             self.RTBnone.disconnect(self.Snone)
             self.RTBadvanced.disconnect(self.Sadv)
             
+    def load_users(self):
+        
+        icon = gtk.Image()
+        icon.set_from_file(SMALL_ICONS[0])
+        
+        for user in pwd.getpwall():
+            uid = user.pw_uid
+            if uid >= minUID and uid < maxUID:
+                self.LSusers.append([user.pw_name,user.pw_uid,icon.get_pixbuf(),_("Total Unfrozen"),FREEZE_NONE,False])
+                
+        #LDAP users
+        try:
+            con = ldap.initialize(ldap_host)
+            filter = '(objectclass=posixAccount)'
+            attrs = ['uid','homeDirectory','gidNumber','uidNumber']
+         
+            result = con.search_s(ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
+            for person in result:
+                usern = person[1]['uid'][0]
+                gid = person[1]['gidNumber'][0]
+                home = person[1]['homeDirectory'][0]
+                uid = person[1]['uidNumber'][0]
+                #if uid >= minUID and uid < maxUID:
+                self.LSusers.append([usern,uid,icon.get_pixbuf(),_("Total Unfrozen"),FREEZE_NONE,True])
+                    
+        except ldap.LDAPError, e:
+            print e
+            exit
+            
+    def load_groups(self):
+        
+        icon = gtk.Image()
+        icon.set_from_file(SMALL_ICONS[0])
+        
+        for group in grp.getgrall():
+            gid = group.gr_gid
+            if gid >= minUID and gid < maxUID:
+                self.LSgroups.append([group.gr_name,group.gr_gid,icon.get_pixbuf(),_("Total Unfrozen"),FREEZE_NONE,False])
+
+                        
+        #LDAP groups
+        try:
+            con = ldap.initialize(ldap_host)
+            filter = '(objectclass=posixGroup)'
+            attrs = ['cn','gidNumber']
+         
+            result = con.search_s(ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
+            for person in result:
+                groupn = person[1]['cn'][0]
+                gid = person[1]['gidNumber'][0]
+                #if gid >= minUID and gid < maxUID:
+                self.LSgroups.append([groupn,gid,icon.get_pixbuf(),_("Total Unfrozen"),FREEZE_NONE,True])
+                    
+        except ldap.LDAPError, e:
+            print e
+            exit
