@@ -26,10 +26,6 @@ gettext.textdomain('tfreezer')
 _ = gettext.gettext
 
 
-ldap_host = 'ldap://localhost'
-ldap_dn = 'dc=iescopernic,dc=com'
-
-
 ################## CONSTANTS ##################
 
 VERSION = "v0.5"

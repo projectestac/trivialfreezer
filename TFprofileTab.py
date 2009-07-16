@@ -38,7 +38,6 @@ class profileTab(gtk.Table):
         self.set_col_spacings(5)
         self.set_border_width(5)
         
-        
         self.pare = parent
         
         #ListStore of the profiles
@@ -97,7 +96,7 @@ class profileTab(gtk.Table):
         cell = gtk.CellRendererText()
         cell.set_property('editable', True)
         cell.connect('edited', self.Cfiltertitle_edited)
-        tv = gtk.TreeViewColumn(_("Title"),cell,text=0)
+        tv = gtk.TreeViewColumn(_("Name"),cell,text=0)
         self.TVfilter.append_column(tv)
         tv.set_sort_column_id(0)
         tv.set_expand(True)

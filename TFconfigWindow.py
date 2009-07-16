@@ -21,6 +21,7 @@
 
 from TFglobals import *
 from TFprofileTab import *
+from TFconfig import *
 import gtk
 
 import os
@@ -32,83 +33,64 @@ gettext.bindtextdomain('tfreezer', './locale')
 gettext.textdomain('tfreezer')
 _ = gettext.gettext
 
-class configWindow(gtk.Window):
+class configWindow(gtk.Dialog):
     
-    def __init__(self,mainWin):
-        gtk.Window.__init__(self)
-        self.connect("delete_event", self.close)
-        self.connect("destroy_event", lambda *w: self.close)
-        self.set_title("Trivial Freezer"+_(" - Profiles"))
+    def __init__(self, config, win):
+        gtk.Dialog.__init__(self,title="Trivial Freezer"+_(" - Settings"),
+                                 parent=win,
+                                 flags=0,
+                                 buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
+                                          gtk.STOCK_OK, gtk.RESPONSE_ACCEPT))
         self.set_icon_from_file(NORMAL_ICONS[FREEZE_ADV])
         
-        self.mainWin = mainWin
-        self.mainBox = gtk.HBox()
+        self.config = config
+        mainBox = gtk.HBox()
         
         toolbar = gtk.Toolbar()
         toolbar.set_orientation(gtk.ORIENTATION_VERTICAL)
         toolbar.set_style(gtk.TOOLBAR_BOTH)
         
-        iconw = gtk.Image() # icon widget
-        iconw.set_from_file(NORMAL_ICONS[1])
-        iconw.show()
-        item = gtk.RadioToolButton()
-        item.set_icon_widget(iconw)
+        item = gtk.RadioToolButton(None,gtk.STOCK_SELECT_COLOR)
         item.set_label(_('Profiles'))
         item.set_tooltip_text(_('Configure profiles'))
         item.set_is_important(True)
         item.connect("toggled",self.show_hide_profiles)
-        item.show()
         toolbar.insert(item,0)
         
-        iconw = gtk.Image() # icon widget
-        iconw.set_from_file(NORMAL_ICONS[0])
-        iconw.show()
-        item = gtk.RadioToolButton(item)
-        item.set_icon_widget(iconw)
+        item = gtk.RadioToolButton(item,gtk.STOCK_COLOR_PICKER)
         item.set_label(_('Sources'))
         item.set_tooltip_text(_('Configure sources'))
         item.set_is_important(True)
         item.connect("toggled",self.show_hide_sources)
-        item.show()
         toolbar.insert(item,1)
         
-        iconw = gtk.Image() # icon widget
-        iconw.set_from_file(NORMAL_ICONS[2])
-        iconw.show()
-        item = gtk.RadioToolButton(item)
-        item.set_icon_widget(iconw)
+        item = gtk.RadioToolButton(item,gtk.STOCK_CONNECT)
         item.set_label(_('LDAP'))
         item.set_tooltip_text(_('Configure LDAP'))
         item.set_is_important(True)
         item.connect("toggled",self.show_hide_ldap)
-        item.show()
         toolbar.insert(item,2)
-        
-        item = gtk.ToolItem()
-        item.set_expand(True)
-        toolbar.insert(item,3)
-        
-        item = gtk.ToolButton(gtk.STOCK_CLOSE)
-        item.set_is_important(True)
-        item.connect("clicked",self.close)
-        toolbar.insert(item,4)
         
         toolbar.show_all()
         
-        self.mainBox.pack_start(toolbar, False)
-        self.add(self.mainBox)
+        mainBox.pack_start(toolbar, False)
         
         self.init_profiles()
-        self.mainBox.pack_start(self.profiles, True)
+        mainBox.pack_start(self.profiles, True)
         self.profiles.show_all()
         
         self.init_sources()
-        self.mainBox.pack_start(self.sources, True)
+        mainBox.pack_start(self.sources, True)
         
         self.init_ldap()
-        self.mainBox.pack_start(self.ldap, True)
+        mainBox.pack_start(self.ldap, True)
         
-        self.mainBox.show()
+        
+        self.load()
+        
+        self.get_content_area().add(mainBox)
+        mainBox.show()
+        self.show()
     
     def init_profiles(self):
         self.profiles = gtk.VBox()
@@ -227,17 +209,74 @@ class configWindow(gtk.Window):
         self.Edn.set_sensitive(False)
         self.ldap.attach(self.Edn, 1, 3, 3, 4, gtk.EXPAND | gtk.FILL, gtk.FILL)
         
-    def close(self, widget=None, data=None):
-        self.hide()
-        return True
+    def load(self):
+        
+        for source in self.config.sources:
+            self.LSsources.append([source.name,source.file])
+            
+        for profile in self.config.profiles:
+            newTab = self.add_tab(data = profile.title)
+            newTab.set_sensitive(profile.could_be_edited)
+            newTab.Edeposit.set_text(profile.deposit)
+            
+            newTab.set_source(profile.source)
+            if not profile.saved_source:
+                newTab.CBfile.set_active(-1)         
+                                 
+            newTab.RBhome.set_active(not profile.saved_source)
+            newTab.RBfile.set_active(profile.saved_source)
+            newTab.CBfile.set_sensitive(profile.saved_source)
+            
+            for rule in profile.rules:
+                newTab.LSfilter.append([rule.name,
+                    rule.filter,
+                    newTab.LSactions[rule.action][0],
+                    newTab.LSactions[rule.action][1],
+                    rule.action])
+                
+        self.CBldapenable.set_active(self.config.ldap_enabled)
+        self.Eserver.set_text(self.config.ldap_server)
+        self.Edn.set_text(self.config.ldap_dn)
+        
+        return
+    
+    def get_config(self):
+        del self.config.profiles[:]
+        
+        self.config.load_profile_defaults()
+        
+        numProfiles = self.tabs.get_n_pages()
+        for i in range(numProfiles - BLOCKED_PROFILES):
+            tab = self.tabs.get_nth_page(i + BLOCKED_PROFILES)
+            p = profile(tab.Ename.get_text())
+            p.saved_source = tab.RBfile.get_active()
+            p.source = tab.get_source()
+            p.deposit = tab.Edeposit.get_text()
+            
+            for row in tab.LSfilter:
+                r = rule(row[0], row[2], row[4])
+                p.rules.append(r)
+            
+            self.config.profiles.append(p)
+            
+        del self.config.sources[:]
+        
+        for row in self.LSsources:
+            s = source()
+            s.name = row[0]
+            s.file = row[1]
+            self.config.sources.append(s)
+            
+        self.config.ldap_enabled = self.CBldapenable.get_active()
+        self.config.ldap_dn = self.Edn.get_text()
+        self.config.ldap_server = self.Eserver.get_text()
+            
+        return self.config
     
     def add_tab(self, widget=None, data=_("New Profile")):
-        
         newTab = profileTab(self,data)
         label = gtk.Label(data)
         self.tabs.append_page(newTab, label)
-        
-        self.mainWin.LS_add(data)
         
         return newTab
     
@@ -245,13 +284,11 @@ class configWindow(gtk.Window):
         i = self.tabs.get_current_page()
         if i >= BLOCKED_PROFILES:
             self.tabs.remove_page(i)
-            self.mainWin.LS_remove(i)
             
     def tab_name_modified(self, widget, data=None):
         name = widget.get_text()
         tab = widget.get_parent()
         self.tabs.set_tab_label_text(tab, name)
-        self.mainWin.set_all_states_label(self.tabs.page_num(tab), name)
 
     def show_hide_sources(self,widget):
         if widget.get_active():
@@ -368,100 +405,12 @@ class configWindow(gtk.Window):
             path = self.TMsources.get_path(iter)[0]
             repo = os.path.join (TAR_DIRECTORY, TAR_REPOSITORY)
             file = os.path.join (repo, self.LSsources[path][1])
-            #mark to erases
-            self.mainWin.sources_to_erase.append(file)
+            #TODO: fer que avisi si està en ús
+            #mark to erase
+            #self.config.sources_to_erase.append(file)
             
             self.LSsources.remove(iter)
             
     def CBldapenable_toggled(self, widget=None):
         self.Eserver.set_sensitive(widget.get_active())
         self.Edn.set_sensitive(widget.get_active())
-
-    #TOFIX: no es necessita
-    #self.Eserver = gtk.Entry()
-    #self.Eserver.set_text('0.0.0.0')
-    #self.Eserver.connect("key-press-event", self.Eserver_key_pressed)
-    #self.ldap.attach(self.Eserver, 1, 3, 1, 2, gtk.EXPAND | gtk.FILL, gtk.FILL)
-    def Eserver_key_pressed(self,widget,event):
-        #up, down, left, right, backspace, delete
-        permited_key_vals = [65362, 65364, 65361, 65363, 65288, 65535]
-        #Tab keys
-        tabs = [65289, 65056]
-
-        if event.string.isdigit():
-            
-            text = widget.get_text()
-            selection = widget.get_selection_bounds()
-            
-            #Replace selection
-            if len(selection) == 2:
-                pos = selection[0]
-                end = selection[1]
-                text = text[0:pos] + event.string + text[end:]
-            else:
-                pos = widget.get_position()
-                end = text.find('.',pos)
-                
-                #DOT NOT FOUND (FINAL NUMBER)
-                if end == -1:
-                    if text[pos:].isdigit():
-                        text = text[0:pos] + event.string
-                    else:
-                        text = text[0:pos] + event.string + text[pos:]
-                else:
-                    if not text[pos:end].isdigit():
-                        end = pos
-                    text = text[0:pos] + event.string + text[end:]
-                    
-            pos = pos + 1
-            
-            #SPLIT IN FOUR NUMBERS
-            numbers = text.split('.',4)
-            for i in range(4 - len(numbers)):
-                numbers.append('0')
-                
-            off = -1
-            for i, number in enumerate(numbers):
-                if not number.isdigit():
-                    if off >= 0:
-                        num = off
-                        pos = pos + 1
-                        off = -1
-                    else:
-                        num = 0
-                else:
-                    num = int(number)
-                    if off >= 0:
-                        if num > 0:
-                            num = int(str(off) + number)
-                        else:
-                            num = off
-                        pos = pos + 1
-                        off = -1
-                        number = str(num)
-                    if num > 999:
-                        num = int(number[0:3])
-                        if len(text) > pos and text[pos] == '.':
-                            off = int(number[3])
-                    if num > 255:
-                        num = 255
-                numbers[i] = str(num)
-            
-            text = ".".join(numbers)
-            widget.set_text(text)
-            widget.set_position(pos)
-
-        
-        elif event.keyval in permited_key_vals:
-            return False
-        #Tab or dot
-        elif event.keyval in tabs or event.string == '.':
-            
-            #Set cursor position
-            pos = widget.get_position()
-            start = widget.get_text().find('.',pos) + 1
-            if start > -1:
-                end = widget.get_text().find('.',start)
-                widget.select_region(start, end)
-        
-        return True

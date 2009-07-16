@@ -28,13 +28,7 @@ import pygtk
 pygtk.require('2.0')
 import gtk
 
-import pwd, grp
-
-import ldap
-
-import shutil
-
-import os
+import shutil, os
 
 import gettext
 gettext.bindtextdomain('tfreezer', './locale')
@@ -91,10 +85,7 @@ class mainWindow:
         self.mainBox.show()
 
         #ListStore of the profiles
-        self.LSfreeze_settings = gtk.ListStore(gtk.gdk.Pixbuf,str,int)
-        
-        #Init config Window
-        self.configW = configWindow(self)
+        self.LSfreeze_settings = gtk.ListStore(gtk.gdk.Pixbuf,str)
         
         #Init and add ToolBar
         self.init_toolbar()
@@ -166,43 +157,27 @@ class mainWindow:
         return False
 
     def show_settings(self, widget=None, data=None):
-        self.configW.show()
+        #Init config Window
+        self.configW = configWindow(self.config, self.window)
+        response = self.configW.run()
+        if response == gtk.RESPONSE_ACCEPT:
+            #Apply config
+            self.config = self.configW.get_config()
+            
+            self.config.reload_users()
+            self.config.reload_groups()
+            self.load_config()
+            
+        self.configW.destroy()
 
     def load_config(self, widget=None):
         
         self.set_enabled_to_load(False)
         
-        j = self.configW.tabs.get_n_pages()
-        for i in range(j):
-            self.configW.tabs.remove_page(0)
-            self.LSfreeze_settings.remove(self.LSfreeze_settings.get_iter(0))
-        
-        self.configW.LSsources.clear()
-        
-        sources = self.configW.LSsources
-        for source in self.config.sources:
-            print source.name
-            sources.append([source.name,source.file])
+        self.LSfreeze_settings.clear()
         
         for profile in self.config.profiles:
-            newTab = self.configW.add_tab(data = profile.title)
-            newTab.set_sensitive(profile.edited)
-            newTab.Edeposit.set_text(profile.deposit)
-            
-            newTab.set_source(profile.source)
-            if not profile.saved_source:
-                newTab.CBfile.set_active(-1)         
-                                 
-            newTab.RBhome.set_active(not profile.saved_source)
-            newTab.RBfile.set_active(profile.saved_source)
-            newTab.CBfile.set_sensitive(profile.saved_source)
-            
-            for rule in profile.rules:
-                newTab.LSfilter.append([rule.name,
-                    rule.filter,
-                    newTab.LSactions[rule.action][0],
-                    newTab.LSactions[rule.action][1],
-                    rule.action])
+            self.LS_add(profile.title)
         
         self.CBtime.set_active(self.config.time)
         
@@ -216,7 +191,7 @@ class mainWindow:
             if (self.config.all == FREEZE_NONE):
                 self.RTBnone.set_active(True)
                 self.set_freeze_all(data = FREEZE_NONE, save = False)
-            elif (self.config.all == FREEZE_ALL and time == TIME_SESSION):
+            elif (self.config.all == FREEZE_ALL and self.config.time == TIME_SESSION):
                 self.RTBall.set_active(True)
                 self.set_freeze_all(data = FREEZE_ALL, save = False)
             else:
@@ -225,29 +200,36 @@ class mainWindow:
         else:
             self.RTBadvanced.set_active(True)
             self.set_freeze_all(data = FREEZE_ADV, save = False)
-            
+        
+        #LOAD USERS
+        self.LSusers.clear()
         for user in self.config.users:
-            for path, row in enumerate(self.LSusers):
-                if row[1] == user.id:
-                    self.set_state(self.TMusers, path, None, user.profile)
-        
+            self.LSusers.append([user.name,
+                                 user.id,
+                                 self.LSfreeze_settings[user.profile][0],
+                                 self.LSfreeze_settings[user.profile][1],
+                                 user.profile,
+                                 user.ldap])
+        self.CBusers.set_active(0)         
+          
+        #LOAD GROUPS
+        self.LSgroups.clear()
         for group in self.config.groups:
-            for path, row in enumerate(self.LSgroups):
-                if row[1] == group.id:
-                    self.set_state(self.TMgroups, path, None, group.profile)
-
+            self.LSgroups.append([group.name,
+                                 group.id,
+                                 self.LSfreeze_settings[group.profile][0],
+                                 self.LSfreeze_settings[group.profile][1],
+                                 group.profile,
+                                 group.ldap])
         self.CBgroups.set_active(0)
-        self.CBusers.set_active(0)
         
+        #TOFIX: No s'ha de fer sempre...  
         del self.sources_to_erase[:]
         
         self.set_enabled_to_load(True)
     
     def save_config(self, widget=None, data=None):
         debug("Entering tfreezer.save_file",DEBUG_LOW)
-        
-        del self.config
-        self.config = config()
         
         self.config.time = self.CBtime.get_active()
         if self.RBall.get_active():
@@ -260,33 +242,12 @@ class mainWindow:
         self.config.all = self.CBall.get_active()
         
         for row in self.LSusers:
-            u = user_group(row[1],row[4])
+            u = user_group(row[1],row[0],row[4],row[5])
             self.config.users.append(u)
             
         for row in self.LSgroups:
-            g = user_group(row[1],row[4])
+            g = user_group(row[1],row[0],row[4],row[5])
             self.config.groups.append(g)
-        
-        numProfiles = self.configW.tabs.get_n_pages()
-        for i in range(numProfiles):
-            tab = self.configW.tabs.get_nth_page(i)
-            p = profile()
-            p.title = tab.Ename.get_text()
-            p.saved_source = tab.RBfile.get_active()
-            p.source = tab.get_source()
-            p.deposit = tab.Edeposit.get_text()
-            
-            for row in tab.LSfilter:
-                r = rule(row[0], row[2], row[4])
-                p.rules.append(r)
-            
-            self.config.profiles.append(p)
-        
-        for row in self.configW.LSsources:
-            s = source()
-            s.name = row[0]
-            s.file = row[1]
-            self.config.sources.append(s)
         
         for path in self.sources_to_erase:
             os.unlink(path)
@@ -299,7 +260,6 @@ class mainWindow:
         else:
             self.make_tars()        
         
-    
     def make_tars(self):
         debug("Entering tfreezer.make_tars",DEBUG_LOW)
         
@@ -313,10 +273,6 @@ class mainWindow:
         except OSError as (errno, strerror):
             print_error(dir + " " + strerror,WARNING)
         
-        #TOERASE 2
-        for froze in fu:
-            debug(froze.username,DEBUG_LOW)
-            
         self.PBprogress.set_fraction(0.0)
         self.PBprogress.set_text(_("Starting"))
         
@@ -377,14 +333,12 @@ class mainWindow:
         self.CBall.set_active(0)
         self.table.attach(self.CBall, 1, 3, 2, 3, gtk.EXPAND | gtk.FILL, gtk.SHRINK)
         
+        #USERS
         self.RBusers = gtk.RadioButton(self.RBall, _("Freeze by user"))
         self.RBusers.connect("toggled",self.RBusers_toggled)
         self.table.attach(self.RBusers, 0, 3, 3, 4, gtk.EXPAND | gtk.FILL, gtk.SHRINK)
         
-        
-        #LOAD USERS
         self.LSusers = gtk.ListStore(str,str,gtk.gdk.Pixbuf,str,int,bool)
-        self.load_users()
             
         # Create the TreeView using liststore
         self.TVusers = gtk.TreeView(self.LSusers)
@@ -399,7 +353,7 @@ class mainWindow:
         self.TVusers.append_column(tv)
         tv.set_sort_column_id(0)
         
-        # Camps d'usuari
+        #USER FIELDS
         cell = gtk.CellRendererText()
         tv = gtk.TreeViewColumn(_("User"),cell,text=0)
         self.TVusers.append_column(tv)
@@ -460,9 +414,7 @@ class mainWindow:
         self.RBgroups.connect("toggled",self.RBgroup_toggled)
         self.table.attach(self.RBgroups, 0, 3, 7, 8, gtk.EXPAND | gtk.FILL, gtk.SHRINK)
        
-        #LOAD GROUPS
         self.LSgroups = gtk.ListStore(str,str,gtk.gdk.Pixbuf,str,int,bool)
-        self.load_groups()
 
         # create the TreeView using liststore
         self.TVgroups = gtk.TreeView(self.LSgroups)
@@ -476,7 +428,7 @@ class mainWindow:
         self.TVgroups.append_column(tv)
         tv.set_sort_column_id(0)
         
-        # Camps de grup
+        #GROUP FIELDS
         cell = gtk.CellRendererText()
         tv = gtk.TreeViewColumn(_("Group"),cell,text=0)
         self.TVgroups.append_column(tv)
@@ -635,18 +587,18 @@ class mainWindow:
         else:
             icon.set_from_file(SMALL_ICONS[FREEZE_ADV])
             
-        self.LSfreeze_settings.append([icon.get_pixbuf(),name,index])
+        self.LSfreeze_settings.append([icon.get_pixbuf(),name])
     
     def LS_remove(self, index):
         self.unset_all_states(index)
         self.LSfreeze_settings.remove(self.LSfreeze_settings.get_iter(index))        
                 
     def Cuser_changed(self, cell, path, iter):
-        state = cell.get_property("model").get_value(iter,2)
+        state = cell.get_property("model").get_path(iter)[0]
         self.set_state(self.TMusers,path,None,state)
    
     def Cgroup_changed(self, cell, path, iter):
-        state = cell.get_property("model").get_value(iter,2)
+        state = cell.get_property("model").get_path(iter)[0]
         self.set_state(self.TMgroups,path,None,state)
     
     def unset_all_states(self,state):
@@ -662,7 +614,7 @@ class mainWindow:
     def set_state(self, model, path, iter, state):
         model[path][2] = self.LSfreeze_settings[state][0]
         model[path][3] = self.LSfreeze_settings[state][1]
-        model[path][4] = self.LSfreeze_settings[state][2]
+        model[path][4] = state
     
     def unset_state(self, model, path, iter, state):
         if model[path][4] == state:
@@ -672,11 +624,6 @@ class mainWindow:
         if model[path][4] == state:
             model[path][3] = self.LSfreeze_settings[state][1]
             
-    def set_all_states_label(self, path, label):
-        self.LSfreeze_settings[path][1] = label
-        self.TMusers.foreach(self.set_state_label, path)
-        self.TMgroups.foreach(self.set_state_label, path)
-    
     def set_freeze_all(self, widget = None, data = 0, save = True):
         if widget == None or widget.get_active():
             
@@ -693,13 +640,11 @@ class mainWindow:
                 self.CBall.set_active(FREEZE_NONE)
                 self.CBtime.set_active(TIME_MANUAL)
                 self.RBall.set_active(True)
-                self.configW.hide()
             elif data == FREEZE_ALL:
                 self.PBprogress.set_text(_("System frozen"))
                 self.CBall.set_active(FREEZE_ALL)
                 self.CBtime.set_active(TIME_SESSION)
                 self.RBall.set_active(True)
-                self.configW.hide()
             elif data >= FREEZE_ADV:   
                 self.PBprogress.set_text(_("Advanced frozen"))
             
@@ -779,60 +724,3 @@ class mainWindow:
             self.RTBall.disconnect(self.Sall)
             self.RTBnone.disconnect(self.Snone)
             self.RTBadvanced.disconnect(self.Sadv)
-            
-    def load_users(self):
-        
-        icon = gtk.Image()
-        icon.set_from_file(SMALL_ICONS[0])
-        
-        for user in pwd.getpwall():
-            uid = user.pw_uid
-            if uid >= minUID and uid < maxUID:
-                self.LSusers.append([user.pw_name,user.pw_uid,icon.get_pixbuf(),_("Total Unfrozen"),FREEZE_NONE,False])
-                
-        #LDAP users
-        try:
-            con = ldap.initialize(ldap_host)
-            filter = '(objectclass=posixAccount)'
-            attrs = ['uid','homeDirectory','gidNumber','uidNumber']
-         
-            result = con.search_s(ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
-            for person in result:
-                usern = person[1]['uid'][0]
-                gid = person[1]['gidNumber'][0]
-                home = person[1]['homeDirectory'][0]
-                uid = person[1]['uidNumber'][0]
-                #if uid >= minUID and uid < maxUID:
-                self.LSusers.append([usern,uid,icon.get_pixbuf(),_("Total Unfrozen"),FREEZE_NONE,True])
-                    
-        except ldap.LDAPError, e:
-            print e
-            exit
-            
-    def load_groups(self):
-        
-        icon = gtk.Image()
-        icon.set_from_file(SMALL_ICONS[0])
-        
-        for group in grp.getgrall():
-            gid = group.gr_gid
-            if gid >= minUID and gid < maxUID:
-                self.LSgroups.append([group.gr_name,group.gr_gid,icon.get_pixbuf(),_("Total Unfrozen"),FREEZE_NONE,False])
-
-                        
-        #LDAP groups
-        try:
-            con = ldap.initialize(ldap_host)
-            filter = '(objectclass=posixGroup)'
-            attrs = ['cn','gidNumber']
-         
-            result = con.search_s(ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
-            for person in result:
-                groupn = person[1]['cn'][0]
-                gid = person[1]['gidNumber'][0]
-                #if gid >= minUID and gid < maxUID:
-                self.LSgroups.append([groupn,gid,icon.get_pixbuf(),_("Total Unfrozen"),FREEZE_NONE,True])
-                    
-        except ldap.LDAPError, e:
-            print e
-            exit

@@ -27,6 +27,7 @@ from xml.dom import minidom
 import pwd, grp
 import os
 import tarfile
+import ldap
 
 from datetime import datetime
 
@@ -41,10 +42,10 @@ class source:
         self.file = ""
     
 class profile:
-    def __init__(self):
-        self.title = ""
+    def __init__(self, title=""):
+        self.title = title
         self.rules = []
-        self.edited = True
+        self.could_be_edited = True
         self.saved_source = False
         self.source = ""
         self.deposit = ""
@@ -59,13 +60,20 @@ class rule:
         self.name = name
         self.filter = filter
         self.action = action
-        
+
 class user_group:
     id = ""
+    name = ""
     profile = FREEZE_NONE
+    ldap = False
     
-    def __init__(self,id, profile):
+    def __init__(self, id, name, profile=FREEZE_NONE, ldap=False):
         self.id = id
+        self.name = name
+        self.profile = profile
+        self.ldap = ldap
+
+    def set_profile(self,profile):
         self.profile = profile
     
 class config:
@@ -78,6 +86,9 @@ class config:
         self.all = FREEZE_NONE
         self.users = []
         self.groups = []
+        self.ldap_enabled = False
+        self.ldap_server = ""
+        self.ldap_dn = ""
         
     def load(self):
         try:  
@@ -92,8 +103,7 @@ class config:
         except OSError as (errno, strerror):
             debug(dirname + " " + strerror,DEBUG_HIGH)
             
-        del self.sources
-        self.sources = []
+        del self.sources [:]
         
         try:
             xSources = xdoc.getElementsByTagName("sources")[0].getElementsByTagName("source")
@@ -137,69 +147,39 @@ class config:
                         s.file = file
                         self.sources.append(s)
             
-        del self.profiles
-        self.profiles = []                           
+        
         try:
             xProfiles = xdoc.getElementsByTagName("profile")
         except:
             print_error("Corrupted profile tag, taking defaults",WARNING)
-            p = profile()
-            p.edited = False
-            p.title = _("Total Unfrozen")
-            r = rule(_("Everything"),".",ACTION_KEEP)
-            p.rules.append(r)
-            self.profiles.append(p)
-            
-            p = profile()
-            p.title = _("Total Frozen")
-            p.edited = False
-            r = rule(_("Everything"),".",ACTION_RESTORE)
-            p.rules.append(r)
-            self.profiles.append(p)
-
-            p = profile()
-            p.title = _("Configuration Frozen")
-            p.edited = False
-            r = rule(_("Configuration"),"^\.",ACTION_RESTORE)
-            p.rules.append(r)
-            r = rule(_("Everything"),".",ACTION_KEEP)
-            p.rules.append(r)
-            self.profiles.append(p)
-            
-            
+            self.load_profile_defaults()
         else:
+            self.profiles[:]
             for i, xProfile in enumerate(xProfiles):
                 p = profile()
                 try:
                     p.title = xProfile.getAttribute("name")
                 except:
                     print_error("Corrupted name attribute on profile tag, taking defaults",WARNING)
-                    if i == FREEZE_NONE:
-                        p.title = _("Total Unfrozen")
-                    elif i == FREEZE_ALL:
-                        p.title = _("Total Frozen")
-                    elif i  == FREEZE_ADV:
-                        p.title = _("Configuration Frozen")
-                    else:
-                        p.title = _("No name")
+                    p.title = self.get_profile_name_defaults(i)
                     p.valid = False
                 
                 if i < BLOCKED_PROFILES:
-                    p.edited = False
+                    p.could_be_edited = False
                                    
                 try:
                     p.saved_source = str2bool(xProfile.getElementsByTagName("source")[0].getAttribute("active"))
                     p.source = xProfile.getElementsByTagName("source")[0].getAttribute("value")
                 except:
-                    p.saved_source = False
                     print_error("Corrupted source tag, taking defaults",WARNING)
+                    p.saved_source = False
                     p.valid = False
                 
                 try:
                     p.deposit = xProfile.getElementsByTagName("deposit")[0].getAttribute("value")
                 except:
-                    p.deposit = ""
                     print_error("Corrupted deposit tag, taking defaults",WARNING)
+                    p.deposit = ""
                     p.valid = False
                     
                 try:   
@@ -208,17 +188,7 @@ class config:
                         p.rules.append(r)
                 except:
                     print_error("Corrupted or empty rules tag, taking defaults",WARNING)
-                    if i == FREEZE_NONE:
-                        r = rule(_("Everything"),".",ACTION_KEEP)
-                        p.rules.append(r)
-                    elif i == FREEZE_ALL:
-                        r = rule(_("Everything"),".",ACTION_RESTORE)
-                        p.rules.append(r)
-                    elif i  == FREEZE_ADV:
-                        r = rule(_("Configuration"),"^\.",ACTION_RESTORE)
-                        p.rules.append(r)
-                        r = rule(_("Everything"),".",ACTION_KEEP)
-                        p.rules.append(r)
+                    p.rules = self.get_profile_rules_defaults(i)
                     p.valid = False
                 self.profiles.append(p)
         
@@ -230,8 +200,8 @@ class config:
         try:
             self.time = str2int(xFreeze.getAttribute("time"))
         except:
-            self.time = TIME_MANUAL
             print_error("Corrupted time attribute on freeze tag, taking defaults",WARNING)
+            self.load_time_defaults()
         
         try:
             if str2bool(xFreeze.getElementsByTagName("all")[0].getAttribute("active")):
@@ -241,43 +211,116 @@ class config:
             elif str2bool(xFreeze.getElementsByTagName("groups")[0].getAttribute("active")):
                 self.option = OPTION_GROUPS
         except:
-            self.option = OPTION_ALL
-            self.all = FREEZE_NONE
             print_error("Corrupted option tag, taking defaults",WARNING)
+            self.load_freeze_defaults()
         else:
             try:
                 self.all = str2int(xFreeze.getElementsByTagName("all")[0].getAttribute("value"))
             except:
-                self.option = OPTION_ALL
-                self.all = FREEZE_NONE
                 print_error("Corrupted all tag, taking defaults",WARNING)
+                self.load_freeze_defaults()
+        
         try:
-            del self.users
-            self.users = []
+            self.ldap_server = "ldap://localhost"
+            self.ldap_dn = "dc=iescopernic,dc=com"
+            self.ldap_enabled = True
+        except:
+            self.load_ldap_defaults()
+        
+        self.load_users()
+        
+        #CHANGE PROFILES FOR SAVED USERS
+        try:
             for xUser in xdoc.getElementsByTagName("users")[0].getElementsByTagName("user"):
-                user = user_group(xUser.getAttribute("uid"),int(xUser.getAttribute("value")))
-                self.users.append(user)
+                uid = int(xUser.getAttribute("uid"))
+                for user in self.users:
+                    if user.id == uid:
+                        value = int(xUser.getAttribute("value"))
+                        user.set_profile(value)
+                        break
         except:
             print_error("Corrupted or empty users tag, taking defaults",WARNING)
-            
+        
+        self.load_groups()
+        
+        #CHANGE PROFILES FOR SAVED GROUPS
         try:
-            del self.groups
-            self.groups = []
             for xGroup in xdoc.getElementsByTagName("groups")[0].getElementsByTagName("group"):
-                group = user_group(xGroup.getAttribute("gid"),int(xGroup.getAttribute("value")))
-                self.groups.append(group)
+                gid = int(xGroup.getAttribute("gid"))
+                for group in self.groups:
+                    if group.id == gid:
+                        value = int(xGroup.getAttribute("value"))
+                        group.set_profile(value)
+                        break
         except:
             print_error("Corrupted or empty groups tag, taking defaults",WARNING)
+            
+    def get_profile_rules_defaults(self,index):
+        rules = []
+        if index == FREEZE_NONE:
+            r = rule(_("Everything"),".",ACTION_KEEP)
+            rules.append(r)
+        elif index == FREEZE_ALL:
+            r = rule(_("Everything"),".",ACTION_RESTORE)
+            rules.append(r)
+        elif index  == FREEZE_ADV:
+            r = rule(_("Configuration"),"^\.",ACTION_RESTORE)
+            rules.append(r)
+            r = rule(_("Everything"),".",ACTION_KEEP)
+            rules.append(r)
+        return rules
+    
+    def get_profile_name_defaults(self,index):
+        if index == FREEZE_NONE:
+            return _("Total Unfrozen")
+        
+        if index == FREEZE_ALL:
+            return _("Total Frozen")
+        
+        if index  == FREEZE_ADV:
+            return _("Configuration Frozen")
+        
+        return _("No name")
+        
+    def load_profile_defaults(self):
+        self.profiles[:]
+        
+        p = profile(self.get_profile_name_defaults(FREEZE_NONE))
+        p.could_be_edited = False
+        p.rules = self.get_profile_rules_defaults(FREEZE_NONE)
+        self.profiles.append(p)
+        
+        p = profile(self.get_profile_name_defaults(FREEZE_ALL))
+        p.could_be_edited = False
+        p.rules = self.get_profile_rules_defaults(FREEZE_ALL)
+        self.profiles.append(p)
 
+        p = profile(self.get_profile_name_defaults(FREEZE_ADV))
+        p.could_be_edited = False
+        p.rules = self.get_profile_rules_defaults(FREEZE_ADV)
+        self.profiles.append(p)
+        
+    def load_time_defaults(self):
+        self.time = TIME_MANUAL
+        
+    def load_freeze_defatuls(self):
+        self.option = OPTION_ALL
+        self.all = FREEZE_NONE
+        
+    def load_ldap_defaults(self):
+        self.ldap_enabled = False
+        self.ldap_server = ""
+        self.ldap_dn = ""
+        
     def load_defaults(self):
-        del self.sources
-        self.sources = []
+        
+        self.sources[:]
         
         dirname = os.path.join (TAR_DIRECTORY, TAR_REPOSITORY)
         try:   
             os.makedirs(dirname,0755)
         except OSError as (errno, strerror):
-            print_error(dirname + " " + strerror,WARNING)
+            debug(dirname + " " + strerror,DEBUG_HIGH)
         
         files = os.listdir(dirname)
         for file in files:
@@ -294,41 +337,16 @@ class config:
                     s.file = file
                     self.sources.append(s)
             
-        del self.profiles
-        self.profiles = []
-                                  
-        p = profile()
-        p.edited = False
-        p.title = _("Total Unfrozen")
-        r = rule(_("Everything"),".",ACTION_KEEP)
-        p.rules.append(r)
-        self.profiles.append(p)
-        
-        p = profile()
-        p.title = _("Total Frozen")
-        p.edited = False
-        r = rule(_("Everything"),".",ACTION_RESTORE)
-        p.rules.append(r)
-        self.profiles.append(p)
-
-        p = profile()
-        p.title = _("Configuration Frozen")
-        p.edited = False
-        r = rule(_("Configuration"),"^\.",ACTION_RESTORE)
-        p.rules.append(r)
-        r = rule(_("Everything"),".",ACTION_KEEP)
-        p.rules.append(r)
-        self.profiles.append(p)
+        self.load_profile_defaults()
             
-        self.time = TIME_MANUAL
-        self.option = OPTION_ALL
-        self.all = FREEZE_NONE
+        self.load_time_defaults()
+        self.load_freeze_defaults()
         
-        del self.users
-        self.users = []
-        del self.groups
-        self.groups = []
+        self.load_ldap_defaults()
         
+        self.load_users()
+        self.load_groups()
+    
     def save(self):
         debug("Entering config.save",DEBUG_LOW)
         
@@ -352,7 +370,7 @@ class config:
         xusers.setAttribute("active", str(self.option == OPTION_USERS))
         for user in self.users:
             xuser = xdoc.createElement("user")
-            xuser.setAttribute("uid", user.id)
+            xuser.setAttribute("uid", str(user.id))
             xuser.setAttribute("value", str(user.profile)) 
             xusers.appendChild(xuser)
         xFreeze.appendChild(xusers)
@@ -422,7 +440,7 @@ class config:
             raise
     
     def get_frozen_users(self,time = TIME_INDEFFERENT):
-        debug('Entering config.load',DEBUG_LOW)
+        debug('Entering config.get_frozen_users',DEBUG_LOW)
        
         #IF requested time is not indifferent
         #AND time requested is different  of the configured time
@@ -482,24 +500,24 @@ class config:
                 frozen_users.append(newConf)
                 
         #TODO: ldap
-        try:
-            con = ldap.initialize(ldap_host)
-            filter = '(objectclass=posixAccount)'
-            attrs = ['uid','homeDirectory','gidNumber','uidNumber']
-         
-            result = con.search_s(ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
-            for person in result:
-                newConf = self.init_profile(self.all)
-                newConf.username = person[1]['uid'][0]
-                newConf.homedir = person[1]['homeDirectory'][0]
-                newConf.uid = person[1]['uidNumber'][0]
-                newConf.gid = person[1]['gidNumber'][0]
-            
-                frozen_users.append(newConf)
+        if self.ldap_enabled:
+            try:
+                con = ldap.initialize(self.ldap_server)
+                filter = '(objectclass=posixAccount)'
+                attrs = ['uid','homeDirectory','gidNumber','uidNumber']
+             
+                result = con.search_s(ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
+                for person in result:
+                    newConf = self.init_profile(self.all)
+                    newConf.username = person[1]['uid'][0]
+                    newConf.homedir = person[1]['homeDirectory'][0]
+                    newConf.uid = person[1]['uidNumber'][0]
+                    newConf.gid = person[1]['gidNumber'][0]
                 
-        except ldap.LDAPError, e:
-            print e
-            exit
+                    frozen_users.append(newConf)
+                    
+            except ldap.LDAPError, e:
+                print e
             
         return frozen_users
     
@@ -529,24 +547,24 @@ class config:
                 continue
             
             #If not found, try ldap
-            #TODO: ldap
-            try:
-                con = ldap.initialize(ldap_host)
-                filter = '(&(objectclass=posixAccount)(uidNumber='+str(user.id)+'))'
-                attrs = ['uid','homeDirectory','gidNumber','uidNumber']
-                result = con.search_s(ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
-                if len(result) > 0:
-                    prof = self.init_profile(user.profile)
-                    prof.username = result[0][1]['uid'][0]
-                    prof.homedir = result[0][1]['homeDirectory'][0]
-                    prof.uid = result[0][1]['uidNumber'][0]
-                    prof.gid = result[0][1]['gidNumber'][0]
-                
-                    frozen_users.append(prof)
+            if self.ldap_enabled:
+                try:
+                    con = ldap.initialize(self.ldap_server)
+                    filter = '(&(objectclass=posixAccount)(uidNumber='+str(user.id)+'))'
+                    attrs = ['uid','homeDirectory','gidNumber','uidNumber']
+                    result = con.search_s(self.ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
+                    if len(result) > 0:
+                        prof = self.init_profile(user.profile)
+                        prof.username = result[0][1]['uid'][0]
+                        prof.homedir = result[0][1]['homeDirectory'][0]
+                        prof.uid = result[0][1]['uidNumber'][0]
+                        prof.gid = result[0][1]['gidNumber'][0]
+                    
+                        frozen_users.append(prof)
+                        continue
+                except ldap.LDAPError, e:
+                    print e
                     continue
-            except ldap.LDAPError, e:
-                print e
-                continue
         
         return frozen_users
                 
@@ -601,42 +619,168 @@ class config:
             #TODO: if not in local
             #TODO: ldap
             #Primary and secontaries group user
-            try:
-                con = ldap.initialize(ldap_host)
-                filter = '(&(objectclass=posixGroup)(gidNumber='+str(group.id)+'))'
-                attrs = ['memberUid']
-             
-                result = con.search_s(ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
-                print len(result)
-                
-                secondaries = ''
-                if len(result) > 0:
-                    try:
-                        secondaries = '(&(objectclass=posixAccount)(|'
-                        for uid in result[0][1]['memberUid']:
-                            secondaries = secondaries + '(uid='+uid+')'
-                        secondaries = secondaries + '))'
-                    except:
-                        secondaries = ''
+            if self.ldap_enabled:
+                try:
+                    con = ldap.initialize(self.ldap_server)
+                    filter = '(&(objectclass=posixGroup)(gidNumber='+str(group.id)+'))'
+                    attrs = ['memberUid']
+                 
+                    result = con.search_s(self.ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
+                    print len(result)
                     
-                con = ldap.initialize(ldap_host)
-                filter = '(|(&(objectclass=posixAccount)(gidNumber='+str(group.id)+'))'+secondaries+')'
-                attrs = ['uid','homeDirectory','gidNumber','uidNumber']
-             
-                result = con.search_s(ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
-                for person in result:
-                    prof = self.init_profile(group.profile)
-                    prof.username = person['uid'][0]
-                    prof.homedir = person['homeDirectory'][0]
-                    prof.uid = person['uidNumber'][0]
-                    prof.gid = person['gidNumber'][0]
-    
-                    frozen_users.append(prof)
+                    secondaries = ''
+                    if len(result) > 0:
+                        try:
+                            secondaries = '(&(objectclass=posixAccount)(|'
+                            for uid in result[0][1]['memberUid']:
+                                secondaries = secondaries + '(uid='+uid+')'
+                            secondaries = secondaries + '))'
+                        except:
+                            secondaries = ''
                         
-            except ldap.LDAPError, e:
-                print e
-                continue
+                    filter = '(|(&(objectclass=posixAccount)(gidNumber='+str(group.id)+'))'+secondaries+')'
+                    attrs = ['uid','homeDirectory','gidNumber','uidNumber']
+                 
+                    result = con.search_s(self.ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
+                    for person in result:
+                        prof = self.init_profile(group.profile)
+                        prof.username = person['uid'][0]
+                        prof.homedir = person['homeDirectory'][0]
+                        prof.uid = person['uidNumber'][0]
+                        prof.gid = person['gidNumber'][0]
+        
+                        frozen_users.append(prof)
+                            
+                except ldap.LDAPError, e:
+                    print e
+                    continue
             
         return frozen_users
-            
+    
+    def try_ldap(self):
+        if self.ldap_enabled:
+            try:
+                con = ldap.initialize(self.ldap_server)
+                filter = '(objectclass=posixAccount)'
+                attrs = ['uidNumber']
+             
+                result = con.search_s(self.ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
+                if len(result) < 1:
+                    self.ldap_enabled = False
+                    
+            except ldap.LDAPError, e:
+                self.ldap_enabled = False
+                
+    #TOFIX: new users?
+    def reload_users(self):
+        
+        to_remove = []
+        for user in self.users:
+            try:
+                pwuser = pwd.getpwuid(user.id)
+            except:
+                trobat = False
+                if(self.ldap_enabled):
+                    try:
+                        con = ldap.initialize(self.ldap_server)
+                        filter = '(objectclass=posixAccount)'
+                        attrs = ['uidNumber']
+                     
+                        result = con.search_s(self.ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
+                        for lduser in result:
+                            uid = lduser[1]['uidNumber'][0]
+                            if uid == user.id:
+                                trobat = True
+                                break
+                            
+                    except ldap.LDAPError, e:
+                        print_error(e,WARNING) 
+                if not trobat:
+                    to_remove.append(user)
+                        
+        for user in to_remove:
+            self.users.remove(user)
+
+    #TOFIX: new groups?
+    def reload_groups(self):
+        
+        to_remove = []
+        for group in self.groups:
+            try:
+                pwgroup = grp.getgrgid(group.id)
+            except:
+                trobat = False
+                if(self.ldap_enabled):
+                    try:
+                        con = ldap.initialize(self.ldap_server)
+                        filter = '(objectclass=posixGroup)'
+                        attrs = ['gidNumber']
+                     
+                        result = con.search_s(self.ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
+                        for ldgroup in result:
+                            gid = ldgroup[1]['gidNumber'][0]
+                            if gid == group.id:
+                                trobat = True
+                                break
+                        
+                    except ldap.LDAPError, e:
+                        print_error(e,WARNING)
+                        
+                if not trobat:
+                    to_remove.append(group)
+                        
+        for group in to_remove:
+            self.groups.remove(group)  
+                        
+    def load_users(self):
+        del self.users[:]
+         
+        for pwuser in pwd.getpwall():
+            uid = pwuser.pw_uid
+            if uid >= minUID and uid < maxUID:
+                user = user_group(pwuser.pw_uid, pwuser.pw_name)
+                self.users.append(user)
+                
+        #LDAP users
+        if(self.ldap_enabled):
+            try:
+                con = ldap.initialize(self.ldap_server)
+                filter = '(objectclass=posixAccount)'
+                attrs = ['uid','uidNumber']
+             
+                result = con.search_s(self.ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
+                for lduser in result:
+                    usern = lduser[1]['uid'][0]
+                    uid = lduser[1]['uidNumber'][0]
+                    user = user_group(uid, usern, ldap=True)
+                    self.users.append(user)
+                    
+            except ldap.LDAPError, e:
+                print_error(e,WARNING)
+                
+    def load_groups(self):
+        del self.groups[:]
+         
+        for pwgroup in grp.getgrall():
+            gid = pwgroup.gr_gid
+            if gid >= minUID and gid < maxUID:
+                group = user_group(pwgroup.gr_gid, pwgroup.gr_name)
+                self.groups.append(group)
+                
+        #LDAP groups
+        if(self.ldap_enabled):
+            try:
+                con = ldap.initialize(self.ldap_server)
+                filter = '(objectclass=posixGroup)'
+                attrs = ['cn','gidNumber']
+             
+                result = con.search_s(self.ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
+                for ldgroup in result:
+                    groupn = ldgroup[1]['cn'][0]
+                    gid = ldgroup[1]['gidNumber'][0]
+                    group = user_group(gid, groupn, ldap=True)
+                    self.groups.append(group)
+                    
+            except ldap.LDAPError, e:
+                print_error(e,WARNING)
     

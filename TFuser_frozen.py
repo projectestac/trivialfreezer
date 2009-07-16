@@ -19,11 +19,14 @@
 #You should have received a copy of the GNU General Public License
 #along with Trivial Freezer.  If not, see <http://www.gnu.org/licenses/>.
 
+from TFglobals import *
+
 import threading
 import os
 import tarfile
 import re
 import shutil
+
 
 def move(src,dst):
     
@@ -41,6 +44,7 @@ def move(src,dst):
 class user_frozen ( threading.Thread ):
             
     def __init__(self):
+        threading.Thread.__init__(self)
         self.name = ""
         self.filters = []
         self.username = ""
