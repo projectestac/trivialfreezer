@@ -43,7 +43,8 @@ class configWindow(gtk.Dialog):
                                           gtk.STOCK_OK, gtk.RESPONSE_ACCEPT))
         self.set_icon_from_file(NORMAL_ICONS[FREEZE_ADV])
         
-        self.config = config
+        self.sources_to_erase = []
+        
         mainBox = gtk.HBox()
         
         toolbar = gtk.Toolbar()
@@ -86,7 +87,7 @@ class configWindow(gtk.Dialog):
         mainBox.pack_start(self.ldap, True)
         
         
-        self.load()
+        self.load(config)
         
         self.get_content_area().add(mainBox)
         mainBox.show()
@@ -94,27 +95,34 @@ class configWindow(gtk.Dialog):
     
     def init_profiles(self):
         self.profiles = gtk.VBox()
+        self.profiles.set_spacing(5)
+        self.profiles.set_border_width(5)
+        
+        label = gtk.Label("<b>"+_("Freeze profiles")+"</b>")
+        label.set_use_markup(True)
+        self.profiles.pack_start(label,False)
         
         #ToolBar
-        toolbar = gtk.Toolbar()
-        toolbar.set_orientation(gtk.ORIENTATION_HORIZONTAL)
-        toolbar.set_style(gtk.TOOLBAR_BOTH_HORIZ)
+        toolbar = gtk.HBox()
         
-        item = gtk.ToolButton(gtk.STOCK_ADD)
-        item.set_label(_('Add profile'))
+        item = gtk.Button(_('Add profile'), gtk.STOCK_ADD)
         item.set_tooltip_text(_('Adds a new Frozen Profile'))
-        item.set_is_important(True)
         item.connect("clicked",self.add_tab)
-        toolbar.insert(item,0)
+        toolbar.pack_start(item)
         
-        item = gtk.ToolButton(gtk.STOCK_REMOVE)
-        item.set_label(_('Remove profile'))
+        item = gtk.Button(_('Remove profile'), gtk.STOCK_REMOVE)
         item.set_tooltip_text(_('Removes the selected Frozen Profile'))
-        item.set_is_important(True)
         item.connect("clicked",self.remove_tab)
-        toolbar.insert(item,1)
+        toolbar.pack_start(item)
         
         self.profiles.pack_start(toolbar, False)
+        
+        #ListStore of the actions in the profiles
+        self.LSactions = gtk.ListStore(str,str,int)
+        self.LSactions.append([gtk.STOCK_REVERT_TO_SAVED,_("Restore (Frozen)"), ACTION_RESTORE])
+        self.LSactions.append([gtk.STOCK_STOP,_("Keep (Unfrozen)"),ACTION_KEEP])
+        self.LSactions.append([gtk.STOCK_DELETE,_("Erase"),ACTION_ERASE])
+        self.LSactions.append([gtk.STOCK_FIND,_("Move to Lost+Found"),ACTION_LOST])
         
         #Config tabs
         self.tabs = gtk.Notebook()
@@ -209,12 +217,25 @@ class configWindow(gtk.Dialog):
         self.Edn.set_sensitive(False)
         self.ldap.attach(self.Edn, 1, 3, 3, 4, gtk.EXPAND | gtk.FILL, gtk.FILL)
         
-    def load(self):
+        image = gtk.Image()
+        image.set_from_stock(gtk.STOCK_CONNECT,gtk.ICON_SIZE_BUTTON)
+        self.Btest = gtk.Button(_("Test connection"))
+        self.Btest.set_image(image)
+        self.Btest.connect("clicked", self.test_connection)
+        self.Btest.set_sensitive(False)
+        self.ldap.attach(self.Btest, 0, 3, 4, 5, gtk.EXPAND | gtk.FILL, gtk.FILL)
         
-        for source in self.config.sources:
+        self.Ltest = gtk.Label()
+        self.Ltest.set_use_markup(True)
+        self.Ltest.set_sensitive(False)
+        self.ldap.attach(self.Ltest, 0, 3, 5, 6, gtk.FILL, gtk.FILL)
+        
+    def load(self, config):
+        
+        for source in config.sources:
             self.LSsources.append([source.name,source.file])
             
-        for profile in self.config.profiles:
+        for profile in config.profiles:
             newTab = self.add_tab(data = profile.title)
             newTab.set_sensitive(profile.could_be_edited)
             newTab.Edeposit.set_text(profile.deposit)
@@ -230,49 +251,42 @@ class configWindow(gtk.Dialog):
             for rule in profile.rules:
                 newTab.LSfilter.append([rule.name,
                     rule.filter,
-                    newTab.LSactions[rule.action][0],
-                    newTab.LSactions[rule.action][1],
+                    self.LSactions[rule.action][0],
+                    self.LSactions[rule.action][1],
                     rule.action])
                 
-        self.CBldapenable.set_active(self.config.ldap_enabled)
-        self.Eserver.set_text(self.config.ldap_server)
-        self.Edn.set_text(self.config.ldap_dn)
+        self.CBldapenable.set_active(config.ldap_enabled)
+        self.Eserver.set_text(config.ldap_server)
+        self.Edn.set_text(config.ldap_dn)
         
         return
     
-    def get_config(self):
-        del self.config.profiles[:]
+    def update_config(self, config):
+        del config.profiles[:]
         
-        self.config.load_profile_defaults()
+        config.load_profile_defaults()
         
         numProfiles = self.tabs.get_n_pages()
         for i in range(numProfiles - BLOCKED_PROFILES):
             tab = self.tabs.get_nth_page(i + BLOCKED_PROFILES)
-            p = profile(tab.Ename.get_text())
-            p.saved_source = tab.RBfile.get_active()
-            p.source = tab.get_source()
-            p.deposit = tab.Edeposit.get_text()
+            config.profiles.append(tab.get_config())
             
-            for row in tab.LSfilter:
-                r = rule(row[0], row[2], row[4])
-                p.rules.append(r)
-            
-            self.config.profiles.append(p)
-            
-        del self.config.sources[:]
+        del config.sources[:]
         
         for row in self.LSsources:
             s = source()
             s.name = row[0]
             s.file = row[1]
-            self.config.sources.append(s)
+            config.sources.append(s)
             
-        self.config.ldap_enabled = self.CBldapenable.get_active()
-        self.config.ldap_dn = self.Edn.get_text()
-        self.config.ldap_server = self.Eserver.get_text()
+        config.sources_to_erase.extend(self.sources_to_erase)
             
-        return self.config
-    
+        config.ldap_dn = self.Edn.get_text()
+        config.ldap_server = self.Eserver.get_text()
+        
+        config.ldap_enabled = self.CBldapenable.get_active() and self.test_connection()
+            
+            
     def add_tab(self, widget=None, data=_("New Profile")):
         newTab = profileTab(self,data)
         label = gtk.Label(data)
@@ -340,11 +354,13 @@ class configWindow(gtk.Dialog):
                 tar = tarfile.open(dst,'w:gz')
             except:
                 print_error("on add_from_directory")
-                warning = gtk.Dialog(_("Unable to create tar file"),buttons=(gtk.STOCK_OK,gtk.RESPONSE_OK))
-                label = gtk.Label(_("The freezer is unable to create the tar file"))
-                label.set_justify(gtk.JUSTIFY_CENTER)
-                label.set_padding(20,20)
-                label.show()
+                warning = gtk.MessageDialog(parent=self,
+                                      type=gtk.MESSAGE_WARNING,
+                                      buttons=gtk.BUTTONS_OK,
+                                      message_format= _("The freezer is unable to create the tar file")
+                                      )
+                res = warning.run()
+                warning.destroy()
             else:
                 tar.add(sourcefile,arcname="")
                 tar.close()
@@ -381,17 +397,13 @@ class configWindow(gtk.Dialog):
                 tar.close()
                 dst = copy(sourcefile,repo)
             except:
-                warning = gtk.Dialog(_("Unreadable tar file"),buttons=(gtk.STOCK_OK,gtk.RESPONSE_OK))
-                label = gtk.Label(_("The selected file is unreadable or malformed"))
-                label.set_justify(gtk.JUSTIFY_CENTER)
-                label.set_padding(20,20)
-                label.show()
-                
-                warning.vbox.pack_start(label,True,True,0)
-                
+                warning = gtk.MessageDialog(parent=self,
+                                      type=gtk.MESSAGE_WARNING,
+                                      buttons=gtk.BUTTONS_OK,
+                                      message_format= _("The selected file is unreadable or malformed")
+                                      )
                 res = warning.run()
                 warning.destroy()
-                
             else:
                 name = dst.split(".",1)[0]
                 self.LSsources.append([name,dst])
@@ -405,12 +417,54 @@ class configWindow(gtk.Dialog):
             path = self.TMsources.get_path(iter)[0]
             repo = os.path.join (TAR_DIRECTORY, TAR_REPOSITORY)
             file = os.path.join (repo, self.LSsources[path][1])
-            #TODO: fer que avisi si està en ús
-            #mark to erase
-            #self.config.sources_to_erase.append(file)
             
-            self.LSsources.remove(iter)
+            tabs_in_use = []
+            for i in range(self.tabs.get_n_pages()):
+                tab = self.tabs.get_nth_page(i)
+                if tab.is_source_in_use(path):
+                    tabs_in_use.append(i)
+            
+            if len(tabs_in_use) > 0:
+                d = gtk.MessageDialog(parent=self,
+                                      type=gtk.MESSAGE_QUESTION,
+                                      buttons=gtk.BUTTONS_YES_NO,
+                                      message_format= _("This source is in use in some profiles, do you want to continue?")
+                                      )
+                response = d.run()
+                if response == gtk.RESPONSE_YES:
+                    #WARN because is in use
+                    #mark to erase
+                    self.sources_to_erase.append(file)
+                    
+                    for i in tabs_in_use:
+                        tab = self.tabs.get_nth_page(i)
+                        tab.set_source("")
+                    
+                    self.LSsources.remove(iter)
+                d.destroy()
+                
+            else:
+                #mark to erase
+                self.sources_to_erase.append(file)
+                self.LSsources.remove(iter)
             
     def CBldapenable_toggled(self, widget=None):
         self.Eserver.set_sensitive(widget.get_active())
         self.Edn.set_sensitive(widget.get_active())
+        self.Ltest.set_sensitive(widget.get_active())
+        self.Btest.set_sensitive(widget.get_active())
+        
+    def test_connection(self, widget=None):
+        try:
+            con = ldap.initialize(self.Eserver.get_text())
+            filter = '(objectclass=posixAccount)'
+            attrs = ['uid']
+         
+            result = con.search_s(self.Edn.get_text(), ldap.SCOPE_SUBTREE, filter, attrs)
+            self.Ltest.set_markup('<span foreground="#007700" size="large">' + _("Connection successfully established")+ '</span>')
+            return True
+        except ldap.LDAPError, e:
+            self.Ltest.set_markup('<span foreground="#770000" size="large">' + _("Connection failed")+ '</span>')
+            return False
+        
+        

@@ -20,6 +20,7 @@
 #along with Trivial Freezer.  If not, see <http://www.gnu.org/licenses/>.
 
 from TFglobals import *
+from TFconfig import rule,profile
 
 import gtk
 import sexy
@@ -38,15 +39,8 @@ class profileTab(gtk.Table):
         self.set_col_spacings(5)
         self.set_border_width(5)
         
-        self.pare = parent
-        
-        #ListStore of the profiles
-        self.LSactions = gtk.ListStore(str,str,int)
-        self.LSactions.append([gtk.STOCK_REVERT_TO_SAVED,_("Restore (Frozen)"), ACTION_RESTORE])
-        self.LSactions.append([gtk.STOCK_STOP,_("Keep (Unfrozen)"),ACTION_KEEP])
-        self.LSactions.append([gtk.STOCK_DELETE,_("Erase"),ACTION_ERASE])
-        self.LSactions.append([gtk.STOCK_FIND,_("Move to Lost+Found"),ACTION_LOST])
-        
+        self.mother = parent
+               
         label = gtk.Label(_("Profile name"))
         self.attach(label, 0, 1, 0, 1, gtk.FILL, gtk.FILL)
         
@@ -75,7 +69,7 @@ class profileTab(gtk.Table):
         cell = gtk.CellRendererText()
         self.CBfile.pack_start(cell, True)
         self.CBfile.set_attributes(cell, text=0)
-        self.CBfile.set_active(0)
+        self.CBfile.set_active(-1)
         self.attach(self.CBfile, 1, 3, 8, 9, gtk.EXPAND | gtk.FILL, gtk.SHRINK)
         
         separator = gtk.HSeparator()
@@ -114,7 +108,7 @@ class profileTab(gtk.Table):
         cellpb = gtk.CellRendererPixbuf()
                
         cell = gtk.CellRendererCombo()
-        cell.set_property("model",self.LSactions)
+        cell.set_property("model",self.mother.LSactions)
         cell.set_property('text-column', 1)
         cell.set_property('editable', True)
         cell.set_property('has-entry',False)
@@ -173,7 +167,6 @@ class profileTab(gtk.Table):
         self.attach(self.Ldeposit, 0, 1, 17, 18, gtk.FILL, gtk.FILL)
         
         self.Edeposit = sexy.IconEntry()
-        #self.Edeposit.connect("key-press-event", self.blocked_writing)
         image = gtk.Image()
         image.set_from_stock(gtk.STOCK_OPEN,gtk.ICON_SIZE_BUTTON)
         self.Edeposit.set_icon(sexy.ICON_ENTRY_PRIMARY, image)
@@ -192,9 +185,6 @@ class profileTab(gtk.Table):
         
         #END of Config Files
             
-    def RBnetwork_toggled(self, widget, data=None):
-        self.Emachine.set_sensitive(widget.get_active())
-    
     def RBfile_toggled(self, widget, data=None):
         self.CBfile.set_sensitive(widget.get_active())
     
@@ -204,9 +194,9 @@ class profileTab(gtk.Table):
         
     def Cfilter_changed(self, cell, path, iter):
         state = cell.get_property("model").get_value(iter,2)
-        self.TMfilter[path][2] = self.LSactions[state][0]
-        self.TMfilter[path][3] = self.LSactions[state][1]
-        self.TMfilter[path][4] = self.LSactions[state][2]
+        self.TMfilter[path][2] = self.mother.LSactions[state][0]
+        self.TMfilter[path][3] = self.mother.LSactions[state][1]
+        self.TMfilter[path][4] = self.mother.LSactions[state][2]
         
     def Cfilter_edited(self,cellrenderertext, path, new_text):
         self.LSfilter[path][1] = new_text
@@ -215,7 +205,7 @@ class profileTab(gtk.Table):
         self.LSfilter[path][0] = new_text
         
     def add_filter(self, widget=None, data=_("Eveything")):       
-        self.LSfilter.append([data,".",self.LSactions[ACTION_KEEP][0],self.LSactions[ACTION_KEEP][1],ACTION_KEEP])
+        self.LSfilter.append([data,".",self.mother.LSactions[ACTION_KEEP][0],self.mother.LSactions[ACTION_KEEP][1],ACTION_KEEP])
         
     def remove_filter(self, widget=None):
         (view, iter) = self.TVfilter.get_selection().get_selected()
@@ -227,7 +217,7 @@ class profileTab(gtk.Table):
         if iter != None:
             path = self.TMfilter.get_path(iter)[0] - 1
             if path < 0:
-                print_error("The filter have reached the top of the list",WARNING)
+                debug("The filter have reached the top of the list",DEBUG_HIGH)
                 return
             iterPrev = self.TMfilter.get_iter(self.TMfilter.get_path(iter)[0] - 1)
             self.LSfilter.move_before(iter, iterPrev)
@@ -237,7 +227,7 @@ class profileTab(gtk.Table):
         if iter != None:
             path = self.TMfilter.get_path(iter)[0] + 1
             if path >= self.TMfilter.iter_n_children(None):
-                print_error("The filter have reached the bottom of the list",WARNING)
+                debug("The filter have reached the bottom of the list",DEBUG_HIGH)
                 return
             iterNext = self.TMfilter.get_iter(path)
             self.LSfilter.move_after(iter, iterNext)
@@ -264,23 +254,37 @@ class profileTab(gtk.Table):
         dialog.destroy()
         return
     
-    def get_source(self):
-        path = self.CBfile.get_active()
-        if path >= 0:
-            return self.pare.LSsources[path][1]
-        
-        return ""
-    
     def set_source(self, source):
         if source == "":
             self.CBfile.set_active(-1)
             return
         
-        for path, sourceAux in enumerate(self.pare.LSsources):
+        for path, sourceAux in enumerate(self.mother.LSsources):
             if sourceAux[1] == source:
                 self.CBfile.set_active(path)
                 return
             
         self.CBfile.set_active(-1)
         return
+    
+    def get_config(self):
+        p = profile(self.Ename.get_text())
+        p.saved_source = self.RBfile.get_active()
+        
+        path = self.CBfile.get_active()
+        if path >= 0:
+            p.source = self.mother.LSsources[path][1]
+        else:
+            p.source = ""
+            
+        p.deposit = self.Edeposit.get_text()
+
+        for row in self.LSfilter:
+            r = rule(row[0], row[2], row[4])
+            p.rules.append(r)
+            
+        return p
+    
+    def is_source_in_use(self, path):
+        return self.CBfile.get_active() == path
     

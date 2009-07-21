@@ -122,18 +122,12 @@ class mainWindow:
         self.Bapply.connect("clicked", self.save_config)
         self.Hbuttons.pack_start(self.Bapply, True)
         
-        self.Brestore = gtk.Button(_("Restore"), gtk.STOCK_REVERT_TO_SAVED)
-        self.Brestore.connect("clicked", self.load_config)
-        self.Hbuttons.pack_start(self.Brestore, True)
-        
         but = gtk.Button(_("Quit"),gtk.STOCK_QUIT)
         but.connect("clicked",self.close,0)
         but.show()
         self.Hbuttons.pack_start(but, True)
         
         self.mainBox.pack_start(self.Hbuttons, False)
-        
-        self.sources_to_erase = []
         
         self.config = config()
         self.config.load()
@@ -158,17 +152,17 @@ class mainWindow:
 
     def show_settings(self, widget=None, data=None):
         #Init config Window
-        self.configW = configWindow(self.config, self.window)
-        response = self.configW.run()
+        configW = configWindow(self.config, self.window)
+        response = configW.run()
         if response == gtk.RESPONSE_ACCEPT:
             #Apply config
-            self.config = self.configW.get_config()
+            configW.update_config(self.config)
             
             self.config.reload_users()
             self.config.reload_groups()
             self.load_config()
             
-        self.configW.destroy()
+        configW.destroy()
 
     def load_config(self, widget=None):
         
@@ -223,9 +217,6 @@ class mainWindow:
                                  group.ldap])
         self.CBgroups.set_active(0)
         
-        #TOFIX: No s'ha de fer sempre...  
-        del self.sources_to_erase[:]
-        
         self.set_enabled_to_load(True)
     
     def save_config(self, widget=None, data=None):
@@ -249,10 +240,6 @@ class mainWindow:
             g = user_group(row[1],row[0],row[4],row[5])
             self.config.groups.append(g)
         
-        for path in self.sources_to_erase:
-            os.unlink(path)
-        del self.sources_to_erase[:]
-
         try:   
             self.config.save()
         except:
@@ -673,7 +660,6 @@ class mainWindow:
                 
                 self.RTBsettings.show()
                 self.Bapply.show()
-                self.Brestore.show()
                 self.STIsep.show()
                 
                 self.TBtoolbar.set_size_request(480,-1)
@@ -704,7 +690,6 @@ class mainWindow:
                 
                 self.RTBsettings.hide()
                 self.Bapply.hide()
-                self.Brestore.hide()
                 self.STIsep.hide()
                 
                 

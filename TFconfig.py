@@ -80,6 +80,7 @@ class config:
     
     def __init__(self):
         self.sources = []
+        self.sources_to_erase = []
         self.profiles = []
         self.time = TIME_MANUAL
         self.option = OPTION_ALL
@@ -303,7 +304,7 @@ class config:
     def load_time_defaults(self):
         self.time = TIME_MANUAL
         
-    def load_freeze_defatuls(self):
+    def load_freeze_defaults(self):
         self.option = OPTION_ALL
         self.all = FREEZE_NONE
         
@@ -379,7 +380,7 @@ class config:
         xgroups.setAttribute("active", str(self.option == OPTION_GROUPS))
         for group in self.groups:
             xgroup = xdoc.createElement("group")
-            xgroup.setAttribute("gid", group.id)
+            xgroup.setAttribute("gid", str(group.id))
             xgroup.setAttribute("value", str(group.profile)) 
             xgroups.appendChild(xgroup) 
         xFreeze.appendChild(xgroups)
@@ -430,14 +431,19 @@ class config:
             os.makedirs(CONFIG_DIRECTORY,0755)
         except OSError as (errno, strerror):
             debug(CONFIG_DIRECTORY + " " + strerror,DEBUG_HIGH)
-            
+        
         try:
             file = open(os.path.join (CONFIG_DIRECTORY, CONFIG_FILE), "w")
-            file.write(xdoc.toxml())
+            file.write(xdoc.toxml("utf-8"))
             file.close()
         except:
             print_error(_("Can't save the configuration file"))
             raise
+        
+        for path in self.sources_to_erase:
+            os.unlink(path)
+            
+        del self.sources_to_erase[:]
     
     def get_frozen_users(self,time = TIME_INDEFFERENT):
         debug('Entering config.get_frozen_users',DEBUG_LOW)
@@ -506,7 +512,7 @@ class config:
                 filter = '(objectclass=posixAccount)'
                 attrs = ['uid','homeDirectory','gidNumber','uidNumber']
              
-                result = con.search_s(ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
+                result = con.search_s(self.ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
                 for person in result:
                     newConf = self.init_profile(self.all)
                     newConf.username = person[1]['uid'][0]
@@ -617,7 +623,6 @@ class config:
                             frozen_users.append(prof)
             
             #TODO: if not in local
-            #TODO: ldap
             #Primary and secontaries group user
             if self.ldap_enabled:
                 try:
@@ -671,66 +676,29 @@ class config:
             except ldap.LDAPError, e:
                 self.ldap_enabled = False
                 
-    #TOFIX: new users?
     def reload_users(self):
         
-        to_remove = []
+        oldusers = self.users[:]
+        self.load_users()
+        
+        #APPLY THE OLD PROFILE
         for user in self.users:
-            try:
-                pwuser = pwd.getpwuid(user.id)
-            except:
-                trobat = False
-                if(self.ldap_enabled):
-                    try:
-                        con = ldap.initialize(self.ldap_server)
-                        filter = '(objectclass=posixAccount)'
-                        attrs = ['uidNumber']
-                     
-                        result = con.search_s(self.ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
-                        for lduser in result:
-                            uid = lduser[1]['uidNumber'][0]
-                            if uid == user.id:
-                                trobat = True
-                                break
-                            
-                    except ldap.LDAPError, e:
-                        print_error(e,WARNING) 
-                if not trobat:
-                    to_remove.append(user)
-                        
-        for user in to_remove:
-            self.users.remove(user)
-
-    #TOFIX: new groups?
+            for olduser in oldusers:
+                if user.id == olduser.id:
+                    user.profile = olduser.profile
+                    break
+                
     def reload_groups(self):
         
-        to_remove = []
+        oldgroups = self.groups[:]
+        self.load_groups()
+        
+        #APPLY THE OLD PROFILE
         for group in self.groups:
-            try:
-                pwgroup = grp.getgrgid(group.id)
-            except:
-                trobat = False
-                if(self.ldap_enabled):
-                    try:
-                        con = ldap.initialize(self.ldap_server)
-                        filter = '(objectclass=posixGroup)'
-                        attrs = ['gidNumber']
-                     
-                        result = con.search_s(self.ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
-                        for ldgroup in result:
-                            gid = ldgroup[1]['gidNumber'][0]
-                            if gid == group.id:
-                                trobat = True
-                                break
-                        
-                    except ldap.LDAPError, e:
-                        print_error(e,WARNING)
-                        
-                if not trobat:
-                    to_remove.append(group)
-                        
-        for group in to_remove:
-            self.groups.remove(group)  
+            for oldgroup in oldgroups:
+                if group.id == oldgroup.id:
+                    group.profile = oldgroup.profile
+                    break
                         
     def load_users(self):
         del self.users[:]
