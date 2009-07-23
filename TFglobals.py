@@ -46,6 +46,7 @@ NORMAL_ICONS = ["pixmaps/drop-32.png", "pixmaps/ice-32.png", "pixmaps/drops-32.p
 BIG_ICONS = ["pixmaps/drop-64.png", "pixmaps/ice-64.png", "pixmaps/drops-64.png"]
 HUGE_ICONS = ["pixmaps/drop-128.png", "pixmaps/ice-128.png", "pixmaps/drops-128.png"]
 
+FREEZE_LDAP = -1
 FREEZE_NONE = 0
 FREEZE_ALL = 1
 FREEZE_ADV = 2

@@ -41,10 +41,8 @@ def move(src,dst):
     shutil.move(src, dstComplete)
     return dst
 
-class user_frozen ( threading.Thread ):
-            
+class user_frozen ():
     def __init__(self):
-        threading.Thread.__init__(self)
         self.name = ""
         self.filters = []
         self.username = ""
@@ -54,10 +52,15 @@ class user_frozen ( threading.Thread ):
         self.deposit = ""
         self.uid = 0
         self.gid = 0
+        self.hostname = ""
         
     def create_tar(self):
         debug("Entering profile.create_tar",DEBUG_LOW)
         debug("User " + self.username + ":" + self.name + ":" + self.homedir + ":" + self.source,DEBUG_LOW)
+        
+        if not os.access(self.homedir, os.R_OK):
+            print_error("on create_tar. " + self.homedir + "does not exists")
+            raise
         
         #SOURCE  ALREADY SPECIFIED
         if len(self.source) > 0: return
@@ -67,15 +70,46 @@ class user_frozen ( threading.Thread ):
         try:
             tar = tarfile.open(tarpath,'w:gz')
         except:
-            print_error("on create_tar")
+            print_error("on create_tar. Can't create tar file")
+            raise
         else:
             #arcname is "" to avoid homedir folders to be included 
             tar.add(self.homedir,arcname="",exclude=self.exclude_from_tar)
             tar.close()
-          
+    
+    def restore_external_tar(self):
+        #TODO
+        #CONNECT WITH THE SERVER
+        #Mirar si el profile == -1(FREEZE_LDAP) funciona... :S
+#===============ORIGINAL========================================
+#        if [ ! -f $DIRECTORI_PERSONAL/.ssh/.congela_ssh ]; then
+#              sudo -u $USER  ssh-keygen -t dsa -P "" -N "" -f $DIRECTORI_PERSONAL/.ssh/id_dsa > /dev/null
+#              sudo -u $USER  cp $DIRECTORI_PERSONAL/.ssh/id_dsa.pub $DIRECTORI_PERSONAL/.ssh/authorized_keys
+#              sudo -u $USER  ssh-keyscan -p 22 -t rsa $SERVIDOR > $DIRECTORI_PERSONAL/.ssh/known_hosts #2>/dev/null
+#              sudo -u $USER  ssh-keyscan -p 22 -t rsa $CLIENT >> $DIRECTORI_PERSONAL/.ssh/known_hosts #2>/dev/null
+#              chown $USER:$PROPIETARI_GRUP $DIRECTORI_PERSONAL/.ssh/known_hosts
+#           fi
+#           sudo -u $USER  ssh $USER@$SERVIDOR 'sh -x /srv/exports/S/restaura/restaura_servidor.sh'
+#        fi
+#===============================================================================
+        #EL QUE HAURIA DE FER... pREGUNTAR AL JOAN
+        print 'IPCLIENT=$(ping -c1 $HOSTNAME |grep PING |cut -d "(" -f 2 | cut -d ")" -f 1)'
+        print 'ssh-keygen -t dsa -P "" -N "" -f '+self.homedir+'/.ssh/id_dsa > /dev/null'
+        print 'cp '+self.homedir+'/.ssh/id_dsa.pub '+self.homedir+'/.ssh/authorized_keys'
+        print 'ssh-keyscan -p 22 -t rsa '+self.hostname+' > '+self.homedir+'/.ssh/known_hosts #2>/dev/null'
+        print 'ssh-keyscan -p 22 -t rsa $IPCLIENT >> '+self.homedir+'/.ssh/known_hosts #2>/dev/null'
+        print 'chown '+self.uid+':'+self.gid+' '+self.homedir+'/.ssh/known_hosts'
+        print "ssh "+self.hostname+" 'sh -x tfreezer -s " + self.username + "'"
+        
+        return
+        
     def restore_tar(self):
         debug("Entering profile.restore_tar",DEBUG_LOW)
         debug("User " + self.username + ":" + self.name + ":" + self.homedir + ":" + self.source,DEBUG_LOW)
+        
+        if len(self.hostname) > 0:
+            self.restore_external_tar()
+            return
         
         #SOURCE ALREADY SPECIFIED
         if len(self.source) < 1:
@@ -84,13 +118,12 @@ class user_frozen ( threading.Thread ):
         else:
             dir = os.path.join (TAR_DIRECTORY, TAR_REPOSITORY)
             tarpath = os.path.join (dir, self.source)
-            
 
         #OPEN THE TAR TO KNOW IF IT EXISTS AND IS READABLE    
         try:
             tar = tarfile.open(tarpath,'r')
         except:
-            print_error("on restore_tar")
+            print_error("on restore_tar from user: " + self.username)
         else:
             #PREPARE COPY THE LOST AND FOUND
             if len(self.deposit) == 0:
@@ -110,7 +143,6 @@ class user_frozen ( threading.Thread ):
             
             #APPLY EXCLUDING AND LOST FILTERS
             self.apply_filters(self.homedir)
-            
             
             #do not extract ".." or "/" members
             to_extract = []

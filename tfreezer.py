@@ -36,12 +36,19 @@ def check_root():
 
 def do_restore(time = TIME_INDEFFERENT, username = ""):
     check_root()
-    print "Trivial Freezer "+VERSION
-    print "===================="
+    title = "Trivial Freezer "+VERSION
+    print title
+    print "=" * len(title)
     
     cfg = config()
     cfg.load()
-    fu = cfg.get_frozen_users()
+    
+    #If time requested is different  of the configured time
+    if cfg.time != time:
+        return
+    
+    #Get users to restore
+    fu = cfg.get_frozen_users(TAR_RESTORE)
     
     if len(fu) > 0:
         debug(" RESTORE",DEBUG_LOW)
@@ -60,8 +67,9 @@ def do_restore(time = TIME_INDEFFERENT, username = ""):
     debug("DONE",DEBUG_LOW)
         
 def print_help():
-    print "Trivial Freezer "+VERSION+" HELP"
-    print "========================="
+    title = "Trivial Freezer "+VERSION+" HELP"
+    print title
+    print "=" * len(title)
     print "Usage: "+sys.argv[0]+"  [OPTION]\n"
     print " Options:"
     print "  -x,-c       Open the configuration window (DEFAULT OPTION)"
@@ -73,6 +81,9 @@ def print_help():
     return
 
 def print_config():
+    title = "Trivial Freezer "+VERSION
+    print title
+    print "=" * len(title)
     from xml.dom import minidom
     try:
         xdoc = minidom.parse(os.path.join (CONFIG_DIRECTORY, CONFIG_FILE))
@@ -88,61 +99,57 @@ def show_window():
 
 def main(argv, args):
     action_ok = False
+    action_error = False
     show_help = False
     show_config = False
-    configure = False
-    restore = False
+    restore = False #False: show config, True: restore
     user = ""
-    time = TIME_INDEFFERENT
     
     for i, arg in enumerate(argv):
         if arg.startswith("-"):
             if arg == "-x" or arg == "-c":
                if action_ok:
-                   show_help = True
-                   configure = False
-                   restore = False
+                   action_error = True
+                   break
                else:
                    #CONFIGURATION
-                   configure = True
                    action_ok = True
+                   restore = False
             elif arg == "-m":
                 if action_ok:
-                   show_help = True
-                   configure = False
-                   restore = False
+                   action_error = True
+                   break
                 else:
                    #MANUAL RESTORATION
+                   action_ok = True
                    restore = True
                    time = TIME_MANUAL
-                   action_ok = True
             elif arg == "-s":
                 if action_ok or args <= i + 1:
-                    show_help = True
-                    configure = False
-                    restore = False
+                    action_error = True
+                    break
                 else:
                     #SESSION RESTORATION
-                    user = argv[i]
+                    action_ok = True
                     restore = True
                     time = TIME_SESSION
-                    action_ok = True
+                    user = argv[i]
             elif arg == "-S":
                 if action_ok:
-                    show_help = True
-                    configure = False
-                    restore = False
+                    action_error = True
+                    break
                 else:
                     #SYSTEM RESTORATION
+                    action_ok = True
                     restore = True
                     time = TIME_SYSTEM
-                    action_ok = True
             elif arg == "-d":
                 if args > i + 1:
                     #DEBUG LEVEL
                     debug_level = str2int(sys.argv[i+1])
                 else:
-                    show_help = True
+                    action_error = True
+                    break
             elif arg == "-p":
                 #PRINT CONFIG
                 show_config = True
@@ -151,16 +158,15 @@ def main(argv, args):
                 show_help = True
 
     if not action_ok and not show_help and not show_config:
-        configure = True
+        #If no action: show window
         action_ok = True
+        restore = False
         
-    if action_ok:
+    if action_ok and not action_error:
         if restore:
             do_restore(time,user)
-        elif configure:
-            show_window()
         else:
-            show_help = True
+            show_window()
     elif not show_config:
         show_help = True
         

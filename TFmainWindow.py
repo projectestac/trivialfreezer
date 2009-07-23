@@ -198,23 +198,39 @@ class mainWindow:
         #LOAD USERS
         self.LSusers.clear()
         for user in self.config.users:
-            self.LSusers.append([user.name,
+            if user.ldap and not self.config.home_server:
+                self.LSusers.append([user.name,
                                  user.id,
-                                 self.LSfreeze_settings[user.profile][0],
-                                 self.LSfreeze_settings[user.profile][1],
-                                 user.profile,
+                                 None,
+                                 _("Not editable"),
+                                 FREEZE_LDAP,
                                  user.ldap])
+            else:
+                self.LSusers.append([user.name,
+                     user.id,
+                     self.LSfreeze_settings[user.profile][0],
+                     self.LSfreeze_settings[user.profile][1],
+                     user.profile,
+                     user.ldap])
         self.CBusers.set_active(0)         
           
         #LOAD GROUPS
         self.LSgroups.clear()
         for group in self.config.groups:
-            self.LSgroups.append([group.name,
+            if group.ldap and not self.config.home_server:
+                self.LSgroups.append([group.name,
                                  group.id,
-                                 self.LSfreeze_settings[group.profile][0],
-                                 self.LSfreeze_settings[group.profile][1],
-                                 group.profile,
+                                 None,
+                                 _("Not editable"),
+                                 FREEZE_LDAP,
                                  group.ldap])
+            else:
+                self.LSgroups.append([group.name,
+                                     group.id,
+                                     self.LSfreeze_settings[group.profile][0],
+                                     self.LSfreeze_settings[group.profile][1],
+                                     group.profile,
+                                     group.ldap])
         self.CBgroups.set_active(0)
         
         self.set_enabled_to_load(True)
@@ -250,7 +266,8 @@ class mainWindow:
     def make_tars(self):
         debug("Entering tfreezer.make_tars",DEBUG_LOW)
         
-        fu = self.config.get_frozen_users()
+        #Get users to make tars
+        fu = self.config.get_frozen_users(TAR_CREATE)
         
         dir = os.path.join (TAR_DIRECTORY, TAR_HOMES)
         recursive_delete(dir)
@@ -599,6 +616,8 @@ class mainWindow:
         self.TMgroups.foreach(self.unset_state, state)
         
     def set_state(self, model, path, iter, state):
+        if model[path][4] == FREEZE_LDAP:
+            return
         model[path][2] = self.LSfreeze_settings[state][0]
         model[path][3] = self.LSfreeze_settings[state][1]
         model[path][4] = state

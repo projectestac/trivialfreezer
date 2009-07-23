@@ -90,6 +90,8 @@ class config:
         self.ldap_enabled = False
         self.ldap_server = ""
         self.ldap_dn = ""
+        self.home_server = False
+        self.home_server_ip = ""
         
     def load(self):
         try:  
@@ -222,10 +224,16 @@ class config:
                 self.load_freeze_defaults()
         
         try:
-            self.ldap_server = "ldap://localhost"
-            self.ldap_dn = "dc=iescopernic,dc=com"
-            self.ldap_enabled = True
+            xLdap = xdoc.getElementsByTagName("ldap")[0]
+            self.ldap_enabled = str2bool(xLdap.getAttribute("active"))
+            self.ldap_server = xLdap.getAttribute("server")
+            self.ldap_dn = xLdap.getAttribute("dn")
+            
+            xHomeServer = xdoc.getElementsByTagName("homserver")[0]
+            self.home_server_ip = xHomeServer.getAttribute("ip")
+            self.home_server = str2bool(xHomeServer.getAttribute("server"))
         except:
+            print_error("Corrupted ldap or homserver tag, taking defaults",WARNING)
             self.load_ldap_defaults()
         
         self.load_users()
@@ -312,6 +320,9 @@ class config:
         self.ldap_enabled = False
         self.ldap_server = ""
         self.ldap_dn = ""
+        self.home_server = False
+        self.home_server_ip = "localhost"
+        
         
     def load_defaults(self):
         
@@ -427,6 +438,17 @@ class config:
             xSource.appendChild(xchild)
         xtf.appendChild(xSource)
         
+        xLdap = xdoc.createElement("ldap")
+        xLdap.setAttribute("active", str(self.ldap_enabled))
+        xLdap.setAttribute("server", str(self.ldap_server))
+        xLdap.setAttribute("dn", str(self.ldap_dn))
+        xtf.appendChild(xLdap)
+        
+        xHomeServer = xdoc.createElement("homserver")
+        xHomeServer.setAttribute("ip", str(self.home_server_ip))
+        xHomeServer.setAttribute("server", str(self.home_server))
+        xtf.appendChild(xHomeServer)
+        
         try:   
             os.makedirs(CONFIG_DIRECTORY,0755)
         except OSError as (errno, strerror):
@@ -445,29 +467,23 @@ class config:
             
         del self.sources_to_erase[:]
     
-    def get_frozen_users(self,time = TIME_INDEFFERENT):
+    def get_frozen_users(self, action):
         debug('Entering config.get_frozen_users',DEBUG_LOW)
        
-        #IF requested time is not indifferent
-        #AND time requested is different  of the configured time
-        if time != TIME_INDEFFERENT and self.time != time:
-            #Return and don't parse more
-            return []
-        
         #ALL
         if self.option == OPTION_ALL:
             debug('  ALL SYSTEM',DEBUG_LOW)
-            return self.get_all_frozen()
+            return self.get_all_frozen(action)
         
         #BY USERS
         if self.option == OPTION_USERS:
             debug('  USERS',DEBUG_LOW)
-            return self.get_users_frozen()
+            return self.get_users_frozen(action)
         
         #BY GROUPS
         if self.option == OPTION_GROUPS:
             debug('  GROUPS',DEBUG_LOW)
-            return self.get_groups_frozen()
+            return self.get_groups_frozen(action)
     
     def init_profile(self, prof):
 
@@ -487,7 +503,7 @@ class config:
             
         return uf
     
-    def get_all_frozen(self):
+    def get_all_frozen(self, action):
         if self.all == FREEZE_NONE or self.all >= len(self.profiles):
             return []
         
@@ -497,37 +513,50 @@ class config:
         for user in pwd.getpwall():
             uid = user.pw_uid
             if uid >= minUID and uid < maxUID:
-                newConf = self.init_profile(self.all)
-                newConf.username = user.pw_name
-                newConf.homedir = user.pw_dir
-                newConf.uid = user.pw_uid
-                newConf.gid = user.pw_gid
+                prof = self.init_profile(self.all)
+                prof.username = user.pw_name
+                prof.homedir = user.pw_dir
+                prof.uid = user.pw_uid
+                prof.gid = user.pw_gid
+                prof.hostname = ""
                 
-                frozen_users.append(newConf)
+                frozen_users.append(prof)
+        
+        #DO NOT CREATE LDAP USERS TARS ON CLIENT
+        if action == TAR_CREATE and not self.home_server:
+            return frozen_users
+        
+        #LDAP ENABLED?
+        if not self.ldap_enabled:
+            return frozen_users
+
+        try:
+            con = ldap.initialize(self.ldap_server)
+            filter = '(objectclass=posixAccount)'
+            attrs = ['uid','homeDirectory','gidNumber','uidNumber']
+         
+            result = con.search_s(self.ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
+            for person in result:
+                prof = self.init_profile(self.all)
+                prof.username = person[1]['uid'][0]
+                prof.homedir = person[1]['homeDirectory'][0]
+                prof.uid = person[1]['uidNumber'][0]
+                prof.gid = person[1]['gidNumber'][0]
                 
-        #TODO: ldap
-        if self.ldap_enabled:
-            try:
-                con = ldap.initialize(self.ldap_server)
-                filter = '(objectclass=posixAccount)'
-                attrs = ['uid','homeDirectory','gidNumber','uidNumber']
-             
-                result = con.search_s(self.ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
-                for person in result:
-                    newConf = self.init_profile(self.all)
-                    newConf.username = person[1]['uid'][0]
-                    newConf.homedir = person[1]['homeDirectory'][0]
-                    newConf.uid = person[1]['uidNumber'][0]
-                    newConf.gid = person[1]['gidNumber'][0]
+                #If I'm restoring from the client, I have to say where is the server
+                if action == TAR_RESTORE and not self.home_server:
+                    prof.hostname = self.home_server_ip
+                else:
+                    prof.hostname = ""
+            
+                frozen_users.append(prof)
                 
-                    frozen_users.append(newConf)
-                    
-            except ldap.LDAPError, e:
-                print e
+        except ldap.LDAPError, e:
+            print e
             
         return frozen_users
     
-    def get_users_frozen(self):
+    def get_users_frozen(self, action):
         
         frozen_users = []
         
@@ -548,29 +577,43 @@ class config:
                 prof.homedir = pwuser.pw_dir
                 prof.uid = pwuser.pw_uid
                 prof.gid = pwuser.pw_gid
+                prof.hostname = ""
                 
                 frozen_users.append(prof)
                 continue
             
-            #If not found, try ldap
-            if self.ldap_enabled:
-                try:
-                    con = ldap.initialize(self.ldap_server)
-                    filter = '(&(objectclass=posixAccount)(uidNumber='+str(user.id)+'))'
-                    attrs = ['uid','homeDirectory','gidNumber','uidNumber']
-                    result = con.search_s(self.ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
-                    if len(result) > 0:
-                        prof = self.init_profile(user.profile)
-                        prof.username = result[0][1]['uid'][0]
-                        prof.homedir = result[0][1]['homeDirectory'][0]
-                        prof.uid = result[0][1]['uidNumber'][0]
-                        prof.gid = result[0][1]['gidNumber'][0]
+            #DO NOT CREATE LDAP USERS TARS ON CLIENT
+            if action == TAR_CREATE and not self.home_server:
+                continue
+            
+            #LDAP ENABLED?
+            if not self.ldap_enabled:
+                continue
+            
+            try:
+                con = ldap.initialize(self.ldap_server)
+                filter = '(&(objectclass=posixAccount)(uidNumber='+str(user.id)+'))'
+                attrs = ['uid','homeDirectory','gidNumber','uidNumber']
+                result = con.search_s(self.ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
+                if len(result) > 0:
+                    prof = self.init_profile(user.profile)
+                    prof.username = result[0][1]['uid'][0]
+                    prof.homedir = result[0][1]['homeDirectory'][0]
+                    prof.uid = result[0][1]['uidNumber'][0]
+                    prof.gid = result[0][1]['gidNumber'][0]
                     
-                        frozen_users.append(prof)
-                        continue
-                except ldap.LDAPError, e:
-                    print e
+                    #If I'm restoring from the client, I have to say where is the server
+                    if action == TAR_RESTORE and not self.home_server:
+                        prof.hostname = self.home_server_ip
+                    else:
+                        prof.hostname = ""
+                
+                    frozen_users.append(prof)
                     continue
+                
+            except ldap.LDAPError, e:
+                print e
+                continue
         
         return frozen_users
                 
@@ -586,7 +629,7 @@ class config:
             
             debug("   " +str(group.id),DEBUG_LOW)
         
-            #Usuari primari del grup
+            #Primary group users
             for pwuser in pwd.getpwall():
                 if group.id == user.pw_gid:
                     uid = pwuser.pw_uid
@@ -596,11 +639,12 @@ class config:
                         prof.homedir = pwuser.pw_dir
                         prof.uid = pwuser.pw_uid
                         prof.gid = pwuser.pw_gid
+                        prof.hostname = ""
                         
                         frozen_users.append(prof)
                     break
                 
-            #Usuaris secuntaris del grup
+            #Secondary group users
             try:
                 pwgroup = grp.getgrgid(group.id)
             except:
@@ -619,46 +663,59 @@ class config:
                             prof.homedir = pwuser.pw_dir
                             prof.uid = pwuser.pw_uid
                             prof.gid = pwuser.pw_gid
+                            prof.hostname = ""
                             
                             frozen_users.append(prof)
             
-            #TODO: if not in local
-            #Primary and secontaries group user
-            if self.ldap_enabled:
-                try:
-                    con = ldap.initialize(self.ldap_server)
-                    filter = '(&(objectclass=posixGroup)(gidNumber='+str(group.id)+'))'
-                    attrs = ['memberUid']
-                 
-                    result = con.search_s(self.ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
-                    print len(result)
+            #DO NOT CREATE LDAP USERS TARS ON CLIENT
+            if action == TAR_CREATE and not self.home_server:
+                continue
+            
+            #LDAP ENABLED?
+            if not self.ldap_enabled:
+                continue
+            
+            #Primary and secondary group user
+            try:
+                con = ldap.initialize(self.ldap_server)
+                filter = '(&(objectclass=posixGroup)(gidNumber='+str(group.id)+'))'
+                attrs = ['memberUid']
+             
+                result = con.search_s(self.ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
+                print len(result)
+                
+                secondaries = ''
+                if len(result) > 0:
+                    try:
+                        secondaries = '(&(objectclass=posixAccount)(|'
+                        for uid in result[0][1]['memberUid']:
+                            secondaries = secondaries + '(uid='+uid+')'
+                        secondaries = secondaries + '))'
+                    except:
+                        secondaries = ''
                     
-                    secondaries = ''
-                    if len(result) > 0:
-                        try:
-                            secondaries = '(&(objectclass=posixAccount)(|'
-                            for uid in result[0][1]['memberUid']:
-                                secondaries = secondaries + '(uid='+uid+')'
-                            secondaries = secondaries + '))'
-                        except:
-                            secondaries = ''
+                filter = '(|(&(objectclass=posixAccount)(gidNumber='+str(group.id)+'))'+secondaries+')'
+                attrs = ['uid','homeDirectory','gidNumber','uidNumber']
+             
+                result = con.search_s(self.ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
+                for person in result:
+                    prof = self.init_profile(group.profile)
+                    prof.username = person['uid'][0]
+                    prof.homedir = person['homeDirectory'][0]
+                    prof.uid = person['uidNumber'][0]
+                    prof.gid = person['gidNumber'][0]
+                    
+                    #If I'm restoring from the client, I have to say where is the server
+                    if action == TAR_RESTORE and not self.home_server:
+                        prof.hostname = self.home_server_ip
+                    else:
+                        prof.hostname = ""
+    
+                    frozen_users.append(prof)
                         
-                    filter = '(|(&(objectclass=posixAccount)(gidNumber='+str(group.id)+'))'+secondaries+')'
-                    attrs = ['uid','homeDirectory','gidNumber','uidNumber']
-                 
-                    result = con.search_s(self.ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
-                    for person in result:
-                        prof = self.init_profile(group.profile)
-                        prof.username = person['uid'][0]
-                        prof.homedir = person['homeDirectory'][0]
-                        prof.uid = person['uidNumber'][0]
-                        prof.gid = person['gidNumber'][0]
-        
-                        frozen_users.append(prof)
-                            
-                except ldap.LDAPError, e:
-                    print e
-                    continue
+            except ldap.LDAPError, e:
+                print e
+                continue
             
         return frozen_users
     

@@ -40,8 +40,11 @@ class tar_thread ( threading.Thread ):
     def run ( self ):
         debug("Entering tar_thread.run",DEBUG_MEDIUM)
         
+        errors = False
+        
         sys.settrace(self.globaltrace)
         max = float(len(self.tars) * 2)
+        
         
         #Create thread that create tars
         gtk.gdk.threads_enter()
@@ -52,7 +55,10 @@ class tar_thread ( threading.Thread ):
             
             gtk.gdk.threads_leave()
             
-            froze.create_tar()
+            try:
+                froze.create_tar()
+            except:
+                errors = True
             
             gtk.gdk.threads_enter()
             
@@ -60,8 +66,12 @@ class tar_thread ( threading.Thread ):
             self.win.PBprogress.set_fraction(i/max)
             
         self.win.PBprogress.set_fraction(1.0)
-        self.win.PBprogress.set_text(_("Frozen successfully done"))
         
+        if errors:
+            self.win.PBprogress.set_text(_("WARNING: There were errors on frozen"))
+        else:
+            self.win.PBprogress.set_text(_("Frozen successfully done"))
+            
         self.win.Bstop.set_sensitive(False)
         self.win.table.set_sensitive(True)
         self.win.TBtoolbar.set_sensitive(True)

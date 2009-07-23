@@ -66,10 +66,10 @@ class configWindow(gtk.Dialog):
         toolbar.insert(item,1)
         
         item = gtk.RadioToolButton(item,gtk.STOCK_CONNECT)
-        item.set_label(_('LDAP'))
-        item.set_tooltip_text(_('Configure LDAP'))
+        item.set_label(_('Remote users'))
+        item.set_tooltip_text(_('Configure Remote users'))
         item.set_is_important(True)
-        item.connect("toggled",self.show_hide_ldap)
+        item.connect("toggled",self.show_hide_remote)
         toolbar.insert(item,2)
         
         toolbar.show_all()
@@ -83,8 +83,8 @@ class configWindow(gtk.Dialog):
         self.init_sources()
         mainBox.pack_start(self.sources, True)
         
-        self.init_ldap()
-        mainBox.pack_start(self.ldap, True)
+        self.init_remote()
+        mainBox.pack_start(self.remote, True)
         
         
         self.load(config)
@@ -189,33 +189,33 @@ class configWindow(gtk.Dialog):
         button.connect("clicked", self.remove_source)
         self.sources.pack_start(button,False)
         
-    def init_ldap(self):
-        self.ldap = gtk.Table()
-        self.ldap.set_row_spacings(5)
-        self.ldap.set_col_spacings(5)
-        self.ldap.set_border_width(5)
+    def init_remote(self):
+        self.remote = gtk.Table()
+        self.remote.set_row_spacings(5)
+        self.remote.set_col_spacings(5)
+        self.remote.set_border_width(5)
         
-        label = gtk.Label("<b>"+_("LDAP configuration")+"</b>")
+        label = gtk.Label("<b>"+_("Remote users configuration")+"</b>")
         label.set_use_markup(True)
-        self.ldap.attach(label, 0, 3, 0, 1, gtk.FILL, gtk.FILL)
+        self.remote.attach(label, 0, 3, 0, 1, gtk.FILL, gtk.FILL)
         
         self.CBldapenable = gtk.CheckButton(_("Enable LDAP support"))
         self.CBldapenable.connect("toggled",self.CBldapenable_toggled)
-        self.ldap.attach(self.CBldapenable, 0, 3, 1, 2, gtk.FILL, gtk.SHRINK)
+        self.remote.attach(self.CBldapenable, 0, 3, 1, 2, gtk.FILL, gtk.SHRINK)
         
         label = gtk.Label(_("LDAP Server"))
-        self.ldap.attach(label, 0, 1, 2, 3, gtk.FILL, gtk.FILL)
+        self.remote.attach(label, 0, 1, 2, 3, gtk.FILL, gtk.FILL)
         
         self.Eserver = gtk.Entry()
         self.Eserver.set_sensitive(False)
-        self.ldap.attach(self.Eserver, 1, 3, 2, 3, gtk.EXPAND | gtk.FILL, gtk.FILL)
+        self.remote.attach(self.Eserver, 1, 3, 2, 3, gtk.EXPAND | gtk.FILL, gtk.FILL)
         
         label = gtk.Label(_("Distinguished Name (dn)"))
-        self.ldap.attach(label, 0, 1, 3, 4, gtk.FILL, gtk.FILL)
+        self.remote.attach(label, 0, 1, 3, 4, gtk.FILL, gtk.FILL)
         
         self.Edn = gtk.Entry()
         self.Edn.set_sensitive(False)
-        self.ldap.attach(self.Edn, 1, 3, 3, 4, gtk.EXPAND | gtk.FILL, gtk.FILL)
+        self.remote.attach(self.Edn, 1, 3, 3, 4, gtk.EXPAND | gtk.FILL, gtk.FILL)
         
         image = gtk.Image()
         image.set_from_stock(gtk.STOCK_CONNECT,gtk.ICON_SIZE_BUTTON)
@@ -223,12 +223,32 @@ class configWindow(gtk.Dialog):
         self.Btest.set_image(image)
         self.Btest.connect("clicked", self.test_connection)
         self.Btest.set_sensitive(False)
-        self.ldap.attach(self.Btest, 0, 3, 4, 5, gtk.EXPAND | gtk.FILL, gtk.FILL)
+        self.remote.attach(self.Btest, 0, 3, 4, 5, gtk.EXPAND | gtk.FILL, gtk.FILL)
         
         self.Ltest = gtk.Label()
         self.Ltest.set_use_markup(True)
         self.Ltest.set_sensitive(False)
-        self.ldap.attach(self.Ltest, 0, 3, 5, 6, gtk.FILL, gtk.FILL)
+        self.remote.attach(self.Ltest, 0, 3, 5, 6, gtk.FILL, gtk.FILL)
+        
+        label = gtk.Label("<b>"+_("Remote homes")+"</b>")
+        label.set_use_markup(True)
+        self.remote.attach(label, 0, 3, 6, 7, gtk.FILL, gtk.FILL)
+        
+        self.RBclient = gtk.RadioButton(None,_("Work as a client"))
+        self.RBclient.set_sensitive(False)
+        self.RBclient.connect("toggled",self.RBclient_toggled)
+        self.remote.attach(self.RBclient, 0, 1, 7, 8, gtk.FILL, gtk.FILL)
+        
+        label = gtk.Label(_("Home server host"))
+        self.remote.attach(label, 0, 1, 8, 9, gtk.FILL, gtk.FILL)
+        
+        self.EhomeServer = gtk.Entry()
+        self.EhomeServer.set_sensitive(False)
+        self.remote.attach(self.EhomeServer, 1, 3, 8, 9, gtk.EXPAND | gtk.FILL, gtk.FILL)
+        
+        self.RBserver = gtk.RadioButton(self.RBclient,_("Work as a server"))
+        self.RBserver.set_sensitive(False)
+        self.remote.attach(self.RBserver, 0, 1, 9, 10, gtk.FILL, gtk.FILL)
         
     def load(self, config):
         
@@ -259,6 +279,9 @@ class configWindow(gtk.Dialog):
         self.Eserver.set_text(config.ldap_server)
         self.Edn.set_text(config.ldap_dn)
         
+        self.RBserver.set_active(config.home_server)
+        self.EhomeServer.set_text(config.home_server_ip)
+        
         return
     
     def update_config(self, config):
@@ -285,6 +308,9 @@ class configWindow(gtk.Dialog):
         config.ldap_server = self.Eserver.get_text()
         
         config.ldap_enabled = self.CBldapenable.get_active() and self.test_connection()
+        
+        config.home_server = self.RBserver.get_active()
+        config.home_server_ip = self.EhomeServer.get_text()
             
             
     def add_tab(self, widget=None, data=_("New Profile")):
@@ -316,11 +342,11 @@ class configWindow(gtk.Dialog):
         else:
             self.profiles.hide_all()
     
-    def show_hide_ldap(self,widget):
+    def show_hide_remote(self,widget):
         if widget.get_active():
-            self.ldap.show_all()
+            self.remote.show_all()
         else:
-            self.ldap.hide_all()
+            self.remote.hide_all()
     
     def Cname_edited(self,cellrenderertext, path, new_text):
         self.LSsources[path][0] = new_text
@@ -448,11 +474,17 @@ class configWindow(gtk.Dialog):
                 self.sources_to_erase.append(file)
                 self.LSsources.remove(iter)
             
-    def CBldapenable_toggled(self, widget=None):
+    def CBldapenable_toggled(self, widget):
         self.Eserver.set_sensitive(widget.get_active())
         self.Edn.set_sensitive(widget.get_active())
         self.Ltest.set_sensitive(widget.get_active())
         self.Btest.set_sensitive(widget.get_active())
+        self.RBclient.set_sensitive(widget.get_active())
+        self.RBserver.set_sensitive(widget.get_active())
+        self.EhomeServer.set_sensitive(widget.get_active() and self.RBclient.get_active())
+    
+    def RBclient_toggled(self, widget):
+        self.EhomeServer.set_sensitive(widget.get_active())    
         
     def test_connection(self, widget=None):
         try:
