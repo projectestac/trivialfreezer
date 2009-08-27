@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2009-07-21 13:36+0200\n"
+"POT-Creation-Date: 2009-08-27 11:50+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,47 +16,47 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: TFconfig.py:98
+#: TFconfig.py:100
 msgid "Corrupted config file, taking defaults"
 msgstr ""
 
-#: TFconfig.py:112
+#: TFconfig.py:114
 msgid "Corrupted or empty sources tag, taking defaults"
 msgstr ""
 
-#: TFconfig.py:123
+#: TFconfig.py:125
 msgid "Corrupted source file tag, ignoring..."
 msgstr ""
 
-#: TFconfig.py:144 TFconfig.py:334
+#: TFconfig.py:146 TFconfig.py:345
 msgid "Unreadable tar file, ignoring..."
 msgstr ""
 
-#: TFconfig.py:262 TFconfig.py:265 TFconfig.py:270
+#: TFconfig.py:270 TFconfig.py:273 TFconfig.py:278
 msgid "Everything"
 msgstr ""
 
-#: TFconfig.py:268
+#: TFconfig.py:276
 msgid "Configuration"
 msgstr ""
 
-#: TFconfig.py:276
+#: TFconfig.py:284
 msgid "Total Unfrozen"
 msgstr ""
 
-#: TFconfig.py:279
+#: TFconfig.py:287
 msgid "Total Frozen"
 msgstr ""
 
-#: TFconfig.py:282
+#: TFconfig.py:290
 msgid "Configuration Frozen"
 msgstr ""
 
-#: TFconfig.py:284
+#: TFconfig.py:292
 msgid "No name"
 msgstr ""
 
-#: TFconfig.py:440
+#: TFconfig.py:462
 msgid "Can't save the configuration file"
 msgstr ""
 
@@ -80,12 +80,12 @@ msgstr ""
 msgid "Configure sources"
 msgstr ""
 
-#: TFconfigWindow.py:69 TFmainWindow.py:339 TFmainWindow.py:414
-msgid "LDAP"
+#: TFconfigWindow.py:69
+msgid "Remote users"
 msgstr ""
 
 #: TFconfigWindow.py:70
-msgid "Configure LDAP"
+msgid "Configure Remote users"
 msgstr ""
 
 #: TFconfigWindow.py:101
@@ -149,7 +149,7 @@ msgid "Remove a source"
 msgstr ""
 
 #: TFconfigWindow.py:198
-msgid "LDAP configuration"
+msgid "Remote users configuration"
 msgstr ""
 
 #: TFconfigWindow.py:202
@@ -168,35 +168,51 @@ msgstr ""
 msgid "Test connection"
 msgstr ""
 
-#: TFconfigWindow.py:290
+#: TFconfigWindow.py:233
+msgid "Remote homes"
+msgstr ""
+
+#: TFconfigWindow.py:237
+msgid "Work as a client"
+msgstr ""
+
+#: TFconfigWindow.py:242
+msgid "Home server host"
+msgstr ""
+
+#: TFconfigWindow.py:249
+msgid "Work as a server"
+msgstr ""
+
+#: TFconfigWindow.py:316
 msgid "New Profile"
 msgstr ""
 
-#: TFconfigWindow.py:329 TFconfigWindow.py:375 TFprofileTab.py:238
+#: TFconfigWindow.py:355 TFconfigWindow.py:401 TFprofileTab.py:238
 msgid "Choose source file"
 msgstr ""
 
-#: TFconfigWindow.py:360
+#: TFconfigWindow.py:386
 msgid "The freezer is unable to create the tar file"
 msgstr ""
 
-#: TFconfigWindow.py:379
+#: TFconfigWindow.py:405
 msgid "Tar files"
 msgstr ""
 
-#: TFconfigWindow.py:403
+#: TFconfigWindow.py:429
 msgid "The selected file is unreadable or malformed"
 msgstr ""
 
-#: TFconfigWindow.py:431
+#: TFconfigWindow.py:457
 msgid "This source is in use in some profiles, do you want to continue?"
 msgstr ""
 
-#: TFconfigWindow.py:464
+#: TFconfigWindow.py:496
 msgid "Connection successfully established"
 msgstr ""
 
-#: TFconfigWindow.py:467
+#: TFconfigWindow.py:499
 msgid "Connection failed"
 msgstr ""
 
@@ -208,107 +224,115 @@ msgstr ""
 msgid "Quit"
 msgstr ""
 
-#: TFmainWindow.py:246
+#: TFmainWindow.py:205 TFmainWindow.py:224
+msgid "Not editable"
+msgstr ""
+
+#: TFmainWindow.py:262
 msgid "WARNING: Errors in the fridge"
 msgstr ""
 
-#: TFmainWindow.py:264
+#: TFmainWindow.py:281
 msgid "Starting"
 msgstr ""
 
-#: TFmainWindow.py:286
+#: TFmainWindow.py:303
 msgid "WARNING: Stopped by the user"
 msgstr ""
 
-#: TFmainWindow.py:295
+#: TFmainWindow.py:312
 msgid "Time of restoration"
 msgstr ""
 
-#: TFmainWindow.py:299
+#: TFmainWindow.py:316
 msgid "Manual"
 msgstr ""
 
-#: TFmainWindow.py:300
+#: TFmainWindow.py:317
 msgid "At Session startup (GDM only)"
 msgstr ""
 
-#: TFmainWindow.py:301
+#: TFmainWindow.py:318
 msgid "At System startup"
 msgstr ""
 
-#: TFmainWindow.py:309
+#: TFmainWindow.py:326
 msgid "Freeze system"
 msgstr ""
 
-#: TFmainWindow.py:324
+#: TFmainWindow.py:341
 msgid "Freeze by user"
 msgstr ""
 
-#: TFmainWindow.py:345
+#: TFmainWindow.py:356 TFmainWindow.py:431
+msgid "LDAP"
+msgstr ""
+
+#: TFmainWindow.py:362
 msgid "User"
 msgstr ""
 
-#: TFmainWindow.py:356 TFmainWindow.py:431
+#: TFmainWindow.py:373 TFmainWindow.py:448
 msgid "State"
 msgstr ""
 
-#: TFmainWindow.py:389 TFmainWindow.py:463
+#: TFmainWindow.py:406 TFmainWindow.py:480
 msgid "Apply all"
 msgstr ""
 
-#: TFmainWindow.py:394 TFmainWindow.py:468
+#: TFmainWindow.py:411 TFmainWindow.py:485
 msgid "Apply selected"
 msgstr ""
 
-#: TFmainWindow.py:400
+#: TFmainWindow.py:417
 msgid "Freeze by group"
 msgstr ""
 
-#: TFmainWindow.py:420
+#: TFmainWindow.py:437
 msgid "Group"
 msgstr ""
 
-#: TFmainWindow.py:486
+#: TFmainWindow.py:503
 msgid "Freeze All"
 msgstr ""
 
-#: TFmainWindow.py:487
+#: TFmainWindow.py:504
 msgid "Freezes All the system"
 msgstr ""
 
-#: TFmainWindow.py:499
+#: TFmainWindow.py:516
 msgid "Unfreeze All"
 msgstr ""
 
-#: TFmainWindow.py:500
+#: TFmainWindow.py:517
 msgid "Unfreezes All the system"
 msgstr ""
 
-#: TFmainWindow.py:512
+#: TFmainWindow.py:529
 msgid "Advanced"
 msgstr ""
 
-#: TFmainWindow.py:513
+#: TFmainWindow.py:530
 msgid "Advanced freeze"
 msgstr ""
 
-#: TFmainWindow.py:525
+#: TFmainWindow.py:542
 msgid "Settings"
 msgstr ""
 
-#: TFmainWindow.py:526
+#: TFmainWindow.py:543
 msgid "Shows the settings window"
 msgstr ""
 
-#: TFmainWindow.py:626
+#: TFmainWindow.py:645
 msgid "System unfrozen"
 msgstr ""
 
-#: TFmainWindow.py:631
+#: TFmainWindow.py:650
 msgid "System frozen"
 msgstr ""
 
-#: TFmainWindow.py:636
+#: TFmainWindow.py:655
 msgid "Advanced frozen"
 msgstr ""
 
@@ -352,6 +376,10 @@ msgstr ""
 msgid "New Filter"
 msgstr ""
 
-#: TFtar_thread.py:63
+#: TFtar_thread.py:71
+msgid "WARNING: There were errors on frozen"
+msgstr ""
+
+#: TFtar_thread.py:73
 msgid "Frozen successfully done"
 msgstr ""

@@ -92,7 +92,7 @@ class user_frozen ():
 #           sudo -u $USER  ssh $USER@$SERVIDOR 'sh -x /srv/exports/S/restaura/restaura_servidor.sh'
 #        fi
 #===============================================================================
-        #EL QUE HAURIA DE FER... pREGUNTAR AL JOAN
+        #EL QUE HAURIA DE FER... PREGUNTAR AL JOAN
         print 'IPCLIENT=$(ping -c1 $HOSTNAME |grep PING |cut -d "(" -f 2 | cut -d ")" -f 1)'
         print 'ssh-keygen -t dsa -P "" -N "" -f '+self.homedir+'/.ssh/id_dsa > /dev/null'
         print 'cp '+self.homedir+'/.ssh/id_dsa.pub '+self.homedir+'/.ssh/authorized_keys'
