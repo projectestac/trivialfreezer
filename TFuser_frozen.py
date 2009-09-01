@@ -82,17 +82,11 @@ class user_frozen ():
         #TODO
         #CONNECT WITH THE SERVER
         #Mirar si el profile == -1(FREEZE_LDAP) funciona... :S
-#===============ORIGINAL========================================
-#        if [ ! -f $DIRECTORI_PERSONAL/.ssh/.congela_ssh ]; then
-#              sudo -u $USER  ssh-keygen -t dsa -P "" -N "" -f $DIRECTORI_PERSONAL/.ssh/id_dsa > /dev/null
-#              sudo -u $USER  cp $DIRECTORI_PERSONAL/.ssh/id_dsa.pub $DIRECTORI_PERSONAL/.ssh/authorized_keys
-#              sudo -u $USER  ssh-keyscan -p 22 -t rsa $SERVIDOR > $DIRECTORI_PERSONAL/.ssh/known_hosts #2>/dev/null
-#              sudo -u $USER  ssh-keyscan -p 22 -t rsa $CLIENT >> $DIRECTORI_PERSONAL/.ssh/known_hosts #2>/dev/null
-#              chown $USER:$PROPIETARI_GRUP $DIRECTORI_PERSONAL/.ssh/known_hosts
-#           fi
-#           sudo -u $USER  ssh $USER@$SERVIDOR 'sh -x /srv/exports/S/restaura/restaura_servidor.sh'
-#        fi
-#===============================================================================
+        
+        #TOUNCOMMENT (2)
+        #if self.hostname == 'localhost':
+        #   return 
+
 #BUSCAR IP'S (no cal)
 #===============================================================================
 #        debug ('EXECUTING: ping -c1 localhost |grep PING |cut -d "(" -f 2 | cut -d ")" -f 1',DEBUG_LOW) 
@@ -163,6 +157,7 @@ class user_frozen ():
                     if match == None:
                         newList.append(text)
         
+        #TOERASE (1)
         if self.hostname != 'localhost':   
             debug ('EXECUTING: ssh-keyscan -p 22 -t rsa ' + self.hostname,DEBUG_LOW)
             server_rsa = os.popen('ssh-keyscan -p 22 -t rsa ' + self.hostname).read().splitlines()[0]
