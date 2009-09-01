@@ -72,12 +72,13 @@ def print_help():
     print "=" * len(title)
     print "Usage: "+sys.argv[0]+"  [OPTION]\n"
     print " Options:"
-    print "  -x,-c       Open the configuration window (DEFAULT OPTION)"
+    print "  -d level    Specify the debug level"
+    print "  -h          Show this help"
     print "  -m          Runs manual restoration profiles"
+    print "  -p          Print the XML configuration file"
     print "  -S          Runs starting system restoration profiles"
     print "  -s username Runs starting session restoration profiles for the specified uid"
-    print "  -p          Print the XML configuration file"
-    print "  -h          Show this help"
+    print "  -x,-c       Open the configuration window (DEFAULT OPTION)"
     return
 
 def print_config():
@@ -133,7 +134,7 @@ def main(argv, args):
                     action_ok = True
                     restore = True
                     time = TIME_SESSION
-                    user = argv[i]
+                    user = argv[i + 1]
             elif arg == "-S":
                 if action_ok:
                     action_error = True
@@ -146,7 +147,7 @@ def main(argv, args):
             elif arg == "-d":
                 if args > i + 1:
                     #DEBUG LEVEL
-                    debug_level = str2int(sys.argv[i+1])
+                    set_debug_level(sys.argv[i+1])
                 else:
                     action_error = True
                     break

@@ -379,6 +379,7 @@ class mainWindow:
         tv.set_attributes(cell, text=3)
         
         cell.connect('changed', self.Cuser_changed)
+        cell.connect('editing-started', self.Cuser_edited)
         
         self.TVusers.append_column(tv)
         
@@ -454,6 +455,7 @@ class mainWindow:
         tv.set_attributes(cell, text=3)
         
         cell.connect('changed', self.Cgroup_changed)
+        cell.connect('editing-started', self.Cgroup_edited)
         
         self.TVgroups.append_column(tv)
         
@@ -600,11 +602,19 @@ class mainWindow:
     def Cuser_changed(self, cell, path, iter):
         state = cell.get_property("model").get_path(iter)[0]
         self.set_state(self.TMusers,path,None,state)
-   
+        
+    def Cuser_edited(self, cell, editable, path):
+        if self.TMusers[path][4] == FREEZE_LDAP:
+            editable.set_model()
+            
     def Cgroup_changed(self, cell, path, iter):
         state = cell.get_property("model").get_path(iter)[0]
         self.set_state(self.TMgroups,path,None,state)
-    
+        
+    def Cgroup_edited(self, cell, editable, path):
+        if self.TMusers[path][4] == FREEZE_LDAP:
+            editable.set_model()
+            
     def unset_all_states(self,state):
         if self.CBall.get_active() == state:
             self.CBall.set_active(0)

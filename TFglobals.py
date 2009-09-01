@@ -82,10 +82,16 @@ debug_level = DEBUG_DISABLED
 
 ###############################################
 
+def set_debug_level(level):
+    "Sets the debug level to be output in the terminal"
+    global debug_level
+    debug_level = str2int(level)
+
 def debug(text, level=DEBUG_LOW):
+    "Prints a text in the terminal if the debug level is higher than the requested"
     #if debug_level == DEBUG_DISABLED:
     #    return
-
+    
     if level <= debug_level:
         if level == DEBUG_LOW:
             print "Debug L: "+ str(text)
@@ -95,18 +101,19 @@ def debug(text, level=DEBUG_LOW):
             print "Debug H: "+ str(text)
 
 def print_error(text,level=ERROR):
+    "Prints a error or warning message in the terminal"
     if level == WARNING:
         print "Warning: "+ str(text)
         return
     
     print "Error  : "+ str(text)
     
-    
-#Converts an string to boolean
 def str2bool(v):
+    "Converts an string to boolean"    
     return v.lower() in ["yes", "true", "t", "1"]
 
 def str2int(v):
+    "Converts an string to integer"
     if v != None:
         return int(v)
     else:

@@ -26,6 +26,7 @@ import os
 import tarfile
 import re
 import shutil
+import pwd
 
 
 def move(src,dst):
@@ -92,14 +93,93 @@ class user_frozen ():
 #           sudo -u $USER  ssh $USER@$SERVIDOR 'sh -x /srv/exports/S/restaura/restaura_servidor.sh'
 #        fi
 #===============================================================================
-        #EL QUE HAURIA DE FER... PREGUNTAR AL JOAN
-        print 'IPCLIENT=$(ping -c1 $HOSTNAME |grep PING |cut -d "(" -f 2 | cut -d ")" -f 1)'
-        print 'ssh-keygen -t dsa -P "" -N "" -f '+self.homedir+'/.ssh/id_dsa > /dev/null'
-        print 'cp '+self.homedir+'/.ssh/id_dsa.pub '+self.homedir+'/.ssh/authorized_keys'
-        print 'ssh-keyscan -p 22 -t rsa '+self.hostname+' > '+self.homedir+'/.ssh/known_hosts #2>/dev/null'
-        print 'ssh-keyscan -p 22 -t rsa $IPCLIENT >> '+self.homedir+'/.ssh/known_hosts #2>/dev/null'
-        print 'chown '+self.uid+':'+self.gid+' '+self.homedir+'/.ssh/known_hosts'
-        print "ssh "+self.hostname+" 'sh -x tfreezer -s " + self.username + "'"
+#BUSCAR IP'S (no cal)
+#===============================================================================
+#        debug ('EXECUTING: ping -c1 localhost |grep PING |cut -d "(" -f 2 | cut -d ")" -f 1',DEBUG_LOW) 
+#        result = os.popen('ping -c1 localhost |grep PING |cut -d "(" -f 2 | cut -d ")" -f 1').read()
+#        ipclient = result.splitlines()[0]
+#        debug ('RESULT: ' + ipclient , DEBUG_LOW)
+#        
+#        debug ('EXECUTING: ping -c1 ' + self.hostname + ' |grep PING |cut -d "(" -f 2 | cut -d ")" -f 1',DEBUG_LOW) 
+#        result = os.popen('ping -c1 ' + self.hostname + ' |grep PING |cut -d "(" -f 2 | cut -d ")" -f 1').read()
+#        ipserver = result.splitlines()[0]
+#        debug ('RESULT: ' + ipserver , DEBUG_LOW)
+#===============================================================================
+        
+        roothome = pwd.getpwuid(0).pw_dir
+        debug (roothome, DEBUG_LOW)
+        
+        id_dsa = roothome + '/.ssh/id_dsa'
+        if os.access(id_dsa, os.R_OK):
+            os.unlink(id_dsa)
+        id_dsa_pub = roothome + '/.ssh/id_dsa.pub'
+        if os.access(id_dsa_pub, os.R_OK):
+            os.unlink(id_dsa_pub)
+        
+        #Create the new key
+        debug ('EXECUTING: ssh-keygen -t dsa -P "" -N "" -f ' + id_dsa,DEBUG_LOW)
+        result = os.popen('ssh-keygen -t dsa -P "" -N "" -f ' + id_dsa).read()
+        for line in result.splitlines():
+            debug ('RESULT: ' + line , DEBUG_LOW)
+        
+        #Search the user@host in the authorized_keys to be replaced
+        file= open(id_dsa_pub, 'r')
+        new_key = file.readline()
+        file.close()
+        string = new_key.split(" ")[2][:-1]
+        
+        newList = []
+        
+        authorized_keys = roothome + '/.ssh/authorized_keys'
+        if os.access(authorized_keys, os.R_OK):
+            file = open(authorized_keys, 'r')
+            list = file.readlines()
+            file.close()
+        
+            
+            for i,text in enumerate(list):
+                match = re.search(string,text)
+                if match == None:
+                    newList.append(text)
+        
+        newList.append(new_key)
+        file = open(authorized_keys, 'w')
+        file.writelines(newList)
+        file.close()
+        
+        #Search server and client rsa in known_hosts to be replaced
+        newList = []
+        
+        known_hosts = roothome + '/.ssh/known_hosts'
+        if os.access(known_hosts, os.R_OK):
+            file = open(known_hosts, 'r')
+            list = file.readlines()
+            file.close()
+            
+            for i,text in enumerate(list):
+                match = re.search(self.hostname,text)
+                if match == None:
+                    match = re.search('localhost',text)
+                    if match == None:
+                        newList.append(text)
+        
+        if self.hostname != 'localhost':   
+            debug ('EXECUTING: ssh-keyscan -p 22 -t rsa ' + self.hostname,DEBUG_LOW)
+            server_rsa = os.popen('ssh-keyscan -p 22 -t rsa ' + self.hostname).read().splitlines()[0]
+            newList.append(server_rsa)
+        
+        debug ('EXECUTING: ssh-keyscan -p 22 -t rsa localhost',DEBUG_LOW)
+        client_rsa = os.popen('ssh-keyscan -p 22 -t rsa localhost').read().splitlines()[0]          
+        newList.append(client_rsa)
+        
+        file = open(known_hosts, 'w')
+        file.writelines(newList)
+        file.close()
+        
+        debug ("EXECUTING: ssh " + self.hostname + " 'tfreezer -s " + self.username + "'",DEBUG_LOW)
+        result = os.popen("ssh " + self.hostname + " 'echo " + self.username + " > /tmp/prova'").read()
+        for line in result.splitlines():
+            debug ('RESULT: ' + line , DEBUG_LOW)  
         
         return
         

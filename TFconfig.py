@@ -529,7 +529,7 @@ class config:
         #LDAP ENABLED?
         if not self.ldap_enabled:
             return frozen_users
-
+        
         try:
             con = ldap.initialize(self.ldap_server)
             filter = '(objectclass=posixAccount)'
