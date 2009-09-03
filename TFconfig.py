@@ -758,6 +758,7 @@ class config:
                     break
                         
     def load_users(self):
+        #TODO Differ ldap and passwd users
         del self.users[:]
          
         for pwuser in pwd.getpwall():

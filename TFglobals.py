@@ -20,8 +20,10 @@
 #along with Trivial Freezer.  If not, see <http://www.gnu.org/licenses/>.
 
 ## i18n
-import gettext
-gettext.bindtextdomain('tfreezer', './locale')
+import gettext, sys, os
+path = os.path.split(os.path.realpath(sys.argv[0]))[0]+"/"
+
+gettext.bindtextdomain('tfreezer', path+'/locale')
 gettext.textdomain('tfreezer')
 _ = gettext.gettext
 
@@ -30,6 +32,7 @@ _ = gettext.gettext
 
 VERSION = "v0.5"
 
+EXEC_DIRECTORY = path
 CONFIG_DIRECTORY = "/etc/tfreezer/"
 CONFIG_FILE = "config.xtf"
 TAR_DIRECTORY = "/var/backups/tfreezer/"
@@ -41,10 +44,10 @@ DEFAULT_DEPOSIT = "/lost+found"
 minUID = 1001
 maxUID = 65534
 
-SMALL_ICONS = ["pixmaps/drop-16.png", "pixmaps/ice-16.png", "pixmaps/drops-16.png"]
-NORMAL_ICONS = ["pixmaps/drop-32.png", "pixmaps/ice-32.png", "pixmaps/drops-32.png"]
-BIG_ICONS = ["pixmaps/drop-64.png", "pixmaps/ice-64.png", "pixmaps/drops-64.png"]
-HUGE_ICONS = ["pixmaps/drop-128.png", "pixmaps/ice-128.png", "pixmaps/drops-128.png"]
+SMALL_ICONS = [path+"pixmaps/drop-16.png", path+"pixmaps/ice-16.png", path+"pixmaps/drops-16.png"]
+NORMAL_ICONS = [path+"pixmaps/drop-32.png", path+"pixmaps/ice-32.png", path+"pixmaps/drops-32.png"]
+BIG_ICONS = [path+"pixmaps/drop-64.png", path+"pixmaps/ice-64.png", path+"pixmaps/drops-64.png"]
+HUGE_ICONS = [path+"pixmaps/drop-128.png", path+"pixmaps/ice-128.png", path+"pixmaps/drops-128.png"]
 
 FREEZE_LDAP = -1
 FREEZE_NONE = 0
