@@ -21,6 +21,7 @@
 
 from TFglobals import *
 from TFconfig import rule,profile
+import pwd
 
 import gtk
 import sexy
@@ -242,7 +243,7 @@ class profileTab(gtk.Table):
         if response == gtk.RESPONSE_OK:
             depositfile = dialog.get_filename()
             
-            #If depositfile is inside a home directory, it will be inside each home
+            #If deposit file is inside a home directory, it will be inside each home
             for user in pwd.getpwall():
                 uid = user.pw_uid
                 if uid >= minUID and uid < maxUID:
