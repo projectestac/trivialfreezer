@@ -26,14 +26,14 @@ import ldap
 class pwduser():
     def __init__(self, name, uid, gid, homedir):
         self.pw_name = name
-        self.pw_uid = uid
-        self.pw_gid = gid
+        self.pw_uid = int(uid)
+        self.pw_gid = int(gid)
         self.pw_dir = homedir
         
 class pwdgroup():
     def __init__(self,name,gid,usernames):
         self.gr_name = name
-        self.gr_gid = gid
+        self.gr_gid = int(gid)
         self.usernames = []
         for username in usernames.split(','):
             username = username.strip()
@@ -67,20 +67,22 @@ class passwd():
         file = open("/etc/group", "r")
         for line in file:
             fields = line.split(':')
-            if int(fields[2]) >= minUID and int(fields[2]) < maxUID:
-                group = pwdgroup(fields[0],fields[2],fields[3])
-                self.groups[fields[2]] = group
+            gid = int(fields[2])
+            if gid >= minUID and gid < maxUID:
+                group = pwdgroup(fields[0],gid,fields[3])
+                self.groups[gid] = group
         file.close()
         
         self.users = dict()
         file = open("/etc/passwd", "r")
         for line in file:
             fields = line.split(':')
-            if int(fields[2]) >= minUID and int(fields[2]) < maxUID:
-                user = pwduser(fields[0],fields[2],fields[3],fields[5])
-                self.users[fields[2]] = user
-                if fields[3] in self.groups:
-                    self.groups.get(fields[3]).adduser(user)
+            uid = int(fields[2])
+            if uid >= minUID and uid < maxUID:
+                user = pwduser(fields[0],uid,fields[3],fields[5])
+                self.users[uid] = user
+                if user.pw_gid in self.groups:
+                    self.groups.get(user.pw_gid).adduser(user)
         file.close()
         
         #Secondary user groups
@@ -99,11 +101,11 @@ class passwd():
         return self.groups.itervalues()
     
     def getpwuid(self, uid):
-        uid = str(uid)
+        uid = int(uid)
         return self.users.get(uid)
     
     def getpwgruid(self, gid):
-        gid = str(gid)
+        gid = int(gid)
         return self.groups.get(gid).users.itervalues()
     
     
@@ -121,13 +123,12 @@ class ldappasswd():
                 gid = int(ldgroup[1]['gidNumber'][0])
                 if gid >= minUID and gid < maxUID:
                     name = ldgroup[1]['cn'][0]
-                    gid = ldgroup[1]['gidNumber'][0]
                     try:
                         usernames = ""
                         for uid in ldgroup[1]['memberUid']:
                             usernames = usernames + uid + ','
                     except:
-                        secusers = ""
+                        usernames = ""
                     group = pwdgroup(name,gid,usernames)
                     self.groups[gid] = group
                 
@@ -146,12 +147,11 @@ class ldappasswd():
                 if uid >= minUID and uid < maxUID:
                     username = person[1]['uid'][0]
                     homedir = person[1]['homeDirectory'][0]
-                    uid = person[1]['uidNumber'][0]
                     gid = person[1]['gidNumber'][0]
                     user = pwduser(username,uid,gid,homedir)
                     self.users[uid] = user
-                    if gid in self.groups:
-                        self.groups.get(gid).adduser(user)
+                    if user.pw_gid in self.groups:
+                        self.groups.get(user.pw_gid).adduser(user)
             
         except ldap.LDAPError, e:
             print_error(e,WARNING)
@@ -172,10 +172,10 @@ class ldappasswd():
         return self.groups.itervalues()
     
     def getpwuid(self, uid):
-        uid = str(uid)
+        uid = int(uid)
         return self.users.get(uid)
     
     def getpwgruid(self, gid):
-        gid = str(gid)
+        gid = int(gid)
         return self.groups.get(gid).users.itervalues()
     

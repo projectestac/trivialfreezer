@@ -559,6 +559,7 @@ class config:
                 continue
             
             debug("   " +str(user.id),DEBUG_LOW)
+            
             if(not user.ldap):
                 pwuser = userlist.getpwuid(user.id)
                 if pwuser == None:
