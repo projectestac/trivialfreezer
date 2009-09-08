@@ -248,10 +248,14 @@ class mainWindow:
         
         self.config.all = self.CBall.get_active()
         
+        del self.config.users [:]
+        
         for row in self.LSusers:
             u = user_group(row[1],row[0],row[4],row[5])
             self.config.users.append(u)
-            
+        
+        del self.config.groups [:]
+          
         for row in self.LSgroups:
             g = user_group(row[1],row[0],row[4],row[5])
             self.config.groups.append(g)

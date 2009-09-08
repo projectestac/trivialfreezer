@@ -658,7 +658,7 @@ class config:
             self.ldap_enabled = ldap_tester().try_ldap(self.ldap_server,self.ldap_dn)
                 
     def reload_users(self):
-        
+        print "RELOAD"
         oldusers = self.users[:]
         self.load_users()
         
@@ -693,11 +693,12 @@ class config:
              
         #LDAP users
         if(self.ldap_enabled):
-            userlist = ldappasswd(self.ldap_server,self.ldap_dn)
+            ldaplist = ldappasswd(self.ldap_server,self.ldap_dn)
         
-            for pwuser in userlist.getpwall():
+            for pwuser in ldaplist.getpwall():
                 user = user_group(pwuser.pw_uid, pwuser.pw_name, ldap=True)
                 self.users.append(user)
+
                 
     def load_groups(self):
         del self.groups[:]
@@ -710,9 +711,9 @@ class config:
              
         #LDAP users
         if(self.ldap_enabled):
-            grouplist = ldappasswd(self.ldap_server,self.ldap_dn)
+            ldaplist = ldappasswd(self.ldap_server,self.ldap_dn)
         
-            for pwgroup in grouplist.getgrall():
+            for pwgroup in ldaplist.getgrall():
                 group = user_group(pwgroup.gr_gid, pwgroup.gr_name, ldap=True)
                 self.groups.append(group)
                 

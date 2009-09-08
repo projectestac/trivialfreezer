@@ -41,7 +41,7 @@ TAR_REPOSITORY = "repository"
 TAR_EXTENSION = ".tar.gz"
 DEFAULT_DEPOSIT = "/lost+found"
 
-minUID = 1001
+minUID = 1000
 maxUID = 65534
 
 SMALL_ICONS = [path+"pixmaps/drop-16.png", path+"pixmaps/ice-16.png", path+"pixmaps/drops-16.png"]

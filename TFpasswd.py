@@ -20,12 +20,11 @@
 #along with Trivial Freezer.  If not, see <http://www.gnu.org/licenses/>.
 
 from TFglobals import *
-import pwd, grp
 import ldap
 
 
 class pwduser():
-    def __init__(self, name, uid,gid, homedir):
+    def __init__(self, name, uid, gid, homedir):
         self.pw_name = name
         self.pw_uid = uid
         self.pw_gid = gid
@@ -149,7 +148,7 @@ class ldappasswd():
                     homedir = person[1]['homeDirectory'][0]
                     uid = person[1]['uidNumber'][0]
                     gid = person[1]['gidNumber'][0]
-                    user = pwduser(username,homedir,uid,gid)
+                    user = pwduser(username,uid,gid,homedir)
                     self.users[uid] = user
                     if gid in self.groups:
                         self.groups.get(gid).adduser(user)
