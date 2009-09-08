@@ -21,13 +21,12 @@
 
 from TFglobals import *
 from TFuser_frozen import *
+from TFpasswd import *
 
 from xml.dom import minidom
 
-import pwd, grp
 import os
 import tarfile
-import ldap
 
 from datetime import datetime
 
@@ -509,18 +508,18 @@ class config:
         
         frozen_users = []
         
-        #Exec for all users in the permitted uid range
-        for user in pwd.getpwall():
-            uid = user.pw_uid
-            if uid >= minUID and uid < maxUID:
-                prof = self.init_profile(self.all)
-                prof.username = user.pw_name
-                prof.homedir = user.pw_dir
-                prof.uid = user.pw_uid
-                prof.gid = user.pw_gid
-                prof.hostname = ""
-                
-                frozen_users.append(prof)
+        #Exec for all users
+        userlist = passwd()
+        for pwuser in userlist.getpwall():
+            prof = self.init_profile(self.all)
+            prof.username = pwuser.pw_name
+            prof.homedir = pwuser.pw_dir
+            prof.uid = pwuser.pw_uid
+            prof.gid = pwuser.pw_gid
+            prof.hostname = ""
+            
+            frozen_users.append(prof)
+
         
         #DO NOT CREATE LDAP USERS TARS ON CLIENT
         if action == TAR_CREATE and not self.home_server:
@@ -529,91 +528,75 @@ class config:
         #LDAP ENABLED?
         if not self.ldap_enabled:
             return frozen_users
-        
-        try:
-            con = ldap.initialize(self.ldap_server)
-            filter = '(objectclass=posixAccount)'
-            attrs = ['uid','homeDirectory','gidNumber','uidNumber']
-         
-            result = con.search_s(self.ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
-            for person in result:
-                prof = self.init_profile(self.all)
-                prof.username = person[1]['uid'][0]
-                prof.homedir = person[1]['homeDirectory'][0]
-                prof.uid = person[1]['uidNumber'][0]
-                prof.gid = person[1]['gidNumber'][0]
-                
-                #If I'm restoring from the client, I have to say where is the server
-                if action == TAR_RESTORE and not self.home_server:
-                    prof.hostname = self.home_server_ip
-                else:
-                    prof.hostname = ""
+
+        ldaplist = ldappasswd(self.ldap_server,self.ldap_dn)
+        for pwuser in ldaplist.getpwall():
+            prof = self.init_profile(self.all)
+            prof.username = pwuser.pw_name
+            prof.homedir = pwuser.pw_dir
+            prof.uid = pwuser.pw_uid
+            prof.gid = pwuser.pw_gid
             
-                frozen_users.append(prof)
-                
-        except ldap.LDAPError, e:
-            print e
+            #If I'm restoring from the client, I have to say where is the server
+            if action == TAR_RESTORE and not self.home_server:
+                prof.hostname = self.home_server_ip
+            else:
+                prof.hostname = ""
+        
+            frozen_users.append(prof)
             
         return frozen_users
     
     def get_users_frozen(self, action):
         
         frozen_users = []
+        userlist = passwd()
+        if self.ldap_enabled:
+            ldaplist = ldappasswd(self.ldap_server,self.ldap_dn)
         
         for user in self.users:
             if user.profile == FREEZE_NONE or user.profile >= len(self.profiles):
                 continue
-            if user.id < minUID or user.id >= maxUID:  continue
             
             debug("   " +str(user.id),DEBUG_LOW)
-            
-            try:
-                pwuser = pwd.getpwuid(user.id)
-            except:
-                print_error("User " + user.id + " not found")
-            else:        
-                prof = self.init_profile(user.profile)
-                prof.username = pwuser.pw_name
-                prof.homedir = pwuser.pw_dir
-                prof.uid = pwuser.pw_uid
-                prof.gid = pwuser.pw_gid
-                prof.hostname = ""
-                
-                frozen_users.append(prof)
-                continue
-            
-            #DO NOT CREATE LDAP USERS TARS ON CLIENT
-            if action == TAR_CREATE and not self.home_server:
-                continue
-            
-            #LDAP ENABLED?
-            if not self.ldap_enabled:
-                continue
-            
-            try:
-                con = ldap.initialize(self.ldap_server)
-                filter = '(&(objectclass=posixAccount)(uidNumber='+str(user.id)+'))'
-                attrs = ['uid','homeDirectory','gidNumber','uidNumber']
-                result = con.search_s(self.ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
-                if len(result) > 0:
+            if(not user.ldap):
+                pwuser = userlist.getpwuid(user.id)
+                if pwuser == None:
+                    print_error("User " + user.id + " not found")
+                else:        
                     prof = self.init_profile(user.profile)
-                    prof.username = result[0][1]['uid'][0]
-                    prof.homedir = result[0][1]['homeDirectory'][0]
-                    prof.uid = result[0][1]['uidNumber'][0]
-                    prof.gid = result[0][1]['gidNumber'][0]
+                    prof.username = pwuser.pw_name
+                    prof.homedir = pwuser.pw_dir
+                    prof.uid = pwuser.pw_uid
+                    prof.gid = pwuser.pw_gid
+                    prof.hostname = ""
                     
+                    frozen_users.append(prof)
+            else:
+                #DO NOT CREATE LDAP USERS TARS ON CLIENT
+                if action == TAR_CREATE and not self.home_server:
+                    continue
+                
+                #LDAP ENABLED?
+                if not self.ldap_enabled:
+                    continue
+
+                pwuser = ldaplist.getpwuid(user.id)
+                if pwuser == None:
+                    print_error("User " + user.id + " not found")
+                else:        
+                    prof = self.init_profile(user.profile)
+                    prof.username = pwuser.pw_name
+                    prof.homedir = pwuser.pw_dir
+                    prof.uid = pwuser.pw_uid
+                    prof.gid = pwuser.pw_gid
                     #If I'm restoring from the client, I have to say where is the server
                     if action == TAR_RESTORE and not self.home_server:
                         prof.hostname = self.home_server_ip
                     else:
                         prof.hostname = ""
-                
+                    
                     frozen_users.append(prof)
-                    continue
-                
-            except ldap.LDAPError, e:
-                print e
-                continue
         
         return frozen_users
                 
@@ -621,117 +604,58 @@ class config:
     def get_groups_frozen(self):
         
         frozen_users = []
+        userlist = passwd()
+        if self.ldap_enabled:
+            ldaplist = ldappasswd(self.ldap_server,self.ldap_dn)
         
         for group in self.groups:
             if group.profile == FREEZE_NONE or group.profile >= len(self.profiles):
                 continue
-            if group.id < minUID or group.id >= maxUID:  continue
             
             debug("   " +str(group.id),DEBUG_LOW)
-        
-            #Primary group users
-            for pwuser in pwd.getpwall():
-                if group.id == user.pw_gid:
-                    uid = pwuser.pw_uid
-                    if uid >= minUID and uid < maxUID:
-                        prof = self.init_profile(group.profile)
-                        prof.username = pwuser.pw_name
-                        prof.homedir = pwuser.pw_dir
-                        prof.uid = pwuser.pw_uid
-                        prof.gid = pwuser.pw_gid
-                        prof.hostname = ""
-                        
-                        frozen_users.append(prof)
-                    break
-                
-            #Secondary group users
-            try:
-                pwgroup = grp.getgrgid(group.id)
-            except:
-                print_error("Group " + group.id + " not found")
-            else:
-                for username in pwgroup.gr_mem:
-                    try:
-                        pwuser = pwd.getpwname(username)
-                    except:
-                        print_error("User " + pwuser + " not found",WARNING)
-                    else:
-                        uid = pwuser.pw_uid
-                        if uid >= minUID and uid < maxUID: 
-                            prof = self.init_profile(group.profile)
-                            prof.username = pwuser.pw_name
-                            prof.homedir = pwuser.pw_dir
-                            prof.uid = pwuser.pw_uid
-                            prof.gid = pwuser.pw_gid
-                            prof.hostname = ""
-                            
-                            frozen_users.append(prof)
             
-            #DO NOT CREATE LDAP USERS TARS ON CLIENT
-            if action == TAR_CREATE and not self.home_server:
-                continue
-            
-            #LDAP ENABLED?
-            if not self.ldap_enabled:
-                continue
-            
-            #Primary and secondary group user
-            try:
-                con = ldap.initialize(self.ldap_server)
-                filter = '(&(objectclass=posixGroup)(gidNumber='+str(group.id)+'))'
-                attrs = ['memberUid']
-             
-                result = con.search_s(self.ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
-                print len(result)
-                
-                secondaries = ''
-                if len(result) > 0:
-                    try:
-                        secondaries = '(&(objectclass=posixAccount)(|'
-                        for uid in result[0][1]['memberUid']:
-                            secondaries = secondaries + '(uid='+uid+')'
-                        secondaries = secondaries + '))'
-                    except:
-                        secondaries = ''
-                    
-                filter = '(|(&(objectclass=posixAccount)(gidNumber='+str(group.id)+'))'+secondaries+')'
-                attrs = ['uid','homeDirectory','gidNumber','uidNumber']
-             
-                result = con.search_s(self.ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
-                for person in result:
+            if(not group.ldap):
+                users = userlist.getpwgruid(group.id)
+                for pwuser in users:
                     prof = self.init_profile(group.profile)
-                    prof.username = person['uid'][0]
-                    prof.homedir = person['homeDirectory'][0]
-                    prof.uid = person['uidNumber'][0]
-                    prof.gid = person['gidNumber'][0]
+                    prof.username = pwuser.pw_name
+                    prof.homedir = pwuser.pw_dir
+                    prof.uid = pwuser.pw_uid
+                    prof.gid = pwuser.pw_gid
+                    prof.hostname = ""
+                    
+                    frozen_users.append(prof)
+                    
+            else:      
+                #DO NOT CREATE LDAP USERS TARS ON CLIENT
+                if action == TAR_CREATE and not self.home_server:
+                    continue
+                
+                #LDAP ENABLED?
+                if not self.ldap_enabled:
+                    continue
+            
+                users = ldaplist.getpwgruid(group.id)
+                for pwuser in users:
+                    prof = self.init_profile(group.profile)
+                    prof.username = pwuser.pw_name
+                    prof.homedir = pwuser.pw_dir
+                    prof.uid = pwuser.pw_uid
+                    prof.gid = pwuser.pw_gid
                     
                     #If I'm restoring from the client, I have to say where is the server
                     if action == TAR_RESTORE and not self.home_server:
                         prof.hostname = self.home_server_ip
                     else:
                         prof.hostname = ""
-    
+                    
                     frozen_users.append(prof)
-                        
-            except ldap.LDAPError, e:
-                print e
-                continue
             
         return frozen_users
     
     def try_ldap(self):
         if self.ldap_enabled:
-            try:
-                con = ldap.initialize(self.ldap_server)
-                filter = '(objectclass=posixAccount)'
-                attrs = ['uidNumber']
-             
-                result = con.search_s(self.ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
-                if len(result) < 1:
-                    self.ldap_enabled = False
-                    
-            except ldap.LDAPError, e:
-                self.ldap_enabled = False
+            self.ldap_enabled = ldap_tester().try_ldap(self.ldap_server,self.ldap_dn)
                 
     def reload_users(self):
         
@@ -761,52 +685,34 @@ class config:
         #TODO Differ ldap and passwd users
         del self.users[:]
          
-        for pwuser in pwd.getpwall():
-            uid = pwuser.pw_uid
-            if uid >= minUID and uid < maxUID:
-                user = user_group(pwuser.pw_uid, pwuser.pw_name)
-                self.users.append(user)
-                
+        userlist = passwd()
+        
+        for pwuser in userlist.getpwall():
+            user = user_group(pwuser.pw_uid, pwuser.pw_name)
+            self.users.append(user)
+             
         #LDAP users
         if(self.ldap_enabled):
-            try:
-                con = ldap.initialize(self.ldap_server)
-                filter = '(objectclass=posixAccount)'
-                attrs = ['uid','uidNumber']
-             
-                result = con.search_s(self.ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
-                for lduser in result:
-                    usern = lduser[1]['uid'][0]
-                    uid = lduser[1]['uidNumber'][0]
-                    user = user_group(uid, usern, ldap=True)
-                    self.users.append(user)
-                    
-            except ldap.LDAPError, e:
-                print_error(e,WARNING)
+            userlist = ldappasswd(self.ldap_server,self.ldap_dn)
+        
+            for pwuser in userlist.getpwall():
+                user = user_group(pwuser.pw_uid, pwuser.pw_name, ldap=True)
+                self.users.append(user)
                 
     def load_groups(self):
         del self.groups[:]
-         
-        for pwgroup in grp.getgrall():
-            gid = pwgroup.gr_gid
-            if gid >= minUID and gid < maxUID:
-                group = user_group(pwgroup.gr_gid, pwgroup.gr_name)
+        
+        grouplist = passwd()
+        
+        for pwgroup in grouplist.getgrall():
+            group = user_group(pwgroup.gr_gid, pwgroup.gr_name)
+            self.groups.append(group)
+             
+        #LDAP users
+        if(self.ldap_enabled):
+            grouplist = ldappasswd(self.ldap_server,self.ldap_dn)
+        
+            for pwgroup in grouplist.getgrall():
+                group = user_group(pwgroup.gr_gid, pwgroup.gr_name, ldap=True)
                 self.groups.append(group)
                 
-        #LDAP groups
-        if(self.ldap_enabled):
-            try:
-                con = ldap.initialize(self.ldap_server)
-                filter = '(objectclass=posixGroup)'
-                attrs = ['cn','gidNumber']
-             
-                result = con.search_s(self.ldap_dn, ldap.SCOPE_SUBTREE, filter, attrs)
-                for ldgroup in result:
-                    groupn = ldgroup[1]['cn'][0]
-                    gid = ldgroup[1]['gidNumber'][0]
-                    group = user_group(gid, groupn, ldap=True)
-                    self.groups.append(group)
-                    
-            except ldap.LDAPError, e:
-                print_error(e,WARNING)
-    

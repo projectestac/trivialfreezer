@@ -20,6 +20,9 @@
 #along with Trivial Freezer.  If not, see <http://www.gnu.org/licenses/>.
 
 from TFglobals import *
+import pwd, grp
+import ldap
+
 
 class pwduser():
     def __init__(self, name, uid,gid, homedir):
@@ -32,12 +35,31 @@ class pwdgroup():
     def __init__(self,name,gid,usernames):
         self.gr_name = name
         self.gr_gid = gid
-        self.usernames = usernames
+        self.usernames = []
+        for username in usernames.split(','):
+            username = username.strip()
+            if username != "":
+                self.usernames.append(username)
         self.users = dict()
     
     def adduser(self,user):
         self.users[user.pw_uid] = user
-        
+
+class ldap_tester():
+    def try_ldap(self, server, dn):
+        try:
+            con = ldap.initialize(server)
+            filter = '(objectclass=posixAccount)'
+            attrs = ['uidNumber']
+         
+            result = con.search_s(dn, ldap.SCOPE_SUBTREE, filter, attrs)
+            if len(result) < 1:
+                return False
+            else:
+                return True
+                
+        except ldap.LDAPError, e:
+            return False
 
 class passwd():
     def __init__(self):
@@ -47,7 +69,7 @@ class passwd():
         for line in file:
             fields = line.split(':')
             if int(fields[2]) >= minUID and int(fields[2]) < maxUID:
-                group = pwdgroup(fields[0],fields[2],fields[3].split(','))
+                group = pwdgroup(fields[0],fields[2],fields[3])
                 self.groups[fields[2]] = group
         file.close()
         
@@ -59,66 +81,102 @@ class passwd():
                 user = pwduser(fields[0],fields[2],fields[3],fields[5])
                 self.users[fields[2]] = user
                 if fields[3] in self.groups:
-                    self.groups.get(fields[3]).add_user(user)
+                    self.groups.get(fields[3]).adduser(user)
         file.close()
         
         #Secondary user groups
-        for group in self.groups:
+        
+        for group in self.groups.itervalues():
             for username in group.usernames:
-                for user in self.users:
+                for user in self.users.itervalues():
                     if user.pw_name == username:
                         group.adduser(user)
                         break
 
-    def getall(self):
-        return self.users
+    def getpwall(self):
+        return self.users.itervalues()
     
-    def getuser(self, uid):
+    def getgrall(self):
+        return self.groups.itervalues()
+    
+    def getpwuid(self, uid):
+        uid = str(uid)
         return self.users.get(uid)
     
-    def getusergroup(self, gid):
-        return self.groups.get(gid).users
+    def getpwgruid(self, gid):
+        gid = str(gid)
+        return self.groups.get(gid).users.itervalues()
     
     
-#TODO: LDAP USERS
-class ldapusers():
-    def __init__(self):
+class ldappasswd():
+    def __init__(self, server, dn):
         
         self.groups = dict()
-        file = open("/etc/group", "r")
-        for line in file:
-            fields = line.split(':')
-            if int(fields[2]) >= minUID and int(fields[2]) < maxUID:
-                group = pwdgroup(fields[0],fields[2],fields[3].split(','))
-                self.groups[fields[2]] = group
-        file.close()
+        try:
+            con = ldap.initialize(server)
+            filter = '(objectclass=posixGroup)'
+            attrs = ['cn','gidNumber','memberUid']
+         
+            result = con.search_s(dn, ldap.SCOPE_SUBTREE, filter, attrs)
+            for ldgroup in result:
+                gid = int(ldgroup[1]['gidNumber'][0])
+                if gid >= minUID and gid < maxUID:
+                    name = ldgroup[1]['cn'][0]
+                    gid = ldgroup[1]['gidNumber'][0]
+                    try:
+                        usernames = ""
+                        for uid in ldgroup[1]['memberUid']:
+                            usernames = usernames + uid + ','
+                    except:
+                        secusers = ""
+                    group = pwdgroup(name,gid,usernames)
+                    self.groups[gid] = group
+                
+        except ldap.LDAPError, e:
+            print_error(e,WARNING)
+            self.groups = dict()
         
         self.users = dict()
-        file = open("/etc/passwd", "r")
-        for line in file:
-            fields = line.split(':')
-            if int(fields[2]) >= minUID and int(fields[2]) < maxUID:
-                user = pwduser(fields[0],fields[2],fields[3],fields[5])
-                self.users[fields[2]] = user
-                if fields[3] in self.groups:
-                    self.groups.get(fields[3]).add_user(user)
-        file.close()
+        try:
+            con = ldap.initialize(server)
+            filter = '(objectclass=posixAccount)'
+            attrs = ['uid','homeDirectory','gidNumber','uidNumber']
+            result = con.search_s(dn, ldap.SCOPE_SUBTREE, filter, attrs)
+            for person in result:
+                uid = int(person[1]['uidNumber'][0])
+                if uid >= minUID and uid < maxUID:
+                    username = person[1]['uid'][0]
+                    homedir = person[1]['homeDirectory'][0]
+                    uid = person[1]['uidNumber'][0]
+                    gid = person[1]['gidNumber'][0]
+                    user = pwduser(username,homedir,uid,gid)
+                    self.users[uid] = user
+                    if gid in self.groups:
+                        self.groups.get(gid).adduser(user)
+            
+        except ldap.LDAPError, e:
+            print_error(e,WARNING)
+            self.users = dict()
         
         #Secondary user groups
-        for group in self.groups:
+        for group in self.groups.itervalues():
             for username in group.usernames:
-                for user in self.users:
+                for user in self.users.itervalues():
                     if user.pw_name == username:
                         group.adduser(user)
                         break
 
-    def getall(self):
-        return self.users
+    def getpwall(self):
+        return self.users.itervalues()
     
-    def getuser(self, uid):
+    def getgrall(self):
+        return self.groups.itervalues()
+    
+    def getpwuid(self, uid):
+        uid = str(uid)
         return self.users.get(uid)
     
-    def getusergroup(self, gid):
-        return self.groups.get(gid).users
+    def getpwgruid(self, gid):
+        gid = str(gid)
+        return self.groups.get(gid).users.itervalues()
     
-         

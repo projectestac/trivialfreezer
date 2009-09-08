@@ -21,7 +21,6 @@
 
 from TFglobals import *
 from TFconfig import rule,profile
-import pwd
 
 import gtk
 import sexy
@@ -244,12 +243,13 @@ class profileTab(gtk.Table):
             depositfile = dialog.get_filename()
             
             #If deposit file is inside a home directory, it will be inside each home
-            for user in pwd.getpwall():
-                uid = user.pw_uid
-                if uid >= minUID and uid < maxUID:
-                    if depositfile.startswith(user.pw_dir):
-                        depositfile = depositfile[len(user.pw_dir)+1:]
-                        break
+            userlist = passwd()
+            for pwuser in userlist.getpwall():
+                uid = pwuser.pw_uid
+                if depositfile.startswith(pwuser.pw_dir):
+                    depositfile = depositfile[len(pwuser.pw_dir)+1:]
+                    break
+
             self.Edeposit.set_text(depositfile)
             
         dialog.destroy()
