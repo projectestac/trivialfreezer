@@ -241,8 +241,9 @@ class config:
         try:
             for xUser in xdoc.getElementsByTagName("users")[0].getElementsByTagName("user"):
                 uid = int(xUser.getAttribute("uid"))
+                ldap = str2bool(xUser.getAttribute("ldap"))
                 for user in self.users:
-                    if user.id == uid:
+                    if user.id == uid and ldap == user.ldap:
                         value = int(xUser.getAttribute("value"))
                         user.set_profile(value)
                         break
@@ -255,8 +256,9 @@ class config:
         try:
             for xGroup in xdoc.getElementsByTagName("groups")[0].getElementsByTagName("group"):
                 gid = int(xGroup.getAttribute("gid"))
+                ldap = str2bool(xGroup.getAttribute("ldap"))
                 for group in self.groups:
-                    if group.id == gid:
+                    if group.id == gid and ldap == group.ldap:
                         value = int(xGroup.getAttribute("value"))
                         group.set_profile(value)
                         break
@@ -382,7 +384,8 @@ class config:
         for user in self.users:
             xuser = xdoc.createElement("user")
             xuser.setAttribute("uid", str(user.id))
-            xuser.setAttribute("value", str(user.profile)) 
+            xuser.setAttribute("value", str(user.profile))
+            xuser.setAttribute("ldap", str(user.ldap))  
             xusers.appendChild(xuser)
         xFreeze.appendChild(xusers)
         
@@ -391,7 +394,8 @@ class config:
         for group in self.groups:
             xgroup = xdoc.createElement("group")
             xgroup.setAttribute("gid", str(group.id))
-            xgroup.setAttribute("value", str(group.profile)) 
+            xgroup.setAttribute("value", str(group.profile))
+            xgroup.setAttribute("ldap", str(group.ldap))
             xgroups.appendChild(xgroup) 
         xFreeze.appendChild(xgroups)
         
@@ -683,7 +687,6 @@ class config:
                     break
                         
     def load_users(self):
-        #TODO Differ ldap and passwd users
         del self.users[:]
          
         userlist = passwd()
