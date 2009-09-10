@@ -24,7 +24,10 @@ from TFprofileTab import *
 from TFconfig import *
 import gtk
 
+import paramiko
+
 import os
+import pwd
 
 import tarfile
 
@@ -85,7 +88,6 @@ class configWindow(gtk.Dialog):
         
         self.init_remote()
         mainBox.pack_start(self.remote, True)
-        
         
         self.load(config)
         
@@ -190,6 +192,11 @@ class configWindow(gtk.Dialog):
         self.sources.pack_start(button,False)
         
     def init_remote(self):
+        
+        self.key = False
+        self.hostname = ""
+        self.port = "22"
+        
         self.remote = gtk.Table()
         self.remote.set_row_spacings(5)
         self.remote.set_col_spacings(5)
@@ -237,18 +244,24 @@ class configWindow(gtk.Dialog):
         self.RBclient = gtk.RadioButton(None,_("Work as a client"))
         self.RBclient.set_sensitive(False)
         self.RBclient.connect("toggled",self.RBclient_toggled)
-        self.remote.attach(self.RBclient, 0, 1, 7, 8, gtk.FILL, gtk.FILL)
+        self.remote.attach(self.RBclient, 0, 3, 7, 8, gtk.FILL, gtk.FILL)
         
-        label = gtk.Label(_("Home server host"))
-        self.remote.attach(label, 0, 1, 8, 9, gtk.FILL, gtk.FILL)
+        image = gtk.Image()
+        image.set_from_stock(gtk.STOCK_DIALOG_AUTHENTICATION,gtk.ICON_SIZE_BUTTON)
+        self.Bkeys = gtk.Button(_("Generate authorization keys"))
+        self.Bkeys.set_image(image)
+        self.Bkeys.connect("clicked", self.generate_keys)
+        self.Bkeys.set_sensitive(False)
+        self.remote.attach(self.Bkeys, 0, 3, 9, 10, gtk.EXPAND | gtk.FILL, gtk.FILL)
         
-        self.EhomeServer = gtk.Entry()
-        self.EhomeServer.set_sensitive(False)
-        self.remote.attach(self.EhomeServer, 1, 3, 8, 9, gtk.EXPAND | gtk.FILL, gtk.FILL)
+        self.Lkeys = gtk.Label()
+        self.Lkeys.set_use_markup(True)
+        self.Lkeys.set_sensitive(False)
+        self.remote.attach(self.Lkeys, 0, 3, 10, 11, gtk.FILL, gtk.FILL)
         
         self.RBserver = gtk.RadioButton(self.RBclient,_("Work as a server"))
         self.RBserver.set_sensitive(False)
-        self.remote.attach(self.RBserver, 0, 1, 9, 10, gtk.FILL, gtk.FILL)
+        self.remote.attach(self.RBserver, 0, 3, 11, 12, gtk.FILL, gtk.FILL)
         
     def load(self, config):
         
@@ -280,7 +293,8 @@ class configWindow(gtk.Dialog):
         self.Edn.set_text(config.ldap_dn)
         
         self.RBserver.set_active(config.home_server)
-        self.EhomeServer.set_text(config.home_server_ip)
+        self.hostname = config.home_server_ip
+        #self.port = config.home_server_port
         
         return
     
@@ -310,7 +324,8 @@ class configWindow(gtk.Dialog):
         config.ldap_enabled = self.CBldapenable.get_active() and self.test_connection()
         
         config.home_server = self.RBserver.get_active()
-        config.home_server_ip = self.EhomeServer.get_text()
+        config.home_server_ip = self.hostname
+        #config.home_server_port = self.port
             
             
     def add_tab(self, widget=None, data=_("New Profile")):
@@ -481,10 +496,12 @@ class configWindow(gtk.Dialog):
         self.Btest.set_sensitive(widget.get_active())
         self.RBclient.set_sensitive(widget.get_active())
         self.RBserver.set_sensitive(widget.get_active())
-        self.EhomeServer.set_sensitive(widget.get_active() and self.RBclient.get_active())
+        self.Lkeys.set_sensitive(widget.get_active() and self.RBclient.get_active())
+        self.Bkeys.set_sensitive(widget.get_active() and self.RBclient.get_active()) 
     
     def RBclient_toggled(self, widget):
-        self.EhomeServer.set_sensitive(widget.get_active())    
+        self.Lkeys.set_sensitive(widget.get_active())
+        self.Bkeys.set_sensitive(widget.get_active())  
         
     def test_connection(self, widget=None):
         try:
@@ -499,4 +516,148 @@ class configWindow(gtk.Dialog):
             self.Ltest.set_markup('<span foreground="#770000" size="large">' + _("Connection failed")+ '</span>')
             return False
         
+    def generate_keys(self, widget=None):
+        if self.key == True:
+            #TODO: Ask for regenerating the key
+            return
+        
+        roothome = pwd.getpwuid(0).pw_dir
+        id_dsa = roothome + '/.ssh/id_dsa'
+        dss = paramiko.DSSKey.generate()
+        dss.write_private_key_file(id_dsa)
+        #print dss.__str__().get_string()
+        #file = open(id_dsa+".pub" ,"w")
+        #file.write(dss.__str__())
+        #file.close()
+        #print dss
+        
+        dialog = gtk.Dialog(title=_("Configure the server"), parent=self, flags=0, buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
+                                          gtk.STOCK_OK, gtk.RESPONSE_ACCEPT))
+        
+        table = gtk.Table()
+        table.set_row_spacings(5)
+        table.set_col_spacings(5)
+        table.set_border_width(5)
+        
+        label = gtk.Label(_("Server hostname"))
+        table.attach(label, 0, 1, 0, 1, gtk.FILL, gtk.FILL)
+        
+        Ehostname = gtk.Entry()
+        Ehostname.set_text(self.hostname)
+        table.attach(Ehostname, 1, 2, 0, 1, gtk.EXPAND | gtk.FILL, gtk.FILL)
+        
+        label = gtk.Label(_("Port"))
+        table.attach(label, 0, 1, 1, 2, gtk.FILL, gtk.FILL)
+        
+        Eport = gtk.Entry()
+        Eport.set_text(self.port)
+        table.attach(Eport, 1, 2, 1, 2, gtk.EXPAND | gtk.FILL, gtk.FILL)
+        
+        label = gtk.Label(_("Username"))
+        table.attach(label, 0, 1, 2, 3, gtk.FILL, gtk.FILL)
+        
+        Euser = gtk.Entry()
+        table.attach(Euser, 1, 2, 2, 3, gtk.EXPAND | gtk.FILL, gtk.FILL)
+        
+        label = gtk.Label(_("Password"))
+        table.attach(label, 0, 1, 3, 4, gtk.FILL, gtk.FILL)
+        
+        Epasswd = gtk.Entry()
+        Epasswd.set_visibility(False)
+        table.attach(Epasswd, 1, 2, 3, 4, gtk.EXPAND | gtk.FILL, gtk.FILL)
+        
+        dialog.vbox.pack_start(table, True)
+        
+        dialog.vbox.show_all()
+        
+        response = dialog.run()
+
+        if response == gtk.RESPONSE_ACCEPT:
+            self.Lkeys.set_markup('<span foreground="#007700" size="large">' + _("OK!")+ '</span>')
+            user = Euser.get_text()
+            passwd = Epasswd.get_text()
+            self.hostname = Ehostname.get_text()
+            self.port = Eport.get_text()
+            dialog.destroy()
+        else:
+            self.Lkeys.set_markup('<span foreground="#770000" size="large">' + _("NO!")+ '</span>')
+            dialog.destroy()
+            return
+
+        
+        id_dsa = roothome + '/.ssh/id_dsa2'
+        if os.access(id_dsa, os.R_OK):
+            os.unlink(id_dsa)
+        id_dsa_pub = roothome + '/.ssh/id_dsa2.pub'
+        if os.access(id_dsa_pub, os.R_OK):
+            os.unlink(id_dsa_pub)
+        
+        #Create the new key
+        debug ('EXECUTING: ssh-keygen -t dsa -P "" -N "" -f ' + id_dsa,DEBUG_LOW)
+        result = os.popen('ssh-keygen -t dsa -P "" -N "" -f ' + id_dsa).read()
+        #for line in result.splitlines():
+        #    debug ('RESULT: ' + line , DEBUG_LOW)
+        
+        #Search the user@host in the authorized_keys to be replaced
+        return
+        file = open(id_dsa_pub, 'r')
+        new_key = file.readline()
+        file.close()
+        string = new_key.split(" ")[2][:-1]
+        
+        newList = []
+        
+        #SAVE AUTHORIZED KEYS ON THE SERVER
+    
+        authorized_keys = '~/.ssh/authorized_keysAux'
+        #ASK FOR USER AND PASSWORD TO AUTHENTICATE
+        result = os.popen("scp -P "+self.port+" "+id_dsa_pub+" "+user+"@"+self.hostname+":"+authorized_keys+"|echo '"+passwd+"'").read()
+        for line in result.splitlines():
+            debug ('RESULT: ' + line , DEBUG_LOW)
+        self.Lkeys.set_markup('<span foreground="#007700" size="large">' + _("OK")+ '</span>')
+        return
+        
+        if os.access(authorized_keys, os.R_OK):
+            file = open(authorized_keys, 'r')
+            list = file.readlines()
+            file.close()
+        
+            
+            for i,text in enumerate(list):
+                match = re.search(string,text)
+                if match == None:
+                    newList.append(text)
+        
+        newList.append(new_key)
+        file = open(authorized_keys, 'w')
+        file.writelines(newList)
+        file.close()
+        
+        #Search server and client rsa in known_hosts to be replaced
+        newList = []
+        
+        known_hosts = roothome + '/.ssh/known_hosts'
+        if os.access(known_hosts, os.R_OK):
+            file = open(known_hosts, 'r')
+            list = file.readlines()
+            file.close()
+            
+            for i,text in enumerate(list):
+                match = re.search(self.hostname,text)
+                if match == None:
+                    match = re.search('localhost',text)
+                    if match == None:
+                        newList.append(text)
+        
+        debug ('EXECUTING: ssh-keyscan -p 22 -t rsa localhost ' + self.hostname,DEBUG_LOW)
+        keylist = os.popen('ssh-keyscan -p 22 -t rsa localhost ' + self.hostname).read().splitlines()
+        newList.extend(keylist)
+                
+        file = open(known_hosts, 'w')
+        file.writelines(newList)
+        file.close()
+        
+        self.Lkeys.set_markup('<span foreground="#007700" size="large">' + _("OK")+ '</span>')
+        
+        return
         
