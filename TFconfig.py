@@ -606,7 +606,7 @@ class config:
         return frozen_users
                 
     
-    def get_groups_frozen(self):
+    def get_groups_frozen(self, action):
         
         frozen_users = []
         userlist = passwd()
@@ -663,7 +663,7 @@ class config:
             self.ldap_enabled = ldap_tester().try_ldap(self.ldap_server,self.ldap_dn)
                 
     def reload_users(self):
-        print "RELOAD"
+        
         oldusers = self.users[:]
         self.load_users()
         
