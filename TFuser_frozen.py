@@ -79,26 +79,10 @@ class user_frozen ():
             tar.close()
     
     def restore_external_tar(self):
-        #TODO
         #CONNECT WITH THE SERVER
-        #Mirar si el profile == -1(FREEZE_LDAP) funciona... :S
         
-        #TOUNCOMMENT (2)
-        #if self.hostname == 'localhost':
-        #   return 
-
-#BUSCAR IP'S (no cal)
-#===============================================================================
-#        debug ('EXECUTING: ping -c1 localhost |grep PING |cut -d "(" -f 2 | cut -d ")" -f 1',DEBUG_LOW) 
-#        result = os.popen('ping -c1 localhost |grep PING |cut -d "(" -f 2 | cut -d ")" -f 1').read()
-#        ipclient = result.splitlines()[0]
-#        debug ('RESULT: ' + ipclient , DEBUG_LOW)
-#        
-#        debug ('EXECUTING: ping -c1 ' + self.hostname + ' |grep PING |cut -d "(" -f 2 | cut -d ")" -f 1',DEBUG_LOW) 
-#        result = os.popen('ping -c1 ' + self.hostname + ' |grep PING |cut -d "(" -f 2 | cut -d ")" -f 1').read()
-#        ipserver = result.splitlines()[0]
-#        debug ('RESULT: ' + ipserver , DEBUG_LOW)
-#===============================================================================
+        if self.hostname == 'localhost':
+            return 
         
         roothome = pwd.getpwuid(0).pw_dir
         debug (roothome, DEBUG_LOW)
@@ -157,16 +141,10 @@ class user_frozen ():
                     if match == None:
                         newList.append(text)
         
-        #TOERASE (1)
-        if self.hostname != 'localhost':   
-            debug ('EXECUTING: ssh-keyscan -p 22 -t rsa ' + self.hostname,DEBUG_LOW)
-            server_rsa = os.popen('ssh-keyscan -p 22 -t rsa ' + self.hostname).read().splitlines()[0]
-            newList.append(server_rsa)
-        
-        debug ('EXECUTING: ssh-keyscan -p 22 -t rsa localhost',DEBUG_LOW)
-        client_rsa = os.popen('ssh-keyscan -p 22 -t rsa localhost').read().splitlines()[0]          
-        newList.append(client_rsa)
-        
+        debug ('EXECUTING: ssh-keyscan -p 22 -t rsa localhost ' + self.hostname,DEBUG_LOW)
+        keylist = os.popen('ssh-keyscan -p 22 -t rsa localhost ' + self.hostname).read().splitlines()
+        newList.extend(keylist)
+                
         file = open(known_hosts, 'w')
         file.writelines(newList)
         file.close()
