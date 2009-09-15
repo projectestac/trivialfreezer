@@ -555,7 +555,7 @@ class configWindow(gtk.Dialog):
             dss = paramiko.DSSKey.generate()
             dss.write_private_key_file(id_dsa,"")
         except:
-            self.Lkeys.set_markup('<span foreground="#770000" size="large">' + _("Error creating private key")+ " " + _("Client not connected")+ '</span>')
+            self.Lkeys.set_markup('<span foreground="#770000" size="large">' + _("Error creating private key.")+ "<br/>" + _("Client not connected")+ '</span>')
             return
         
         #Public Key generation
@@ -567,7 +567,7 @@ class configWindow(gtk.Dialog):
             file.write(public_key)
             file.close()
         except:
-            self.Lkeys.set_markup('<span foreground="#770000" size="large">' + _("Error creating public key")+ " " + _("Client not connected")+ '</span>')
+            self.Lkeys.set_markup('<span foreground="#770000" size="large">' + _("Error creating public key.")+ "<br/>" + _("Client not connected")+ '</span>')
             return    
     
         ##OLD MANNER
@@ -672,7 +672,7 @@ class configWindow(gtk.Dialog):
                             hosts.add(hostname, key.get_name(), key)
                             hosts.save(roothome + '/.ssh/known_hosts')
                         except:
-                            debug("Can't write in the known_hosts file."+str(e), DEBUG_LOW)
+                            debug("Can't write in the known_hosts file.", DEBUG_LOW)
                             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
                     else:
                         warning.destroy()
@@ -688,7 +688,7 @@ class configWindow(gtk.Dialog):
             sftp.close()
         except:
             ssh.close()
-            self.Lkeys.set_markup('<span foreground="#770000" size="large">' + _("Errors connecting to SFTP server.")+ " " + _("Client not connected")+ '</span>')
+            self.Lkeys.set_markup('<span foreground="#770000" size="large">' + _("Errors connecting to SFTP server.")+ "<br/>" + _("Client not connected")+ '</span>')
             return
         
         try:
@@ -697,13 +697,13 @@ class configWindow(gtk.Dialog):
             stdin,stdout,stderr = ssh.exec_command("sudo /tmp/tfpubkey.sh")
             stdin.write(passwd+'\n')
             stdin.flush()
-            self.Lkeys.set_markup('<span foreground="#007700" size="large">' + _("Client connected to ") + self.hostname + '</span>')
+            self.Lkeys.set_markup('<span foreground="#007700" size="large">' + _("Client connected to ") + hostname + '</span>')
             self.hostname = hostname
             self.port = port
             self.key = True
         except:
             ssh.close()
-            self.Lkeys.set_markup('<span foreground="#770000" size="large">' + _("Something executing commands goes wrong.")+ " " + _("Client not connected")+ '</span>')
+            self.Lkeys.set_markup('<span foreground="#770000" size="large">' + _("Something executing commands goes wrong.")+ "<br/>" + _("Client not connected")+ '</span>')
             return
         
         ssh.close()

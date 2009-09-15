@@ -124,13 +124,14 @@ class user_frozen ():
         return
         
     def restore_tar(self):
-        debug("Entering profile.restore_tar",DEBUG_LOW)
+        debug("Entering user_frozen.restore_tar",DEBUG_LOW)
         debug("User " + self.username + ":" + self.name + ":" + self.homedir + ":" + self.source,DEBUG_LOW)
         
         if len(self.hostname) > 0:
+            print "EXTERNAL"
             self.restore_external_tar()
             return
-        
+        print "INTERNAL"
         #SOURCE ALREADY SPECIFIED
         if len(self.source) < 1:
             dir = os.path.join (TAR_DIRECTORY, TAR_HOMES)
