@@ -290,7 +290,7 @@ class configWindow(gtk.Dialog):
         text += "<b>"+_("Author")+":</b>\n"
         text += "Pau Ferrer Ocaña\n\n"
         text += "<b>"+_("Special greetings")+":</b>\n"
-        text += "Carlos Álvarez\n"
+        text += "Carlos Álvarez Martínez\n"
         text += "Joan de Gràcia\n\n"
         text += "<b>"+_("With the support of ")+":</b>\n"
         text += "Departament d'Educació. Generalitat de Catalunya\n\n"
