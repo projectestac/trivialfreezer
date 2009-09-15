@@ -92,7 +92,6 @@ class config:
         self.home_server = False
         self.home_server_ip = ""
         self.home_server_port = "22"
-        self.home_server_key = False
         
     def load(self):
         try:  
@@ -233,7 +232,6 @@ class config:
             xHomeServer = xdoc.getElementsByTagName("homserver")[0]
             self.home_server_ip = xHomeServer.getAttribute("ip")
             self.home_server_port = xHomeServer.getAttribute("port")
-            self.home_server_key = str2bool(xHomeServer.getAttribute("key"))
             self.home_server = str2bool(xHomeServer.getAttribute("server"))
         except:
             print_error("Corrupted ldap or homserver tag, taking defaults",WARNING)
@@ -328,7 +326,6 @@ class config:
         self.home_server = False
         self.home_server_ip = ""
         self.home_server_port = "22"
-        self.home_server_key = False
         
         
     def load_defaults(self):
@@ -455,7 +452,6 @@ class config:
         
         xHomeServer = xdoc.createElement("homserver")
         xHomeServer.setAttribute("ip", str(self.home_server_ip))
-        xHomeServer.setAttribute("key", str(self.home_server_key))
         xHomeServer.setAttribute("port", str(self.home_server_port))
         xHomeServer.setAttribute("server", str(self.home_server))
         xtf.appendChild(xHomeServer)
@@ -552,6 +548,7 @@ class config:
             #If I'm restoring from the client, I have to say where is the server
             if action == TAR_RESTORE and not self.home_server:
                 prof.hostname = self.home_server_ip
+                prof.port = self.home_server_port
             else:
                 prof.hostname = ""
         
@@ -606,6 +603,7 @@ class config:
                     #If I'm restoring from the client, I have to say where is the server
                     if action == TAR_RESTORE and not self.home_server:
                         prof.hostname = self.home_server_ip
+                        prof.port = self.home_server_port
                     else:
                         prof.hostname = ""
                     
@@ -659,6 +657,7 @@ class config:
                     #If I'm restoring from the client, I have to say where is the server
                     if action == TAR_RESTORE and not self.home_server:
                         prof.hostname = self.home_server_ip
+                        prof.port = self.home_server_port
                     else:
                         prof.hostname = ""
                     

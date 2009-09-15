@@ -26,6 +26,12 @@ import os
 import tarfile
 import re
 import shutil
+import paramiko, pwd
+
+import gettext
+gettext.bindtextdomain('tfreezer', './locale')
+gettext.textdomain('tfreezer')
+_ = gettext.gettext
 
 
 def move(src,dst):
@@ -53,6 +59,7 @@ class user_frozen ():
         self.uid = 0
         self.gid = 0
         self.hostname = ""
+        self.port = "22"
         
     def create_tar(self):
         debug("Entering profile.create_tar",DEBUG_LOW)
@@ -81,12 +88,36 @@ class user_frozen ():
         #CONNECT WITH THE SERVER
         
         if self.hostname == 'localhost':
-            return 
+            print _("Localhost external restoration not permitted to avoid loops")
+            return
+            
+        roothome = pwd.getpwuid(0).pw_dir
+        try:
+            pkey = paramiko.DSSKey.from_private_key_file(roothome + '/.ssh/id_dsa',"")
+            ssh = paramiko.SSHClient()
+            try:
+                ssh.load_system_host_keys(roothome + '/.ssh/known_hosts')
+            except:
+                pass
+            ssh.connect(self.hostname,int(self.port),pkey=pkey)
+        except:
+            print _("Can't connect to the server, please review your settings")
+            return
+
+        command = 'tfreezer -s ' + self.username
+        #command = 'echo ' + self.username + ' > /tmp/prova'
         
+        try:
+            stdin,stdout,stderr = ssh.exec_command(command)
+        except Exception as i:
+            print _("Can't execute the command")
+            print i
+            
+        ssh.close()
+        return
         
-        
-        debug ("EXECUTING: ssh " + self.hostname + " 'tfreezer -s " + self.username + "'",DEBUG_LOW)
-        result = os.popen("ssh " + self.hostname + " 'echo " + self.username + " > /tmp/prova'").read()
+        debug ("EXECUTING: ssh " + self.hostname + "'" + command + "'",DEBUG_LOW)
+        result = os.popen("ssh " + self.hostname + "'" + command + "'").read()
         for line in result.splitlines():
             debug ('RESULT: ' + line , DEBUG_LOW)  
         

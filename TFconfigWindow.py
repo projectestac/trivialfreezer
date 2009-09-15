@@ -291,7 +291,6 @@ class configWindow(gtk.Dialog):
         self.RBserver.set_active(config.home_server)
         self.hostname = config.home_server_ip
         self.port = config.home_server_port
-        self.key = config.home_server_key
         
         self.test_home_server()
         
@@ -325,7 +324,6 @@ class configWindow(gtk.Dialog):
         config.home_server = self.RBserver.get_active()
         config.home_server_ip = self.hostname
         config.home_server_port = self.port
-        config.home_server_key = self.key
             
             
     def add_tab(self, widget=None, data=_("New Profile")):
@@ -518,12 +516,19 @@ class configWindow(gtk.Dialog):
     
     def test_home_server(self):
         #TODO
+        roothome = pwd.getpwuid(0).pw_dir
+        
         try:
+            pkey = paramiko.DSSKey.from_private_key_file(roothome + '/.ssh/id_dsa',"")
             ssh = paramiko.SSHClient()
-            ssh.load_system_host_keys()
-            ssh.connect(self.hostname,int(self.port))
+            try:
+                ssh.load_system_host_keys(roothome + '/.ssh/known_hosts')
+            except:
+                pass
+            ssh.connect(self.hostname,int(self.port),pkey=pkey)
         except:
             self.Lkeys.set_markup('<span foreground="#770000" size="large">' + _("Client not connected") + '</span>')
+            self.key = False
             return False
         ssh.close()
         self.key = True
@@ -546,16 +551,24 @@ class configWindow(gtk.Dialog):
         roothome = pwd.getpwuid(0).pw_dir
         #Private Key generation
         id_dsa = roothome + '/.ssh/id_dsa'
-        dss = paramiko.DSSKey.generate()
-        dss.write_private_key_file(id_dsa)
+        try:
+            dss = paramiko.DSSKey.generate()
+            dss.write_private_key_file(id_dsa,"")
+        except:
+            self.Lkeys.set_markup('<span foreground="#770000" size="large">' + _("Error creating private key")+ " " + _("Client not connected")+ '</span>')
+            return
         
         #Public Key generation
         id_dsa_pub = roothome + '/.ssh/id_dsa.pub'
         from socket import gethostname;
         public_key = "ssh-dss " + binascii.b2a_base64(dss.__str__())[:-1] + " root@"+gethostname()+"\n"
-        file = open(id_dsa+".pub" ,"w")
-        file.write(public_key)
-        file.close()
+        try:
+            file = open(id_dsa+".pub" ,"w")
+            file.write(public_key)
+            file.close()
+        except:
+            self.Lkeys.set_markup('<span foreground="#770000" size="large">' + _("Error creating public key")+ " " + _("Client not connected")+ '</span>')
+            return    
     
         ##OLD MANNER
         #debug ('EXECUTING: ssh-keygen -t dsa -P "" -N "" -f ' + id_dsa,DEBUG_LOW)
@@ -619,7 +632,11 @@ class configWindow(gtk.Dialog):
                 dialog.destroy()
             
             try:
-                ssh.load_system_host_keys()
+                ssh.load_system_host_keys(roothome + '/.ssh/known_hosts')
+            except:
+                pass
+            
+            try:
                 ssh.connect(hostname,int(port),user,passwd)
             except paramiko.AuthenticationException,e :
                 debug("AuthenticationException "+str(e), DEBUG_LOW)
@@ -651,45 +668,28 @@ class configWindow(gtk.Dialog):
                     response = warning.run()
         
                     if response == gtk.RESPONSE_YES:
-                        hosts.add(hostname, key.get_name(), key)
-                        hosts.save(roothome + '/.ssh/known_hosts')
-                        #ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
+                        try:
+                            hosts.add(hostname, key.get_name(), key)
+                            hosts.save(roothome + '/.ssh/known_hosts')
+                        except:
+                            debug("Can't write in the known_hosts file."+str(e), DEBUG_LOW)
+                            ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
                     else:
                         warning.destroy()
                         return
                     warning.destroy()
             else:
                 get_connect = True
-        
-#===============================================================================
-#        #Search server and client rsa in known_hosts to be replaced
-#        newList = []
-#        
-#        known_hosts = roothome + '/.ssh/known_hosts'
-#        if os.access(known_hosts, os.R_OK):
-#            file = open(known_hosts, 'r')
-#            list = file.readlines()
-#            file.close()
-#            
-#            for i,text in enumerate(list):
-#                match = re.search(hostname,text)
-#                if match == None:
-#                    newList.append(text)
-#        
-#        debug ('EXECUTING: ssh-keyscan -p '+port+' -t rsa ' + hostname,DEBUG_LOW)
-#        keylist = os.popen('ssh-keyscan -p '+port+' -t rsa ' + hostname).read().splitlines()
-#        newList.extend(keylist)
-#                
-#        file = open(known_hosts, 'w')
-#        file.writelines(newList)
-#        file.close()
-#===============================================================================
-        
-        
-        #Send the public key to the server
-        sftp = ssh.open_sftp()
-        sftp.put(id_dsa_pub,"/tmp/tfpubkey")
-        sftp.close()
+
+        try:
+            #Send the public key to the server
+            sftp = ssh.open_sftp()
+            sftp.put(id_dsa_pub,"/tmp/tfpubkey")
+            sftp.close()
+        except:
+            ssh.close()
+            self.Lkeys.set_markup('<span foreground="#770000" size="large">' + _("Errors connecting to SFTP server.")+ " " + _("Client not connected")+ '</span>')
+            return
         
         try:
             stdin,stdout,stderr = ssh.exec_command("echo '#!/bin/bash\n cat /tmp/tfpubkey >> ~root/.ssh/authorized_keys\n rm -f /tmp/tfpubkey*' > /tmp/tfpubkey.sh")
