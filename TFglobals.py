@@ -6,12 +6,12 @@
 #Trivial Freezer is an easy freezer for user profiles and desktop in linux.
 #Copyright (C) 2009  Pau Ferrer Ocaña
 
-#Trivial Freezer free software: you can redistribute it and/or modify
+#Trivial Freezer is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
 #the Free Software Foundation, either version 3 of the License, or
 #(at your option) any later version.
 
-#Image Haunter is distributed in the hope that it will be useful,
+#Trivial Freezer is distributed in the hope that it will be useful,
 #but WITHOUT ANY WARRANTY; without even the implied warranty of
 #MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #GNU General Public License for more details.
@@ -30,7 +30,7 @@ _ = gettext.gettext
 
 ################## CONSTANTS ##################
 
-VERSION = "v0.5"
+VERSION = "v0.9 beta"
 
 EXEC_DIRECTORY = path
 CONFIG_DIRECTORY = "/etc/tfreezer/"
@@ -40,6 +40,8 @@ TAR_HOMES = "homes"
 TAR_REPOSITORY = "repository"
 TAR_EXTENSION = ".tar.gz"
 DEFAULT_DEPOSIT = "/lost+found"
+ID_DSA_PATH = ".ssh/id_dsa"
+KNOWN_HOSTS_PATH = ".ssh/known_hosts"
 
 minUID = 1000
 maxUID = 65534

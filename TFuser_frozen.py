@@ -6,12 +6,12 @@
 #Trivial Freezer is an easy freezer for user profiles and desktop in linux.
 #Copyright (C) 2009  Pau Ferrer Ocaña
 
-#Trivial Freezer free software: you can redistribute it and/or modify
+#Trivial Freezer is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
 #the Free Software Foundation, either version 3 of the License, or
 #(at your option) any later version.
 
-#Image Haunter is distributed in the hope that it will be useful,
+#Trivial Freezer is distributed in the hope that it will be useful,
 #but WITHOUT ANY WARRANTY; without even the implied warranty of
 #MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #GNU General Public License for more details.
@@ -93,10 +93,10 @@ class user_frozen ():
             
         roothome = pwd.getpwuid(0).pw_dir
         try:
-            pkey = paramiko.DSSKey.from_private_key_file(roothome + '/.ssh/id_dsa',"")
+            pkey = paramiko.DSSKey.from_private_key_file(roothome + '/'+ID_DSA_PATH,"")
             ssh = paramiko.SSHClient()
             try:
-                ssh.load_system_host_keys(roothome + '/.ssh/known_hosts')
+                ssh.load_system_host_keys(roothome + '/'+KNOWN_HOSTS_PATH)
             except:
                 pass
             ssh.connect(self.hostname,int(self.port),pkey=pkey)
@@ -105,7 +105,6 @@ class user_frozen ():
             return
 
         command = 'tfreezer -s ' + self.username
-        #command = 'echo hola'
         
         try:
             stdin,stdout,stderr = ssh.exec_command(command)
@@ -124,8 +123,11 @@ class user_frozen ():
         debug("User " + self.username + ":" + self.name + ":" + self.homedir + ":" + self.source,DEBUG_LOW)
         
         if len(self.hostname) > 0:
+            print "Restoring external "+self.username
             self.restore_external_tar()
             return
+        
+        print "Restoring "+self.username
         #SOURCE ALREADY SPECIFIED
         if len(self.source) < 1:
             dir = os.path.join (TAR_DIRECTORY, TAR_HOMES)

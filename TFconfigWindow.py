@@ -6,12 +6,12 @@
 #Trivial Freezer is an easy freezer for user profiles and desktop in linux.
 #Copyright (C) 2009  Pau Ferrer Ocaña
 
-#Trivial Freezer free software: you can redistribute it and/or modify
+#Trivial Freezer is free software: you can redistribute it and/or modify
 #it under the terms of the GNU General Public License as published by
 #the Free Software Foundation, either version 3 of the License, or
 #(at your option) any later version.
 
-#Image Haunter is distributed in the hope that it will be useful,
+#Trivial Freezer is distributed in the hope that it will be useful,
 #but WITHOUT ANY WARRANTY; without even the implied warranty of
 #MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
 #GNU General Public License for more details.
@@ -75,6 +75,13 @@ class configWindow(gtk.Dialog):
         item.connect("toggled",self.show_hide_remote)
         toolbar.insert(item,2)
         
+        item = gtk.RadioToolButton(item,gtk.STOCK_ABOUT)
+        item.set_label(_('About'))
+        item.set_tooltip_text(_('About Trivial Freezer'))
+        item.set_is_important(True)
+        item.connect("toggled",self.show_hide_about)
+        toolbar.insert(item,3)
+        
         toolbar.show_all()
         
         mainBox.pack_start(toolbar, False)
@@ -88,6 +95,9 @@ class configWindow(gtk.Dialog):
         
         self.init_remote()
         mainBox.pack_start(self.remote, True)
+        
+        self.init_about()
+        mainBox.pack_start(self.about, True)
         
         self.load(config)
         
@@ -258,7 +268,49 @@ class configWindow(gtk.Dialog):
         self.RBserver = gtk.RadioButton(self.RBclient,_("Work as a server"))
         self.RBserver.set_sensitive(False)
         self.remote.attach(self.RBserver, 0, 3, 11, 12, gtk.FILL, gtk.FILL)
+    
+    def init_about(self):
         
+        self.about = gtk.Table()
+        self.about.set_row_spacings(5)
+        self.about.set_col_spacings(5)
+        self.about.set_border_width(5)
+        
+        label = gtk.Label("<b>"+_("About Trivial Freezer")+"</b>")
+        label.set_use_markup(True)
+        self.about.attach(label, 0, 3, 0, 1, gtk.EXPAND |gtk.FILL, gtk.FILL)
+        
+        iconw = gtk.Image() # icon widget
+        iconw.set_from_file(HUGE_ICONS[1])
+        iconw.show()
+        self.about.attach(iconw, 0, 1, 1, 2, gtk.FILL, gtk.EXPAND |gtk.FILL)
+        
+        text = "<b>Trivial Freezer</b>\n"
+        text += _("Version") + ": " + VERSION + "\n\n"
+        text += "<b>"+_("Author")+":</b>\n"
+        text += "Pau Ferrer Ocaña\n\n"
+        text += "<b>"+_("Special greetings")+":</b>\n"
+        text += "Carlos Álvarez\n"
+        text += "Joan de Gràcia\n\n"
+        text += "<b>"+_("With the support of ")+":</b>\n"
+        text += "Departament d'Educació. Generalitat de Catalunya\n\n"
+        text += "License: GPL v3\n\n"
+        text += "Trivial Freezer is free software:\n"
+        text += "you can redistribute it and/or\n"
+        text += "modify it under the terms of the\n"
+        text += "GNU General Public License as\n"
+        text += "published by the Free Software\n"
+        text += "Foundation, either version 3 of\n"
+        text += "the License, or (at your option)\n"
+        text += "any later version.\n\n"
+        text += "Copyright (C) 2009  Pau Ferrer Ocaña"
+        
+        
+        label = gtk.Label(text)
+        label.set_use_markup(True)
+        self.about.attach(label, 1, 2, 1, 2, gtk.FILL, gtk.FILL)
+
+    
     def load(self, config):
         
         for source in config.sources:
@@ -360,6 +412,12 @@ class configWindow(gtk.Dialog):
             self.remote.show_all()
         else:
             self.remote.hide_all()
+            
+    def show_hide_about(self,widget):
+        if widget.get_active():
+            self.about.show_all()
+        else:
+            self.about.hide_all()
     
     def Cname_edited(self,cellrenderertext, path, new_text):
         self.LSsources[path][0] = new_text
@@ -519,10 +577,10 @@ class configWindow(gtk.Dialog):
         roothome = pwd.getpwuid(0).pw_dir
         
         try:
-            pkey = paramiko.DSSKey.from_private_key_file(roothome + '/.ssh/id_dsa',"")
+            pkey = paramiko.DSSKey.from_private_key_file(roothome + '/' + ID_DSA_PATH,"")
             ssh = paramiko.SSHClient()
             try:
-                ssh.load_system_host_keys(roothome + '/.ssh/known_hosts')
+                ssh.load_system_host_keys(roothome + '/' + KNOWN_HOSTS_PATH)
             except:
                 pass
             ssh.connect(self.hostname,int(self.port),pkey=pkey)
@@ -550,7 +608,7 @@ class configWindow(gtk.Dialog):
         
         roothome = pwd.getpwuid(0).pw_dir
         #Private Key generation
-        id_dsa = roothome + '/.ssh/id_dsa'
+        id_dsa = roothome + '/' + ID_DSA_PATH
         try:
             dss = paramiko.DSSKey.generate()
             dss.write_private_key_file(id_dsa,"")
@@ -559,11 +617,11 @@ class configWindow(gtk.Dialog):
             return
         
         #Public Key generation
-        id_dsa_pub = roothome + '/.ssh/id_dsa.pub'
+        id_dsa_pub = id_dsa + '.pub'
         from socket import gethostname;
         public_key = "ssh-dss " + binascii.b2a_base64(dss.__str__())[:-1] + " root@"+gethostname()+"\n"
         try:
-            file = open(id_dsa+".pub" ,"w")
+            file = open(id_dsa_pub ,"w")
             file.write(public_key)
             file.close()
         except:
@@ -632,7 +690,7 @@ class configWindow(gtk.Dialog):
                 dialog.destroy()
             
             try:
-                ssh.load_system_host_keys(roothome + '/.ssh/known_hosts')
+                ssh.load_system_host_keys(roothome + '/' + KNOWN_HOSTS_PATH)
             except:
                 pass
             
@@ -670,7 +728,7 @@ class configWindow(gtk.Dialog):
                     if response == gtk.RESPONSE_YES:
                         try:
                             hosts.add(hostname, key.get_name(), key)
-                            hosts.save(roothome + '/.ssh/known_hosts')
+                            hosts.save(roothome + '/' + KNOWN_HOSTS_PATH)
                         except:
                             debug("Can't write in the known_hosts file.", DEBUG_LOW)
                             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
