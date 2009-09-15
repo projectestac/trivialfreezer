@@ -89,7 +89,7 @@ class user_frozen ():
         
         if self.hostname == 'localhost':
             print _("Localhost external restoration not permitted to avoid loops")
-            return
+            #return
             
         roothome = pwd.getpwuid(0).pw_dir
         try:
@@ -105,10 +105,13 @@ class user_frozen ():
             return
 
         command = 'tfreezer -s ' + self.username
-        #command = 'echo ' + self.username + ' > /tmp/prova'
+        #command = 'echo hola'
         
         try:
             stdin,stdout,stderr = ssh.exec_command(command)
+            for line in stdout.readlines():
+                print line
+            stdout.close() 
         except Exception as i:
             print _("Can't execute the command")
             print i
@@ -116,22 +119,13 @@ class user_frozen ():
         ssh.close()
         return
         
-        debug ("EXECUTING: ssh " + self.hostname + "'" + command + "'",DEBUG_LOW)
-        result = os.popen("ssh " + self.hostname + "'" + command + "'").read()
-        for line in result.splitlines():
-            debug ('RESULT: ' + line , DEBUG_LOW)  
-        
-        return
-        
     def restore_tar(self):
         debug("Entering user_frozen.restore_tar",DEBUG_LOW)
         debug("User " + self.username + ":" + self.name + ":" + self.homedir + ":" + self.source,DEBUG_LOW)
         
         if len(self.hostname) > 0:
-            print "EXTERNAL"
             self.restore_external_tar()
             return
-        print "INTERNAL"
         #SOURCE ALREADY SPECIFIED
         if len(self.source) < 1:
             dir = os.path.join (TAR_DIRECTORY, TAR_HOMES)
