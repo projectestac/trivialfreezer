@@ -75,12 +75,16 @@ class configWindow(gtk.Dialog):
         item.connect("toggled",self.show_hide_remote)
         toolbar.insert(item,2)
         
+        sep =  gtk.ToolItem()
+        sep.set_expand(True)
+        toolbar.insert(sep,3)
+        
         item = gtk.RadioToolButton(item,gtk.STOCK_ABOUT)
         item.set_label(_('About'))
         item.set_tooltip_text(_('About Trivial Freezer'))
         item.set_is_important(True)
         item.connect("toggled",self.show_hide_about)
-        toolbar.insert(item,3)
+        toolbar.insert(item,4)
         
         toolbar.show_all()
         
@@ -613,7 +617,7 @@ class configWindow(gtk.Dialog):
             dss = paramiko.DSSKey.generate()
             dss.write_private_key_file(id_dsa,"")
         except:
-            self.Lkeys.set_markup('<span foreground="#770000" size="large">' + _("Error creating private key.")+ "<br/>" + _("Client not connected")+ '</span>')
+            self.Lkeys.set_markup('<span foreground="#770000" size="large">' + _("Error creating private key.")+ "\n" + _("Client not connected")+ '</span>')
             return
         
         #Public Key generation
@@ -625,7 +629,7 @@ class configWindow(gtk.Dialog):
             file.write(public_key)
             file.close()
         except:
-            self.Lkeys.set_markup('<span foreground="#770000" size="large">' + _("Error creating public key.")+ "<br/>" + _("Client not connected")+ '</span>')
+            self.Lkeys.set_markup('<span foreground="#770000" size="large">' + _("Error creating public key.")+ "\n" + _("Client not connected")+ '</span>')
             return    
     
         ##OLD MANNER
@@ -746,7 +750,7 @@ class configWindow(gtk.Dialog):
             sftp.close()
         except:
             ssh.close()
-            self.Lkeys.set_markup('<span foreground="#770000" size="large">' + _("Errors connecting to SFTP server.")+ "<br/>" + _("Client not connected")+ '</span>')
+            self.Lkeys.set_markup('<span foreground="#770000" size="large">' + _("Errors connecting to SFTP server.")+ "\n" + _("Client not connected")+ '</span>')
             return
         
         try:
@@ -761,7 +765,7 @@ class configWindow(gtk.Dialog):
             self.key = True
         except:
             ssh.close()
-            self.Lkeys.set_markup('<span foreground="#770000" size="large">' + _("Something executing commands goes wrong.")+ "<br/>" + _("Client not connected")+ '</span>')
+            self.Lkeys.set_markup('<span foreground="#770000" size="large">' + _("Something executing commands goes wrong.")+ "\n" + _("Client not connected")+ '</span>')
             return
         
         ssh.close()

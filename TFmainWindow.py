@@ -317,7 +317,7 @@ class mainWindow:
         self.table.attach(label, 0, 1, 0, 1, gtk.FILL, gtk.FILL)
         
         self.CBtime = gtk.combo_box_new_text()
-        self.CBtime.append_text(_("Manual"))
+        #self.CBtime.append_text(_("Manual"))
         self.CBtime.append_text(_("At Session startup (GDM only)"))
         self.CBtime.append_text(_("At System startup"))
 
@@ -658,7 +658,7 @@ class mainWindow:
             if data == FREEZE_NONE:
                 self.PBprogress.set_text(_("System unfrozen"))
                 self.CBall.set_active(FREEZE_NONE)
-                self.CBtime.set_active(TIME_MANUAL)
+                self.CBtime.set_active(TIME_SESSION)
                 self.RBall.set_active(True)
             elif data == FREEZE_ALL:
                 self.PBprogress.set_text(_("System frozen"))

@@ -81,7 +81,7 @@ class config:
         self.sources = []
         self.sources_to_erase = []
         self.profiles = []
-        self.time = TIME_MANUAL
+        self.time = TIME_SESSION
         self.option = OPTION_ALL
         self.all = FREEZE_NONE
         self.users = []
@@ -313,7 +313,7 @@ class config:
         self.profiles.append(p)
         
     def load_time_defaults(self):
-        self.time = TIME_MANUAL
+        self.time = TIME_SESSION
         
     def load_freeze_defaults(self):
         self.option = OPTION_ALL

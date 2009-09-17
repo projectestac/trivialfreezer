@@ -34,14 +34,19 @@ def check_root():
         sys.exit()
 
 
-def do_restore(time = TIME_INDEFFERENT, username = ""):
+def do_restore(username = ""):
     check_root()
-    title = "Trivial Freezer "+VERSION
+    title = "Trivial Freezer " + VERSION
     print title
     print "=" * len(title)
     
     cfg = config()
     cfg.load()
+    
+    if len(username) == 0:
+        time = TIME_SYSTEM
+    else:
+        time = TIME_SESSION
     
     #If time requested is different  of the configured time
     if cfg.time != time:
@@ -52,8 +57,8 @@ def do_restore(time = TIME_INDEFFERENT, username = ""):
     
     if len(fu) > 0:
         debug(" RESTORE",DEBUG_LOW)
-        if len(username) == 0:
-            debug("  SYSTEM or MANUAL",DEBUG_LOW)
+        if time == TIME_SYSTEM:
+            debug("  SYSTEM",DEBUG_LOW)
             for froze in fu:
                 froze.restore_tar()
         elif time == TIME_SESSION:
@@ -67,18 +72,16 @@ def do_restore(time = TIME_INDEFFERENT, username = ""):
     debug("DONE",DEBUG_LOW)
         
 def print_help():
-    title = "Trivial Freezer "+VERSION+" HELP"
+    title = "Trivial Freezer " + VERSION + " HELP"
     print title
     print "=" * len(title)
     print "Usage: "+sys.argv[0]+"  [OPTION]\n"
     print " Options:"
     print "  -d level    Specify the debug level"
     print "  -h          Show this help"
-    print "  -m          Runs manual restoration profiles"
     print "  -p          Print the XML configuration file"
-    print "  -S          Runs starting system restoration profiles"
-    print "  -s username Runs starting session restoration profiles for the specified uid"
-    print "  -x,-c       Open the configuration window (DEFAULT OPTION)"
+    print "  -r          Restore the whole system if configured"
+    print "  -r username Restore the whole system if configured for the specified username"
     return
 
 def print_config():
@@ -99,8 +102,7 @@ def show_window():
     mainWindow().main()
 
 def main(argv, args):
-    action_ok = False
-    action_error = False
+    error = False
     show_help = False
     show_config = False
     restore = False #False: show config, True: restore
@@ -108,74 +110,43 @@ def main(argv, args):
     
     for i, arg in enumerate(argv):
         if arg.startswith("-"):
-            if arg == "-x" or arg == "-c":
-               if action_ok:
-                   action_error = True
-                   break
-               else:
-                   #CONFIGURATION
-                   action_ok = True
-                   restore = False
-            elif arg == "-m":
-                if action_ok:
-                   action_error = True
-                   break
-                else:
-                   #MANUAL RESTORATION
-                   action_ok = True
-                   restore = True
-                   time = TIME_MANUAL
-            elif arg == "-s":
-                if action_ok or args <= i + 1:
-                    action_error = True
-                    break
-                else:
-                    #SESSION RESTORATION
-                    action_ok = True
-                    restore = True
-                    time = TIME_SESSION
+            if arg == "-r":
+                if args > i and not argv[i + 1].startswith("-"):
                     user = argv[i + 1]
-            elif arg == "-S":
-                if action_ok:
-                    action_error = True
+                    
+                if restore:
+                    error = True
                     break
                 else:
-                    #SYSTEM RESTORATION
-                    action_ok = True
+                    #RESTORATION
                     restore = True
-                    time = TIME_SYSTEM
+                    
             elif arg == "-d":
                 if args > i + 1:
                     #DEBUG LEVEL
                     set_debug_level(sys.argv[i+1])
                 else:
-                    action_error = True
+                    error = True
                     break
+                
             elif arg == "-p":
                 #PRINT CONFIG
                 show_config = True
-            else:
+                
+            elif arg == "-h":
                 #PRINT HELP
                 show_help = True
+            else:
+                error = True
 
-    if not action_ok and not show_help and not show_config:
-        #If no action: show window
-        action_ok = True
-        restore = False
-        
-    if action_ok and not action_error:
-        if restore:
-            do_restore(time,user)
-        else:
-            show_window()
-    elif not show_config:
-        show_help = True
-        
-    if show_help:
+    if show_help or error:
         print_help()
-    
-    if show_config:
+    elif restore:
+        do_restore(user)
+    elif show_config:
         print_config()
+    else:
+        show_window()
 
 if __name__ == "__main__":
     main(sys.argv, len(sys.argv))
