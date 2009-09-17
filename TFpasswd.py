@@ -45,7 +45,7 @@ class pwdgroup():
         self.users[user.pw_uid] = user
 
 class ldap_tester():
-    def try_ldap(self, server, dn):
+    def try_ldap(server, dn):
         try:
             con = ldap.initialize(server)
             filter = '(objectclass=posixAccount)'

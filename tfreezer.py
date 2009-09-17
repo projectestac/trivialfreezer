@@ -21,7 +21,6 @@
 #along with Trivial Freezer.  If not, see <http://www.gnu.org/licenses/>.
 
 
-#LOCAL IMPORTS    
 import sys
 sys.path.insert(0, './')
 from TFglobals import *

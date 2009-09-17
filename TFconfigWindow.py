@@ -297,7 +297,7 @@ class configWindow(gtk.Dialog):
         text += "Carlos Álvarez Martínez\n"
         text += "Joan de Gràcia\n\n"
         text += "<b>"+_("With the support of ")+":</b>\n"
-        text += "Departament d'Educació. Generalitat de Catalunya\n\n"
+        text += "Departament d'Educació.\nGeneralitat de Catalunya\n\n"
         text += "License: GPL v3\n\n"
         text += "Trivial Freezer is free software:\n"
         text += "you can redistribute it and/or\n"
@@ -703,7 +703,7 @@ class configWindow(gtk.Dialog):
             except paramiko.AuthenticationException,e :
                 debug("AuthenticationException "+str(e), DEBUG_LOW)
                 warning = gtk.MessageDialog(parent=self, type=gtk.MESSAGE_WARNING,buttons=gtk.BUTTONS_OK)
-                warning.set_markup(_("Permission denied, please verify the username and password."))
+                warning.set_markup(_("Permission denied, please verify the username and password"))
                 warning.show_all()
                 response = warning.run()
                 warning.destroy()
@@ -724,8 +724,8 @@ class configWindow(gtk.Dialog):
                         fingerprint += v
                         if i%2 == 1 and i+1 < len(fingerprinthex):
                             fingerprint += ":"
-                        
-                    warning.set_markup(_("The authenticity of host '"+hostname+"' can't be established. "+key.get_name()+" key fingerprint is "+fingerprint+"."))
+                    text = _("The authenticity of host '%(host)s' can't be established. %(key)s key fingerprint is %(fprint)s.") % {'host': hostname, "key": key.get_name(), "fprint" : fingerprint}
+                    warning.set_markup(text)
                     warning.show_all()
                     response = warning.run()
         
@@ -734,7 +734,7 @@ class configWindow(gtk.Dialog):
                             hosts.add(hostname, key.get_name(), key)
                             hosts.save(roothome + '/' + KNOWN_HOSTS_PATH)
                         except:
-                            debug("Can't write in the known_hosts file.", DEBUG_LOW)
+                            debug("Can't write in the known_hosts file", DEBUG_LOW)
                             ssh.set_missing_host_key_policy(paramiko.AutoAddPolicy())
                     else:
                         warning.destroy()

@@ -606,6 +606,11 @@ class mainWindow:
     def Cuser_changed(self, cell, path, iter):
         state = cell.get_property("model").get_path(iter)[0]
         self.set_state(self.TMusers,path,None,state)
+        for user in self.config.users:
+            if str(self.TMusers[path][1]) == str(user.id):
+                user.profile = state
+                break
+        
         
     def Cuser_edited(self, cell, editable, path):
         if self.TMusers[path][4] == FREEZE_LDAP:
@@ -614,6 +619,10 @@ class mainWindow:
     def Cgroup_changed(self, cell, path, iter):
         state = cell.get_property("model").get_path(iter)[0]
         self.set_state(self.TMgroups,path,None,state)
+        for group in self.config.groups:
+            if str(self.TMgroups[path][1]) == str(group.id):
+                group.profile = state
+                break
         
     def Cgroup_edited(self, cell, editable, path):
         if self.TMusers[path][4] == FREEZE_LDAP:

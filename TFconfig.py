@@ -667,7 +667,7 @@ class config:
     
     def try_ldap(self):
         if self.ldap_enabled:
-            self.ldap_enabled = ldap_tester().try_ldap(self.ldap_server,self.ldap_dn)
+            self.ldap_enabled = ldap_tester.try_ldap(self.ldap_server,self.ldap_dn)
                 
     def reload_users(self):
         
@@ -677,7 +677,7 @@ class config:
         #APPLY THE OLD PROFILE
         for user in self.users:
             for olduser in oldusers:
-                if user.id == olduser.id:
+                if user.id == olduser.id and user.ldap == olduser.ldap:
                     user.profile = olduser.profile
                     break
                 
@@ -689,7 +689,7 @@ class config:
         #APPLY THE OLD PROFILE
         for group in self.groups:
             for oldgroup in oldgroups:
-                if group.id == oldgroup.id:
+                if group.id == oldgroup.id and group.ldap == oldgroup.ldap:
                     group.profile = oldgroup.profile
                     break
                         

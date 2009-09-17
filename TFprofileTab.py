@@ -281,7 +281,7 @@ class profileTab(gtk.Table):
         p.deposit = self.Edeposit.get_text()
 
         for row in self.LSfilter:
-            r = rule(row[0], row[2], row[4])
+            r = rule(row[0], row[1], row[4])
             p.rules.append(r)
             
         return p
