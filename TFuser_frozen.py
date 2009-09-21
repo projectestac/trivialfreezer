@@ -111,7 +111,7 @@ class user_frozen ():
         try:
             stdin,stdout,stderr = ssh.exec_command(command)
             for line in stdout.readlines():
-                print line,
+                print "Server: " + line,
             stdout.close() 
         except Exception as e:
             debug("Exception " + e.type() + ": " + str(e), DEBUG_LOW)
