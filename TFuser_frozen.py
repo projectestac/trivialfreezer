@@ -89,7 +89,7 @@ class user_frozen ():
         
         if self.hostname == 'localhost':
             print _("Localhost external restoration not permitted to avoid loops")
-            #return
+            return
             
         roothome = pwd.getpwuid(0).pw_dir
         try:
@@ -97,23 +97,24 @@ class user_frozen ():
             ssh = paramiko.SSHClient()
             try:
                 ssh.load_system_host_keys(roothome + '/'+KNOWN_HOSTS_PATH)
-            except:
-                pass
+            except Exception as e:
+                debug("Exception " + e.type() + ": " + str(e), DEBUG_LOW)
             ssh.connect(self.hostname,int(self.port),pkey=pkey)
-        except:
+        except Exception as e:
+            debug("Exception " + e.type() + ": " + str(e), DEBUG_LOW)
             print _("Can't connect to the server, please review your settings")
             return
 
-        command = 'tfreezer -s ' + self.username
+        command = 'tfreezer -r ' + self.username
         
         try:
             stdin,stdout,stderr = ssh.exec_command(command)
             for line in stdout.readlines():
-                print line
+                print line,
             stdout.close() 
-        except Exception as i:
+        except Exception as e:
+            debug("Exception " + e.type() + ": " + str(e), DEBUG_LOW)
             print _("Can't execute the command")
-            print i
             
         ssh.close()
         return

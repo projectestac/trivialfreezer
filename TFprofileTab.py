@@ -247,6 +247,7 @@ class profileTab(gtk.Table):
             for pwuser in userlist.getpwall():
                 uid = pwuser.pw_uid
                 if depositfile.startswith(pwuser.pw_dir):
+                    #TODO show a warning
                     depositfile = depositfile[len(pwuser.pw_dir)+1:]
                     break
 

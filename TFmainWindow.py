@@ -202,7 +202,7 @@ class mainWindow:
                 self.LSusers.append([user.name,
                                  user.id,
                                  None,
-                                 _("Not editable"),
+                                 _("Not editable (Defined by the server)"),
                                  FREEZE_LDAP,
                                  user.ldap])
             else:
@@ -221,7 +221,7 @@ class mainWindow:
                 self.LSgroups.append([group.name,
                                  group.id,
                                  None,
-                                 _("Not editable"),
+                                 _("Not editable (Defined by the server)"),
                                  FREEZE_LDAP,
                                  group.ldap])
             else:
