@@ -148,5 +148,9 @@ def main(argv, args):
         show_window()
 
 if __name__ == "__main__":
+    import time
+    start = time.clock()
     main(sys.argv, len(sys.argv))
+    end = time.clock()
+    print "Time elapsed = ", end - start, "seconds"
     

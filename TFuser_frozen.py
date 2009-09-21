@@ -106,7 +106,8 @@ class user_frozen ():
             return
 
         command = 'tfreezer -r ' + self.username
-        
+        import time
+        start = time.clock()
         try:
             stdin,stdout,stderr = ssh.exec_command(command)
             for line in stdout.readlines():
@@ -115,6 +116,8 @@ class user_frozen ():
         except Exception as e:
             debug("Exception " + e.type() + ": " + str(e), DEBUG_LOW)
             print _("Can't execute the command")
+        end = time.clock()
+        print "Time elapsed executing = ", end - start, "seconds"
             
         ssh.close()
         return
