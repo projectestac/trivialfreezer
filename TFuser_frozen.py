@@ -106,6 +106,10 @@ class user_frozen ():
             return
 
         command = 'tfreezer -r ' + self.username
+        if debug_level != DEBUG_DISABLED:
+            command += " -d " + str(debug_level)
+        debug("Executing command " +command + " on server", DEBUG_LOW)   
+        
         import time
         start = time.clock()
         try:
@@ -117,7 +121,7 @@ class user_frozen ():
             debug("Exception " + e.type() + ": " + str(e), DEBUG_LOW)
             print _("Can't execute the command")
         end = time.clock()
-        print "Time elapsed executing = ", end - start, "seconds"
+        print "Time elapsed restoring = ", end - start, "seconds"
             
         ssh.close()
         return
