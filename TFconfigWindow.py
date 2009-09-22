@@ -598,7 +598,6 @@ class configWindow(gtk.Dialog):
         return True
     
     def generate_keys(self, widget=None):
-        #TODO
         if self.key == True:
             warning = gtk.MessageDialog(parent=self,type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_YES_NO)
             warning.set_markup(_("The keys already exists, do you want to overwrite them?"))
@@ -630,11 +629,7 @@ class configWindow(gtk.Dialog):
             file.close()
         except:
             self.Lkeys.set_markup('<span foreground="#770000" size="large">' + _("Error creating public key.")+ "\n" + _("Client not connected")+ '</span>')
-            return    
-    
-        ##OLD MANNER
-        #debug ('EXECUTING: ssh-keygen -t dsa -P "" -N "" -f ' + id_dsa,DEBUG_LOW)
-        #os.popen('ssh-keygen -t dsa -P "" -N "" -f ' + id_dsa).read()
+            return
         
         ssh = paramiko.SSHClient()
         
@@ -664,18 +659,21 @@ class configWindow(gtk.Dialog):
                 Eport.set_text(str(self.port))
                 table.attach(Eport, 1, 2, 1, 2, gtk.EXPAND | gtk.FILL, gtk.FILL)
                 
+                label = gtk.Label(_("Enter a username with privileges in the server"))
+                table.attach(label, 0, 2, 2, 3, gtk.FILL, gtk.FILL)
+                
                 label = gtk.Label(_("Username"))
-                table.attach(label, 0, 1, 2, 3, gtk.FILL, gtk.FILL)
+                table.attach(label, 0, 1, 3, 4, gtk.FILL, gtk.FILL)
                 
                 Euser = gtk.Entry()
-                table.attach(Euser, 1, 2, 2, 3, gtk.EXPAND | gtk.FILL, gtk.FILL)
+                table.attach(Euser, 1, 2, 3, 4, gtk.EXPAND | gtk.FILL, gtk.FILL)
                 
                 label = gtk.Label(_("Password"))
-                table.attach(label, 0, 1, 3, 4, gtk.FILL, gtk.FILL)
+                table.attach(label, 0, 1, 4, 5, gtk.FILL, gtk.FILL)
                 
                 Epasswd = gtk.Entry()
                 Epasswd.set_visibility(False)
-                table.attach(Epasswd, 1, 2, 3, 4, gtk.EXPAND | gtk.FILL, gtk.FILL)
+                table.attach(Epasswd, 1, 2, 4, 5, gtk.EXPAND | gtk.FILL, gtk.FILL)
                 
                 dialog.vbox.pack_start(table, True)
                 

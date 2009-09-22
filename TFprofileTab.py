@@ -21,6 +21,7 @@
 
 from TFglobals import *
 from TFconfig import rule,profile
+from TFpasswd import *
 
 import gtk
 import sexy
@@ -163,8 +164,8 @@ class profileTab(gtk.Table):
         button.connect("clicked", self.down_filter)
         self.attach(button, 2, 3, 15, 16, gtk.FILL, gtk.SHRINK)
         
-        self.Ldeposit = gtk.Label(_("Deposit for Lost+Found"))
-        self.attach(self.Ldeposit, 0, 1, 17, 18, gtk.FILL, gtk.FILL)
+        label = gtk.Label(_("Deposit for Lost+Found"))
+        self.attach(label, 0, 1, 17, 18, gtk.FILL, gtk.FILL)
         
         self.Edeposit = sexy.IconEntry()
         image = gtk.Image()
@@ -174,7 +175,10 @@ class profileTab(gtk.Table):
         self.Edeposit.add_clear_button()
         self.attach(self.Edeposit, 1, 3, 17, 18, gtk.EXPAND | gtk.FILL, gtk.FILL)
         
-        
+        label = gtk.Label("<i>"+_("Enter ~ to replace the home directory of the user")+"</i>")
+        label.set_use_markup(True)
+        self.attach(label, 0, 3, 18, 19, gtk.FILL, gtk.FILL)
+                
         label = gtk.Label()
         self.attach(label, 1, 2, 16, 17, gtk.EXPAND | gtk.FILL, gtk.FILL)
         
@@ -183,7 +187,6 @@ class profileTab(gtk.Table):
 
         self.show_all()
         
-        #END of Config Files
             
     def RBfile_toggled(self, widget, data=None):
         self.CBfile.set_sensitive(widget.get_active())
@@ -235,7 +238,7 @@ class profileTab(gtk.Table):
     def choose_deposit(self,widget=None,button=None,data=None):
         if button != sexy.ICON_ENTRY_PRIMARY:
             return
-        dialog = gtk.FileChooserDialog(_("Choose source file"),action=gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER,buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_OK,gtk.RESPONSE_OK))
+        dialog = gtk.FileChooserDialog(_("Choose source file"),action=gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER,buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_OK,gtk.RESPONSE_OK),parent=self.mother)
         dialog.set_default_response(gtk.RESPONSE_OK)
         
         response = dialog.run()
@@ -247,8 +250,15 @@ class profileTab(gtk.Table):
             for pwuser in userlist.getpwall():
                 uid = pwuser.pw_uid
                 if depositfile.startswith(pwuser.pw_dir):
-                    #TODO show a warning
-                    depositfile = depositfile[len(pwuser.pw_dir)+1:]
+                    warning = gtk.MessageDialog(parent=self.mother,type=gtk.MESSAGE_QUESTION, buttons=gtk.BUTTONS_YES_NO)
+                    warning.set_markup(_("The folder you have selected is inside a home directory.\nDo you want to use create a deposit inside each home directory?"))
+                    warning.show_all()
+                    response = warning.run()
+                    if response == gtk.RESPONSE_NO:
+                        warning.destroy()
+                        break
+                    warning.destroy()
+                    depositfile = "~/"+depositfile[len(pwuser.pw_dir)+1:]
                     break
 
             self.Edeposit.set_text(depositfile)

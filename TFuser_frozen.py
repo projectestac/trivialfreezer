@@ -92,7 +92,6 @@ class user_frozen ():
             return
             
         roothome = pwd.getpwuid(0).pw_dir
-        debug(roothome, DEBUG_LOW)
         try:
             pkey = paramiko.DSSKey.from_private_key_file(roothome + '/'+ID_DSA_PATH,"")
             ssh = paramiko.SSHClient()
@@ -100,11 +99,10 @@ class user_frozen ():
                 ssh.load_system_host_keys(roothome + '/'+KNOWN_HOSTS_PATH)
             except Exception as e:
                 debug("Exception " + str(type(e)) + ": " + str(e), DEBUG_LOW)
-            ssh.connect(self.hostname,int(self.port),pkey=pkey)
+            ssh.connect(self.hostname,int(self.port),username="root",pkey=pkey,look_for_keys=False)
         except Exception as e:
-            debug("Exception " + str(type(e)) + ": " + str(e), DEBUG_LOW)
+            error("Exception " + str(type(e)) + ": " + str(e), DEBUG_LOW)
             print _("Can't connect to the server, please review your settings")
-            raise
             return
 
         command = 'tfreezer -d 3 -r ' + self.username + ' 2>&1'  
@@ -154,9 +152,8 @@ class user_frozen ():
             if len(self.deposit) == 0:
                 self.deposit = DEFAULT_DEPOSIT
             
-                #FOR EACH HOMEDIR
-            if not self.deposit.startswith('/'):
-                self.deposit = path.join(self.homedir,self.deposit)
+            #REPLACE HOMEDIRECTORY IF IT EXISTS
+            self.deposit.replace('~',self.homedir,1)
             
             try:   
                 os.makedirs(self.deposit,0755)
