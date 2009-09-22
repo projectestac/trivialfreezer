@@ -182,7 +182,8 @@ class user_frozen ():
             #Apply user permissions for extracted files
             for file in to_extract:
                 name = os.path.join(self.homedir,file.name)
-                os.chown(name, self.uid, self.gid)
+                if os.path.exists(name):
+                    os.chown(name, self.uid, self.gid)
             
     def exclude_from_tar(self, path):
         path = path[len(self.homedir)+1:]

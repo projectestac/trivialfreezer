@@ -24,7 +24,6 @@
 import sys
 sys.path.insert(0, './')
 from TFglobals import *
-from TFmainWindow import *
 from TFconfig import *
 
 def check_root():
@@ -98,6 +97,9 @@ def print_config():
 
 def show_window():
     check_root()
+    
+    from TFmainWindow import *
+    
     mainWindow().main()
 
 def main(argv, args):
