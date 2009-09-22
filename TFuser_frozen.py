@@ -92,24 +92,22 @@ class user_frozen ():
             return
             
         roothome = pwd.getpwuid(0).pw_dir
+        debug(roothome, DEBUG_LOW)
         try:
             pkey = paramiko.DSSKey.from_private_key_file(roothome + '/'+ID_DSA_PATH,"")
             ssh = paramiko.SSHClient()
             try:
                 ssh.load_system_host_keys(roothome + '/'+KNOWN_HOSTS_PATH)
             except Exception as e:
-                debug("Exception " + e.type() + ": " + str(e), DEBUG_LOW)
+                debug("Exception " + str(type(e)) + ": " + str(e), DEBUG_LOW)
             ssh.connect(self.hostname,int(self.port),pkey=pkey)
         except Exception as e:
-            debug("Exception " + e.type() + ": " + str(e), DEBUG_LOW)
+            debug("Exception " + str(type(e)) + ": " + str(e), DEBUG_LOW)
             print _("Can't connect to the server, please review your settings")
+            raise
             return
 
-        command = 'tfreezer -d 3 -r ' + self.username
-        global debug_level
-        if debug_level != DEBUG_DISABLED:
-            command += " -d " + str(debug_level)
-        command += " 2>&1"  
+        command = 'tfreezer -d 3 -r ' + self.username + ' 2>&1'  
         debug("Executing command " +command + " on server", DEBUG_LOW)   
         
         import time
@@ -120,7 +118,7 @@ class user_frozen ():
                 print "Server: " + line,
             stdout.close() 
         except Exception as e:
-            debug("Exception " + e.type() + ": " + str(e), DEBUG_LOW)
+            debug("Exception " + str(type(e)) + ": " + str(e), DEBUG_LOW)
             print _("Can't execute the command")
         end = time.time()
         print "Time elapsed restoring = ", end - start, "seconds"
