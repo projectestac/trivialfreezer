@@ -25,7 +25,6 @@ from TFconfig import *
 from TFtar_thread import *
 
 import pygtk
-pygtk.require('2.0')
 import gtk
 
 import shutil, os
@@ -70,7 +69,7 @@ def recursive_delete(dirname):
 class mainWindow:
 
     def __init__(self):
-        
+        pygtk.require('2.0')
         debug("GTK version: " + str(gtk.gtk_version), DEBUG_MEDIUM)
         
         self.window = gtk.Window()

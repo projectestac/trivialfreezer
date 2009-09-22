@@ -111,7 +111,7 @@ class user_frozen ():
         debug("Executing command " +command + " on server", DEBUG_LOW)   
         
         import time
-        start = time.clock()
+        start = time.time()
         try:
             stdin,stdout,stderr = ssh.exec_command(command)
             for line in stdout.readlines():
@@ -120,7 +120,7 @@ class user_frozen ():
         except Exception as e:
             debug("Exception " + e.type() + ": " + str(e), DEBUG_LOW)
             print _("Can't execute the command")
-        end = time.clock()
+        end = time.time()
         print "Time elapsed restoring = ", end - start, "seconds"
             
         ssh.close()
