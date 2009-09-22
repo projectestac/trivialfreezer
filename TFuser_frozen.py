@@ -105,9 +105,11 @@ class user_frozen ():
             print _("Can't connect to the server, please review your settings")
             return
 
-        command = 'tfreezer -r ' + self.username
+        command = 'tfreezer -d 3 -r ' + self.username
+        global debug_level
         if debug_level != DEBUG_DISABLED:
             command += " -d " + str(debug_level)
+        command += " 2>&1"  
         debug("Executing command " +command + " on server", DEBUG_LOW)   
         
         import time
