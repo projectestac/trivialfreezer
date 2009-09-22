@@ -91,6 +91,10 @@ def set_debug_level(level):
     global debug_level
     debug_level = str2int(level)
 
+def get_debug_level():
+    global debug_level
+    return debug_level
+
 def debug(text, level=DEBUG_LOW):
     "Prints a text in the terminal if the debug level is higher than the requested"
     #if debug_level == DEBUG_DISABLED:

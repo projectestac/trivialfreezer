@@ -105,8 +105,7 @@ class user_frozen ():
             print_error(_("Can't connect to the server, please review your settings"))
             return
 
-        global debug_level
-        command = 'tfreezer -r ' + self.username + ' -d ' + str(debug_level) + ' 2>&1'  
+        command = 'tfreezer -r ' + self.username + ' -d ' + str(get_debug_level()) + ' 2>&1'  
         debug("Executing command " +command + " on server", DEBUG_LOW)   
         
         #TO ERASE 2
