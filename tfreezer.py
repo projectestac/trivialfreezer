@@ -33,7 +33,7 @@ def check_root():
         sys.exit()
 
 
-def do_restore(username = ""):
+def do_restore(username = "", auto=True):
     check_root()
     title = "Trivial Freezer " + VERSION
     print title
@@ -48,7 +48,7 @@ def do_restore(username = ""):
         time = TIME_SESSION
     
     #If time requested is different  of the configured time
-    if cfg.time != time:
+    if cfg.time != time and auto:
         return
     
     #Get users to restore
@@ -76,11 +76,12 @@ def print_help():
     print "=" * len(title)
     print "Usage: "+sys.argv[0]+"  [OPTION]\n"
     print " Options:"
+    print "  -a          Combined with -r indicates that it's being executed automatically"
     print "  -d level    Specify the debug level"
     print "  -h          Show this help"
     print "  -p          Print the XML configuration file"
     print "  -r          Restore the whole system if configured"
-    print "  -r username Restore the whole system if configured for the specified username"
+    print "  -r username Restore the specified user home directory if configured"
     return
 
 def print_config():
@@ -105,7 +106,8 @@ def main(argv, args):
     error = False
     show_help = False
     show_config = False
-    restore = False #False: show config, True: restore
+    restore = False
+    auto = False
     user = ""
     
     for i, arg in enumerate(argv):
@@ -120,7 +122,9 @@ def main(argv, args):
                 else:
                     #RESTORATION
                     restore = True
-                    
+            elif arg == "-a":
+                #Automatic execution throught gdm or init.d?
+                auto = True
             elif arg == "-d":
                 if args > i + 1:
                     #DEBUG LEVEL
@@ -142,7 +146,7 @@ def main(argv, args):
     if show_help or error:
         print_help()
     elif restore:
-        do_restore(user)
+        do_restore(user,auto)
     elif show_config:
         print_config()
     else:

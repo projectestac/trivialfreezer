@@ -105,7 +105,7 @@ class user_frozen ():
             print_error(_("Can't connect to the server, please review your settings"))
             return
 
-        command = 'tfreezer -r ' + self.username + ' -d ' + str(get_debug_level()) + ' 2>&1'  
+        command = 'tfreezer -a -r ' + self.username + ' -d ' + str(get_debug_level()) + ' 2>&1'  
         debug("Executing command " +command + " on server", DEBUG_LOW)   
         
         #TO ERASE 2
@@ -130,14 +130,15 @@ class user_frozen ():
         
     def restore_tar(self):
         debug("Entering user_frozen.restore_tar",DEBUG_LOW)
-        debug("User " + self.username + ":" + self.name + ":" + self.homedir + ":" + self.source,DEBUG_LOW)
+        
         
         if len(self.hostname) > 0:
             print "Restoring external "+self.username
             self.restore_external_tar()
             return
         
-        print "Restoring "+self.username
+        debug("User " + self.username + ":" + self.name + ":" + self.homedir + ":" + self.source,DEBUG_LOW)
+        
         #SOURCE ALREADY SPECIFIED
         if len(self.source) < 1:
             dir = os.path.join (TAR_DIRECTORY, TAR_HOMES)
