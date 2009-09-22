@@ -577,7 +577,6 @@ class configWindow(gtk.Dialog):
             return False
     
     def test_home_server(self):
-        #TODO
         roothome = pwd.getpwuid(0).pw_dir
         
         try:
@@ -587,7 +586,7 @@ class configWindow(gtk.Dialog):
                 ssh.load_system_host_keys(roothome + '/' + KNOWN_HOSTS_PATH)
             except:
                 pass
-            ssh.connect(self.hostname,int(self.port),pkey=pkey)
+            ssh.connect(self.hostname,int(self.port),username="root",pkey=pkey,look_for_keys=False)
         except:
             self.Lkeys.set_markup('<span foreground="#770000" size="large">' + _("Client not connected") + '</span>')
             self.key = False

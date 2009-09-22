@@ -88,7 +88,7 @@ class user_frozen ():
         #CONNECT WITH THE SERVER
         
         if self.hostname == 'localhost':
-            print _("Localhost external restoration not permitted to avoid loops")
+            print_error(_("Localhost external restoration not permitted to avoid loops"),WARNING)
             return
             
         roothome = pwd.getpwuid(0).pw_dir
@@ -102,14 +102,17 @@ class user_frozen ():
             ssh.connect(self.hostname,int(self.port),username="root",pkey=pkey,look_for_keys=False)
         except Exception as e:
             error("Exception " + str(type(e)) + ": " + str(e), DEBUG_LOW)
-            print _("Can't connect to the server, please review your settings")
+            print_error(_("Can't connect to the server, please review your settings"))
             return
 
-        command = 'tfreezer -d 3 -r ' + self.username + ' 2>&1'  
+        global debug_level
+        command = 'tfreezer -r ' + self.username + ' -d ' + str(debug_level) + ' 2>&1'  
         debug("Executing command " +command + " on server", DEBUG_LOW)   
         
+        #TO ERASE 2
         import time
         start = time.time()
+        
         try:
             stdin,stdout,stderr = ssh.exec_command(command)
             for line in stdout.readlines():
@@ -117,7 +120,9 @@ class user_frozen ():
             stdout.close() 
         except Exception as e:
             debug("Exception " + str(type(e)) + ": " + str(e), DEBUG_LOW)
-            print _("Can't execute the command")
+            print_error(_("Can't execute the command"))
+            
+        #TO ERASE 2
         end = time.time()
         print "Time elapsed restoring = ", end - start, "seconds"
             
