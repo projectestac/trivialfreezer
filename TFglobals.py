@@ -19,13 +19,9 @@
 #You should have received a copy of the GNU General Public License
 #along with Trivial Freezer.  If not, see <http://www.gnu.org/licenses/>.
 
-## i18n
+
 import gettext, sys, os
 path = os.path.split(os.path.realpath(sys.argv[0]))[0]+"/"
-
-gettext.bindtextdomain('tfreezer', path+'/locale')
-gettext.textdomain('tfreezer')
-_ = gettext.gettext
 
 
 ################## CONSTANTS ##################
@@ -35,13 +31,17 @@ VERSION = "v0.9 beta"
 EXEC_DIRECTORY = path
 CONFIG_DIRECTORY = "/etc/tfreezer/"
 CONFIG_FILE = "config.xtf"
+
 TAR_DIRECTORY = "/var/backups/tfreezer/"
 TAR_HOMES = "homes"
 TAR_REPOSITORY = "repository"
 TAR_EXTENSION = ".tar.gz"
-DEFAULT_DEPOSIT = "/lost+found"
+DEFAULT_DEPOSIT = "~/lost+found"
 ID_DSA_PATH = ".ssh/id_dsa"
 KNOWN_HOSTS_PATH = ".ssh/known_hosts"
+
+LOCALE_DOMAIN = "tfreezer"
+LOCALE_PATH = path + "/locale"
 
 minUID = 1000
 maxUID = 65534
@@ -84,7 +84,14 @@ ERROR = 1
 
 debug_level = DEBUG_DISABLED
 
+
 ###############################################
+
+## i18n
+def load_locale():
+    gettext.bindtextdomain(LOCALE_DOMAIN,LOCALE_PATH)
+    gettext.textdomain(LOCALE_DOMAIN)
+    return gettext.gettext
 
 def set_debug_level(level):
     "Sets the debug level to be output in the terminal"

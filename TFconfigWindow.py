@@ -31,10 +31,7 @@ import pwd
 
 import tarfile
 
-import gettext
-gettext.bindtextdomain('tfreezer', './locale')
-gettext.textdomain('tfreezer')
-_ = gettext.gettext
+_ = load_locale()
 
 class configWindow(gtk.Dialog):
     
@@ -297,7 +294,8 @@ class configWindow(gtk.Dialog):
         text += "Carlos Álvarez Martínez\n"
         text += "Joan de Gràcia\n\n"
         text += "<b>"+_("With the support of ")+":</b>\n"
-        text += "Departament d'Educació.\nGeneralitat de Catalunya\n\n"
+        text += "Departament d'Educació\n de la Generalitat de Catalunya\n"
+        text += "IES Nicolau Copèrnic\n\n"
         text += "License: GPL v3\n\n"
         text += "Trivial Freezer is free software:\n"
         text += "you can redistribute it and/or\n"
@@ -385,7 +383,8 @@ class configWindow(gtk.Dialog):
     def add_tab(self, widget=None, data=_("New Profile")):
         newTab = profileTab(self,data)
         label = gtk.Label(data)
-        self.tabs.append_page(newTab, label)
+        page_num = self.tabs.append_page(newTab, label)
+        self.tabs.set_current_page(page_num)
         
         return newTab
     

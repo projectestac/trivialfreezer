@@ -30,10 +30,7 @@ import tarfile
 
 from datetime import datetime
 
-import gettext
-gettext.bindtextdomain('tfreezer', './locale')
-gettext.textdomain('tfreezer')
-_ = gettext.gettext
+_ = load_locale()
 
 class source:
     def __init__(self):

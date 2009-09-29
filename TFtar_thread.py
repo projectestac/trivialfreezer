@@ -23,10 +23,7 @@ from TFglobals import *
 
 import threading, sys, gtk
 
-import gettext
-gettext.bindtextdomain('tfreezer', './locale')
-gettext.textdomain('tfreezer')
-_ = gettext.gettext
+_ = load_locale()
 
 class tar_thread ( threading.Thread ):
     

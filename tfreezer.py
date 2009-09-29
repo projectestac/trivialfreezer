@@ -27,9 +27,12 @@ from TFglobals import *
 from TFmainWindow import *   
 from TFconfig import *
 
+_ = load_locale()
+
 def check_root():
+    "Check if it's running with root privileges"
     if os.geteuid() != 0:
-        print_error("You don't have enough privileges to run this program.")
+        print_error(_("You don't have enough privileges to run this program."))
         sys.exit()
 
 

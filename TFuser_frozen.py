@@ -21,265 +21,292 @@
 
 from TFglobals import *
 
-import threading
 import os
 import tarfile
 import re
 import shutil
 import paramiko, pwd
 
-import gettext
-gettext.bindtextdomain('tfreezer', './locale')
-gettext.textdomain('tfreezer')
-_ = gettext.gettext
+_ = load_locale()
 
 
 def move(src,dst):
+    "Move a file without overwritting it, appends a number at the end of the name"
     
     auxPath = 0 
         
     dstComplete = dst
     
+    #If the destination already exists, change the filename appending a number
     while os.path.exists(dst):
         dstComplete = dst + "_" + str(auxPath)
         auxPath = auxPath + 1
 
     shutil.move(src, dstComplete)
-    return dst
 
 class user_frozen ():
-    def __init__(self):
-        self.name = ""
-        self.filters = []
-        self.username = ""
-        self.homedir = ""
-        self.network = ""
-        self.source = ""
-        self.deposit = ""
-        self.uid = 0
-        self.gid = 0
-        self.hostname = ""
-        self.port = "22"
+    "Class to create and restore the user frozen profiles"
+    
+    #Profile Name
+    name = ""
+    #Profile Filters
+    filters = []
+    #If specified, what file use to save/restore
+    source = ""
+    #If specified, Lost+found directory, if not, use defaults
+    deposit = DEFAULT_DEPOSIT
+    
+    #User name
+    username = ""
+    #User Home Directory
+    homedir = ""
+    #User ID
+    uid = 0
+    #Group ID
+    gid = 0
+    
+    #If specified, Hostname/IP of the ssh/nfs server where the user will be restored
+    hostname = ""
+    #If specified, Port of the ssh/nfs server where the user will be restored
+    port = "22"
         
     def create_tar(self):
-        debug("Entering profile.create_tar",DEBUG_LOW)
-        debug("User " + self.username + ":" + self.name + ":" + self.homedir + ":" + self.source,DEBUG_LOW)
+        "Creates a tar for the frozen user"
         
-        if not os.access(self.homedir, os.R_OK):
-            print_error("on create_tar. " + self.homedir + "does not exists")
-            raise
-        
-        #SOURCE  ALREADY SPECIFIED
+        #If the source is specified, no need to create nothing
         if len(self.source) > 0: return
         
+        debug("Creating tar for " + self.username + " with profile " + self.name,DEBUG_LOW)
+        
+        #Can't access home directory
+        if not os.access(self.homedir, os.R_OK):
+            print_error("on create_tar. Can't access " + self.homedir)
+            raise
+        
+        #Path of the tar
         dir = os.path.join (TAR_DIRECTORY, TAR_HOMES)
         tarpath = os.path.join (dir, self.username + TAR_EXTENSION)
+        
         try:
             tar = tarfile.open(tarpath,'w:gz')
         except:
             print_error("on create_tar. Can't create tar file")
             raise
         else:
-            #arcname is "" to avoid homedir folders to be included 
-            tar.add(self.homedir,arcname="",exclude=self.exclude_from_tar)
+            #arcname is "" to avoid root folders (./home/username) to be included
+            #Exclude from tar is a function that indicates if a file  needs to be excluded from the tar
+            tar.add(self.homedir,arcname="",exclude=self.__exclude_from_tar)
             tar.close()
     
-    def restore_external_tar(self):
-        #CONNECT WITH THE SERVER
-        
-        if self.hostname == 'localhost':
-            print_error(_("Localhost external restoration not permitted to avoid loops"),WARNING)
-            return
-            
-        roothome = pwd.getpwuid(0).pw_dir
-        try:
-            pkey = paramiko.DSSKey.from_private_key_file(roothome + '/'+ID_DSA_PATH,"")
-            ssh = paramiko.SSHClient()
-            try:
-                ssh.load_system_host_keys(roothome + '/'+KNOWN_HOSTS_PATH)
-            except Exception as e:
-                debug("Exception " + str(type(e)) + ": " + str(e), DEBUG_LOW)
-            ssh.connect(self.hostname,int(self.port),username="root",pkey=pkey,look_for_keys=False)
-        except Exception as e:
-            error("Exception " + str(type(e)) + ": " + str(e), DEBUG_LOW)
-            print_error(_("Can't connect to the server, please review your settings"))
-            return
-
-        command = 'tfreezer -a -r ' + self.username + ' -d ' + str(get_debug_level()) + ' 2>&1'  
-        debug("Executing command " +command + " on server", DEBUG_LOW)   
-        
-        #TO ERASE 2
-        import time
-        start = time.time()
-        
-        try:
-            stdin,stdout,stderr = ssh.exec_command(command)
-            for line in stdout.readlines():
-                print "Server: " + line,
-            stdout.close() 
-        except Exception as e:
-            debug("Exception " + str(type(e)) + ": " + str(e), DEBUG_LOW)
-            print_error(_("Can't execute the command"))
-            
-        #TO ERASE 2
-        end = time.time()
-        print "Time elapsed restoring = ", end - start, "seconds"
-            
-        ssh.close()
-        return
-        
     def restore_tar(self):
-        debug("Entering user_frozen.restore_tar",DEBUG_LOW)
+        "Restores a tar for the frozen user. If the hostname is specified, it \
+        restores on an external server"
         
-        
+        #If the hostname is specified, restore in the external server
         if len(self.hostname) > 0:
-            print "Restoring external "+self.username
-            self.restore_external_tar()
+            self.__restore_external_tar()
             return
         
-        debug("User " + self.username + ":" + self.name + ":" + self.homedir + ":" + self.source,DEBUG_LOW)
+        debug("Restoring tar for " + self.username + " with profile " + self.name,DEBUG_LOW)
         
-        #SOURCE ALREADY SPECIFIED
+        #If the source is not specified, use the user tar
         if len(self.source) < 1:
             dir = os.path.join (TAR_DIRECTORY, TAR_HOMES)
             tarpath = os.path.join (dir, self.username + TAR_EXTENSION)
+        #If the source is specified, use it
         else:
             dir = os.path.join (TAR_DIRECTORY, TAR_REPOSITORY)
             tarpath = os.path.join (dir, self.source)
 
-        #OPEN THE TAR TO KNOW IF IT EXISTS AND IS READABLE    
+        #Open the tar to know if it exists and is readable    
         try:
             tar = tarfile.open(tarpath,'r')
         except:
-            print_error("on restore_tar from user: " + self.username)
+            print_error("on restore_tar. Can't access file: " + tarpath)
         else:
-            #PREPARE COPY THE LOST AND FOUND
+            #Prepare copy the lost+found
             if len(self.deposit) == 0:
                 self.deposit = DEFAULT_DEPOSIT
             
-            #REPLACE HOMEDIRECTORY IF IT EXISTS
+            #If the deposit is in the home directory, replace with the correct home
             self.deposit.replace('~',self.homedir,1)
             
-            try:   
+            #Create the deposit directory, if exists, doesn't matter...
+            try:
                 os.makedirs(self.deposit,0755)
             except OSError as (errno, strerror):
-                debug("Warning: " + self.deposit + " " + strerror,DEBUG_LOW)
+                pass
             else:
+                #If the deposit is inside a home directory, change the owner to the user
                 if self.deposit.startswith(self.homedir):
                     os.chown(self.deposit, self.uid, self.gid)
             
-            #APPLY EXCLUDING AND LOST FILTERS
-            self.apply_filters(self.homedir)
+            #Apply the MAINTAIN and LOST+FOUND filters
+            self.__apply_filters(self.homedir)
             
-            #do not extract ".." or "/" members
+            #This is useful to not extract ".." or "/" members
             to_extract = []
             for file in tar.getmembers():
                 if not file.name.startswith("..") and not file.name.startswith("/"):
                     to_extract.append(file)
                     
-            #EXTRACT THE TAR
+            #Extract the tar (excluding / and ..)
             tar.extractall(self.homedir,to_extract)
             tar.close()
             
-            #Apply user permissions for extracted files
+            #Apply owner to the extracted files
             for file in to_extract:
                 name = os.path.join(self.homedir,file.name)
                 if os.path.exists(name):
                     os.chown(name, self.uid, self.gid)
+                    
+    def __restore_external_tar(self):
+        "Restores a tar on an external server"
+        
+        #If the hostname is localhost, I'm the server, so all is locally
+        #This kind of restoring is not permitted to avoid loops
+        if self.hostname == 'localhost':
+            print_error(_("Localhost external restoration not permitted to avoid loops"),WARNING)
+            return
+        
+        debug("Restoring external tar for " + self.username + " with profile " + self.name + " on "+self.hostname,DEBUG_LOW)
+        
+        #Get the root hoem directory            
+        roothome = pwd.getpwuid(0).pw_dir
+        try:
+            #Read the private key SSH file and the SSH Client
+            pkey = paramiko.DSSKey.from_private_key_file(roothome + '/'+ID_DSA_PATH,"")
+            ssh = paramiko.SSHClient()
+            try:
+                #Load the known hosts for the root user
+                ssh.load_system_host_keys(roothome + '/'+KNOWN_HOSTS_PATH)
+            except:
+                pass
+            #Connect to the server with the root user. Do not look for keys, use the specified pkey
+            ssh.connect(self.hostname,int(self.port),username="root",pkey=pkey,look_for_keys=False)
+        except Exception as e:
+            debug("Exception " + str(type(e)) + ": " + str(e), DEBUG_LOW)
+            print_error(_("Can't connect to the server, please review your settings"))
+            return
+
+        #Create the command line
+        command = 'tfreezer -a -r ' + self.username + ' -d ' + str(get_debug_level()) + ' 2>&1'  
+        debug("Executing command " +command + " on server", DEBUG_LOW)   
+        
+        #TOERASE 2
+        import time
+        start = time.time()
+        
+        #Run the command and print its results in debug mode.
+        try:
+            stdin,stdout,stderr = ssh.exec_command(command)
+            for line in stdout.readlines():
+                debug("Server: " + line,DEBUG_MEDIUM)
+            stdout.close() 
+        except Exception as e:
+            debug("Exception " + str(type(e)) + ": " + str(e), DEBUG_LOW)
+            print_error(_("Can't execute the command"))
             
-    def exclude_from_tar(self, path):
+        #TOERASE 2
+        end = time.time()
+        print "Time elapsed restoring = ", end - start, "seconds"
+            
+        ssh.close()
+        return
+    
+            
+    def __exclude_from_tar(self, path):
+        "Files to be excluded from the tar"
+        "Applies the KEEP, ERASE, and RESTORE filters"
+        "Returns True to exlude and False to include"
+        
+        #Cut the path over the home directory
         path = path[len(self.homedir)+1:]
         
+        #If the path and the filters are not empty, carry on
         if len(path) < 1 or len(self.filters) < 1:
             return False
         
-        excludeMatch = False
-        exclude = False
-        action = ACTION_KEEP
-        
+        #Apply every filter
         for filter in self.filters:
+            #If the path matches the filter
             if re.search(filter[1],path) != None:
+                #Take the action of the filter
                 action = filter[0]
                 
+                #For KEEP and ERASE action, exclude from the tar
                 if action == ACTION_KEEP or action == ACTION_ERASE:
                     debug("Exclude  path: " + path,DEBUG_HIGH)
                     return True
+                #For RESTORE action, include in the tar
                 elif action == ACTION_RESTORE:
                     debug("Maintain path: " + path,DEBUG_HIGH)
                     return False
-                #else action == ACTION_LOST: do not affect
+                #The LOST action does not affect
         
-        #Default option is KEEP
+        #Default option is KEEP, so return True
         debug("Exclude  path: " + path,DEBUG_HIGH)
         return True
     
-    def apply_filters_to_file(self,path):
-        
-        pathAux = path[len(self.homedir)+1:]
-        
-        if len(pathAux) <= 0: return True
-            
-        #Do not erase the deposit if it's inside home    
-        if self.deposit == path:
-            debug('Deposit path: ' + path,DEBUG_MEDIUM)
-            return False
-            
-        for filter in self.filters:
-            if re.search(filter[1],path) != None:
-                action = filter[0]
-                if action == ACTION_KEEP:
-                    debug('Keep path: ' + path,DEBUG_MEDIUM)
-                    return False
-                elif action == ACTION_LOST:
-                    debug('Lost path: ' + path,DEBUG_MEDIUM)
-                    move(path, self.deposit)
-                    return False
-                elif action == ACTION_RESTORE or action == ACTION_ERASE:
-                    return True
-        
-        #Default option is KEEP
-        debug('Keep path: ' + path,DEBUG_MEDIUM)
-        return False
     
-    def restore_or_erase(self,path):
-        pathAux = path[len(self.homedir)+1:]
-         
-        #Go on with the home directory
-        if len(pathAux) <= 0: return True
-         
-        #Do nothing with the deposit if it's inside home    
+    def __restore_or_erase(self,path):
+        "Returns True to carry on or erase and False to maintain"
+        
+       #Do nothing with the deposit if it's inside a home directory    
         if self.deposit == path:
             debug('Deposit path: ' + path,DEBUG_MEDIUM)
             return False
         
+        #Cut the path over the home directory
+        path = path[len(self.homedir)+1:]
+         
+        #Go on with the home directory (not to be erased, but go on)
+        if len(path) <= 0: return True
+        
+        #For every filter
         for filter in self.filters:
+            #If the path matches the filter
             if re.search(filter[1],path) != None:
+                #Take the action of the filter
                 action = filter[0]
+                
+                #For KEEP action, do not remove it
                 if action == ACTION_KEEP:
-                    debug('Keep path: ' + path,DEBUG_MEDIUM)
+                    debug('Keep path: ' + path,DEBUG_HIGH)
                     return False
+                #For LOST action, move it to deposit
                 elif action == ACTION_LOST:
-                    debug('Lost path: ' + path,DEBUG_MEDIUM)
+                    debug('Lost path: ' + path,DEBUG_HIGH)
                     move(path, self.deposit)
                     return False
+                #For RESTORE and ERASE action, remove
                 elif action == ACTION_RESTORE or action == ACTION_ERASE:
                     return True
-        return True
+                
+        #Default action is KEEP, so return false
+        return False
              
     
-    def apply_filters(self, dirname):
+    def __apply_filters(self, dirname):
+        "Apply filters for restoring a tar"
         
-        if self.restore_or_erase(dirname):
+        #It has to be erased? (Directory)
+        if self.__restore_or_erase(dirname):
+            #YES! Erase it, but first look inside it...
             files = os.listdir(dirname)
             for file in files:
                 path = os.path.join (dirname, file)
+                #If it's a directory or a link, recursive call
                 if os.path.isdir(path) and not os.path.islink(path):
-                    self.apply_filters(path)
+                    self.__apply_filters(path)
+                #If it's a file, see if it has to be removed
                 else:
                     debug('Removing file: ' + path,DEBUG_HIGH)
-                    if self.restore_or_erase(path):
+                    #It has to be erased? (File)
+                    if self.__restore_or_erase(path):
                         os.unlink(path)
-                
+            
+            #If we're not in the home directory and is an empty directory, erase it
             if dirname != self.homedir:
                 if len(os.listdir(dirname)) == 0:
                     debug('Removing directory: ' + dirname,DEBUG_HIGH)

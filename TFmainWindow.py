@@ -29,10 +29,7 @@ import gtk
 
 import shutil, os
 
-import gettext
-gettext.bindtextdomain('tfreezer', './locale')
-gettext.textdomain('tfreezer')
-_ = gettext.gettext
+_ = load_locale()
 
 
 #COPY A FILE TO A DIRECTORY WITHOUT OVERWRITTING THEM

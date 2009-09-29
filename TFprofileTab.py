@@ -26,10 +26,7 @@ from TFpasswd import *
 import gtk
 import sexy
 
-import gettext
-gettext.bindtextdomain('tfreezer', './locale')
-gettext.textdomain('tfreezer')
-_ = gettext.gettext
+_ = load_locale()
 
 class profileTab(gtk.Table):
     
