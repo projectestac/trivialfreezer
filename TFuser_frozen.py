@@ -31,7 +31,7 @@ _ = load_locale()
 
 
 def move(src,dst):
-    "Move a file without overwritting it, appends a number at the end of the name"
+    "Moves a file without overwritting it, appends a number at the end of the name"
     
     auxPath = 0 
         
@@ -69,7 +69,16 @@ class user_frozen ():
     hostname = ""
     #If specified, Port of the ssh/nfs server where the user will be restored
     port = "22"
+    
+    def __init__(self, title, deposit, rules, source = ""):
+        "Initializes a user_frozen with the selected options"
         
+        self.name =  title
+        self.source = source
+        self.deposit = deposit
+        for rule in rules:
+            self.filters.append([rule.action,rule.filter])
+     
     def create_tar(self):
         "Creates a tar for the frozen user"
         
@@ -288,7 +297,7 @@ class user_frozen ():
              
     
     def __apply_filters(self, dirname):
-        "Apply filters for restoring a tar"
+        "Applies filters for restoring a tar"
         
         #It has to be erased? (Directory)
         if self.__restore_or_erase(dirname):

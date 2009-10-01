@@ -22,8 +22,18 @@
 from TFglobals import *
 import ldap
 
-
 class pwduser():
+    "System user class"
+    
+    #User name
+    pw_name = ""
+    #User ID
+    pw_uid = 0
+    #GROUP ID
+    pw_gid = 0
+    #Home directory
+    pw_dir = ""
+    
     def __init__(self, name, uid, gid, homedir):
         self.pw_name = name
         self.pw_uid = int(uid)
@@ -31,21 +41,40 @@ class pwduser():
         self.pw_dir = homedir
         
 class pwdgroup():
+    "System group class"
+    
+    #Group name
+    gr_name = ""
+    #Group ID
+    gr_gid = 0
+    #List of user names in the group
+    usernames = []
+    #Dictionary of users in the group
+    users = dict()
+    
     def __init__(self,name,gid,usernames):
         self.gr_name = name
         self.gr_gid = int(gid)
+        
         self.usernames = []
         for username in usernames.split(','):
             username = username.strip()
             if username != "":
                 self.usernames.append(username)
+                
+        #We will fill it later
         self.users = dict()
     
+    #Adds a user to the list of users
     def adduser(self,user):
         self.users[user.pw_uid] = user
 
 class ldap_tester():
-    def try_ldap(server, dn):
+    "Class to test if LDAP works"
+    
+    #TODO class method
+    def try_ldap(self,server, dn):
+        "Tries to connect LDAP and returns if it could"
         try:
             con = ldap.initialize(server)
             filter = '(objectclass=posixAccount)'

@@ -563,17 +563,14 @@ class configWindow(gtk.Dialog):
         self.Bkeys.set_sensitive(widget.get_active())  
         
     def test_ldap(self, widget=None):
-        try:
-            con = ldap.initialize(self.Eserver.get_text())
-            filter = '(objectclass=posixAccount)'
-            attrs = ['uid']
-         
-            result = con.search_s(self.Edn.get_text(), ldap.SCOPE_SUBTREE, filter, attrs)
+        from TFpasswd import ldap_tester
+        if ldap_tester().try_ldap(self.Eserver.get_text(),self.Edn.get_text()):
             self.Ltest.set_markup('<span foreground="#007700" size="large">' + _("Connection successfully established")+ '</span>')
             return True
-        except ldap.LDAPError, e:
+        else:
             self.Ltest.set_markup('<span foreground="#770000" size="large">' + _("Connection failed")+ '</span>')
             return False
+            
     
     def test_home_server(self):
         roothome = pwd.getpwuid(0).pw_dir

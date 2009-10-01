@@ -23,142 +23,167 @@
 
 import sys
 sys.path.insert(0, './')
-from TFglobals import *
-from TFmainWindow import *   
-from TFconfig import *
+from TFglobals import *  
 
 _ = load_locale()
 
-def check_root():
-    "Check if it's running with root privileges"
+def __check_root():
+    "Checks if it's running with root privileges"
     if os.geteuid() != 0:
         print_error(_("You don't have enough privileges to run this program."))
         sys.exit()
 
 
-def do_restore(username = "", auto=True):
-    check_root()
+def __do_restore(username = "", auto=True):
+    "Runs a restoration for the specified username or, if not specified, the whole system"
+    
+    from TFconfig import config
+        
+    __check_root()
+    
+    #TOERASE 2
+    import time
+    start = time.time()
+    
     title = "Trivial Freezer " + VERSION
     print title
     print "=" * len(title)
     
+    #Load saved configuration
     cfg = config()
     cfg.load()
     
+    #If the username is empty,the whole system has to be restored
     if len(username) == 0:
-        time = TIME_SYSTEM
+        time_req = TIME_SYSTEM
     else:
-        time = TIME_SESSION
+        time_req = TIME_SESSION
     
-    #If time requested is different  of the configured time
-    if cfg.time != time and auto:
+    #Do nothing if time requested and configured time differs and it's an automatic running
+    if cfg.time != time_req and auto:
         return
     
-    #Get users to restore
+    #Get the list of users to restore
     fu = cfg.get_frozen_users(TAR_RESTORE)
     
     if len(fu) > 0:
-        debug(" RESTORE",DEBUG_LOW)
-        if time == TIME_SYSTEM:
-            debug("  SYSTEM",DEBUG_LOW)
+        #TIME TO RESTORE!
+        if time_req == TIME_SYSTEM:
+            debug("RESTORE SYSTEM",DEBUG_LOW)
+            #Restore every user in the list
             for froze in fu:
                 froze.restore_tar()
-        elif time == TIME_SESSION:
-            debug("  SESSION",DEBUG_LOW)
+        else: #time == TIME_SESSION
+            #Restore only the specified user from the list
             for froze in fu:
                 if username == froze.username:
+                    debug("RESTORE SESSION",DEBUG_LOW)
                     froze.restore_tar()
                     break
-        else: debug("  ERROR",DEBUG_LOW)
-            
-    debug("DONE",DEBUG_LOW)
+    else:
+        debug("NOTHING TO RESTORE",DEBUG_LOW)
+    
+    #TOERASE 2
+    end = time.time()
+    print "Time elapsed = ", end - start, "seconds"
         
-def print_help():
-    title = "Trivial Freezer " + VERSION + " HELP"
+def __print_help():
+    "Prints usage help in the command line"
+    
+    title = "Trivial Freezer " + VERSION
     print title
     print "=" * len(title)
-    print "Usage: "+sys.argv[0]+"  [OPTION]\n"
-    print " Options:"
-    print "  -a          Combined with -r indicates that it's being executed automatically"
-    print "  -d level    Specify the debug level"
-    print "  -h          Show this help"
-    print "  -p          Print the XML configuration file"
-    print "  -r          Restore the whole system if configured"
-    print "  -r username Restore the specified user home directory if configured"
+    print _("Usage: "+sys.argv[0]+"  [OPTION]\n")
+    print " " + _("Options:")
+    print "  -a\t\t"+_("With -r indicates that it's being executed automatically")
+    print "  -d "+_("level")+"\t"+_("Specify the debug level")
+    print "  -h\t\t"+_("Show this help")
+    print "  -p\t\t"+_("Show the XML configuration file")
+    print "  -r\t\t"+_("Restore the whole system if configured")
+    print "  -r "+_("username")+"\t"+_("Restore the specified user home directory if configured")
     return
 
-def print_config():
+def __print_config():
+    "Prints XML formated configuration file in the command line"
+    
+    from xml.dom import minidom
+    
     title = "Trivial Freezer "+VERSION
     print title
     print "=" * len(title)
-    from xml.dom import minidom
+    
     try:
         xdoc = minidom.parse(os.path.join (CONFIG_DIRECTORY, CONFIG_FILE))
     except: 
-        print_error("Corrupted configuration file")
-        return
-    
-    print xdoc.toprettyxml(indent="  ")
+        print_error(_("Corrupted configuration file"))
+    else:
+        print xdoc.toprettyxml(indent="  ")
 
-def show_window():
-    check_root()
+def __show_window():
+    "Shows the configuration window"
+    
+    from TFmainWindow import mainWindow
+    
+    __check_root()
     
     mainWindow().main()
 
-def main(argv, args):
-    error = False
-    show_help = False
-    show_config = False
+if __name__ == "__main__":
+    "Main function"
+    
+    argv = sys.argv
+    args = len(argv)
+
     restore = False
     auto = False
     user = ""
     
+    #Read all the command line parameters
     for i, arg in enumerate(argv):
         if arg.startswith("-"):
+            #Restore
             if arg == "-r":
+                #User
                 if args > i and not argv[i + 1].startswith("-"):
                     user = argv[i + 1]
+                
+                if restore: #Already read
+                    __print_help()
+                    sys.exit(1)
+                
+                restore = True
                     
-                if restore:
-                    error = True
-                    break
-                else:
-                    #RESTORATION
-                    restore = True
+            #Automatic execution through gdm or init.d?
             elif arg == "-a":
-                #Automatic execution throught gdm or init.d?
                 auto = True
+                
+            #Debug level
             elif arg == "-d":
                 if args > i + 1:
-                    #DEBUG LEVEL
                     set_debug_level(sys.argv[i+1])
-                else:
-                    error = True
-                    break
-                
+                else: #Level not specified
+                    __print_help()
+                    sys.exit(1)
+            
+            #Show config 
             elif arg == "-p":
-                #PRINT CONFIG
-                show_config = True
-                
+                __print_config()
+                sys.exit()
+            
+            #Show help
             elif arg == "-h":
-                #PRINT HELP
-                show_help = True
+                __print_help()
+                sys.exit()
+                
+            #Others
             else:
-                error = True
+                __print_help()
+                sys.exit(1)
 
-    if show_help or error:
-        print_help()
-    elif restore:
-        do_restore(user,auto)
-    elif show_config:
-        print_config()
+    #If restoring
+    if restore:
+        __do_restore(user,auto)
+    #else, configure
     else:
-        show_window()
-
-if __name__ == "__main__":
-    import time
-    start = time.time()
-    main(sys.argv, len(sys.argv))
-    end = time.time()
-    print "Time elapsed = ", end - start, "seconds"
-    
+        __show_window()
+  
