@@ -58,7 +58,12 @@ class profile:
     
     def __init__(self, title = ""):
         self.title = title
-    
+        self.rules = []
+        self.could_be_edited = True
+        self.saved_source = False
+        self.source = ""
+        self.deposit = ""
+            
 class rule:
     "Filter rules for frozen profiles"
     

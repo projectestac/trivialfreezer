@@ -35,7 +35,7 @@ def __check_root():
 
 
 def __do_restore(username = "", auto=True):
-    "Runs a restoration for the specified username or, if not specified, the whole system"
+    "Runs a restoration for the specified user name or, if not specified, the whole system"
     
     from TFconfig import config
         

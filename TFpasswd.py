@@ -69,11 +69,10 @@ class pwdgroup():
     def adduser(self,user):
         self.users[user.pw_uid] = user
 
-class ldap_tester():
+class ldap_tester(object):
     "Class to test if LDAP works"
     
-    #TODO class method
-    def try_ldap(self,server, dn):
+    def try_ldap(server, dn):
         "Tries to connect LDAP and returns if it could"
         try:
             con = ldap.initialize(server)
@@ -88,34 +87,52 @@ class ldap_tester():
                 
         except ldap.LDAPError, e:
             return False
+        
+    try_ldap = staticmethod(try_ldap)
+
 
 class passwd():
+    "Class that lists the users and groups of the system"
+    
+    #Dictonary list of users
+    users = dict()
+    #Dictonary list of groups
+    groups = dict()
+    
     def __init__(self):
+        "Initializes the class"
         
+        #Read the /etc/group file and process it
         self.groups = dict()
         file = open("/etc/group", "r")
         for line in file:
             fields = line.split(':')
+            #Take the group GID
             gid = int(fields[2])
             if gid >= minUID and gid < maxUID:
+                #Create a new group with the name, gid and users
                 group = pwdgroup(fields[0],gid,fields[3])
                 self.groups[gid] = group
         file.close()
         
+        #Read the /etc/passwd and process it
         self.users = dict()
         file = open("/etc/passwd", "r")
         for line in file:
             fields = line.split(':')
+            #Take the user UID
             uid = int(fields[2])
             if uid >= minUID and uid < maxUID:
+                #Create a new user with the name, uid, gid and home directory
                 user = pwduser(fields[0],uid,fields[3],fields[5])
                 self.users[uid] = user
                 if user.pw_gid in self.groups:
+                    #Add it to the corresponding group
                     self.groups.get(user.pw_gid).adduser(user)
         file.close()
         
         #Secondary user groups
-        
+        #Process the secondary user groups, with the 3rd field of /etc/group and the created users
         for group in self.groups.itervalues():
             for username in group.usernames:
                 for user in self.users.itervalues():
@@ -124,23 +141,36 @@ class passwd():
                         break
 
     def getpwall(self):
+        "Gets the iter of all users of the list"
         return self.users.itervalues()
     
     def getgrall(self):
+        "Gets the iter of all groups of the list"
         return self.groups.itervalues()
     
     def getpwuid(self, uid):
+        "Gets the user with the requested uid"
         uid = int(uid)
         return self.users.get(uid)
     
     def getpwgruid(self, gid):
+        "Gets the list of users with the requested gid"
         gid = int(gid)
         return self.groups.get(gid).users.itervalues()
     
     
 class ldappasswd():
+    "Class that lists the users and groups in the ldap server, analog of passwd class"
+    
+    #Dictonary list of users
+    users = dict()
+    #Dictonary list of groups
+    groups = dict()
+    
     def __init__(self, server, dn):
+        "Initializes the class"
         
+        #Read the groups of the ldap server        
         self.groups = dict()
         try:
             con = ldap.initialize(server)
@@ -149,8 +179,10 @@ class ldappasswd():
          
             result = con.search_s(dn, ldap.SCOPE_SUBTREE, filter, attrs)
             for ldgroup in result:
+                #Take the gid
                 gid = int(ldgroup[1]['gidNumber'][0])
                 if gid >= minUID and gid < maxUID:
+                    #Create a new group with the name, gid and users inside it
                     name = ldgroup[1]['cn'][0]
                     try:
                         usernames = ""
@@ -165,6 +197,7 @@ class ldappasswd():
             print_error(e,WARNING)
             self.groups = dict()
         
+        #Read the users of the ldap server 
         self.users = dict()
         try:
             con = ldap.initialize(server)
@@ -172,13 +205,16 @@ class ldappasswd():
             attrs = ['uid','homeDirectory','gidNumber','uidNumber']
             result = con.search_s(dn, ldap.SCOPE_SUBTREE, filter, attrs)
             for person in result:
+                #Take the uid
                 uid = int(person[1]['uidNumber'][0])
                 if uid >= minUID and uid < maxUID:
+                    #Create a new user with the name, uid, gid and home directory
                     username = person[1]['uid'][0]
                     homedir = person[1]['homeDirectory'][0]
                     gid = person[1]['gidNumber'][0]
                     user = pwduser(username,uid,gid,homedir)
                     self.users[uid] = user
+                    #Add the new user to the correspondig group
                     if user.pw_gid in self.groups:
                         self.groups.get(user.pw_gid).adduser(user)
             
@@ -187,6 +223,7 @@ class ldappasswd():
             self.users = dict()
         
         #Secondary user groups
+        #Process the secondary user groups, with the memberUid field and the created users
         for group in self.groups.itervalues():
             for username in group.usernames:
                 for user in self.users.itervalues():
@@ -195,16 +232,20 @@ class ldappasswd():
                         break
 
     def getpwall(self):
+        "Gets the iter of all users of the list"
         return self.users.itervalues()
     
     def getgrall(self):
+        "Gets the iter of all groups of the list"
         return self.groups.itervalues()
     
     def getpwuid(self, uid):
+        "Gets the user with the requested uid"
         uid = int(uid)
         return self.users.get(uid)
     
     def getpwgruid(self, gid):
+        "Gets the list of users with the requested gid"
         gid = int(gid)
         return self.groups.get(gid).users.itervalues()
     

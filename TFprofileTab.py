@@ -24,21 +24,43 @@ from TFconfig import rule,profile
 from TFpasswd import *
 
 import gtk
+#TODO remove libsexy when the used feature is enabled in pygtk
 import sexy
 
 _ = load_locale()
 
 class profileTab(gtk.Table):
     
+    #Parent window
+    mother = None
+    #Entry with the title of the profile
+    Ename = None
+    #RadioButton, indicates that the source is from the current home
+    RBhome = None
+    #RadioButton, indicates that the source is a file selected from the repository
+    RBfile = None
+    #ComboBox, with the selected source
+    CBfile = None
+    #LisStore for the filter rules
+    LSfilter = None
+    #TreeView for the filter rules
+    TVfilter = None
+    #TreeModel of the filter rules
+    TMfilter = None
+    #SexyEntry for the lost+found deposit
+    Edeposit = None
+    
     def __init__(self, parent, name):
-        #Taula i botons
+        #Treat the tab as a table
         gtk.Table.__init__(self)
         self.set_row_spacings(5)
         self.set_col_spacings(5)
         self.set_border_width(5)
         
+        #Take the parent window
         self.mother = parent
-               
+        
+        #Title
         label = gtk.Label(_("Profile name"))
         self.attach(label, 0, 1, 0, 1, gtk.FILL, gtk.FILL)
         
@@ -50,7 +72,8 @@ class profileTab(gtk.Table):
         
         separator = gtk.HSeparator()
         self.attach(separator, 0, 3, 1, 6, gtk.EXPAND | gtk.FILL, gtk.FILL)
-        
+
+        #Where to take the tar
         label = gtk.Label("<b>"+_("Restoration source")+"</b>")
         label.set_use_markup(True)
         self.attach(label, 0, 3, 6, 7, gtk.EXPAND | gtk.FILL, gtk.FILL)
@@ -59,52 +82,51 @@ class profileTab(gtk.Table):
         self.attach(self.RBhome, 0, 3, 7, 8, gtk.EXPAND |gtk.FILL, gtk.FILL)
         
         self.RBfile = gtk.RadioButton(self.RBhome, _("Use this source from the repository"))
-        self.RBfile.connect("toggled",self.RBfile_toggled)
+        self.RBfile.connect("toggled",self.__RBfile_toggled)
         self.attach(self.RBfile, 0, 1, 8, 9, gtk.FILL, gtk.FILL)
         
         self.CBfile = gtk.ComboBox(parent.LSsources)
-        self.CBfile.connect("changed",self.CBfile_changed)
+        self.CBfile.connect("changed",self.__CBfile_changed)
         cell = gtk.CellRendererText()
         self.CBfile.pack_start(cell, True)
         self.CBfile.set_attributes(cell, text=0)
         self.CBfile.set_active(-1)
+        self.CBfile.set_sensitive(False)
         self.attach(self.CBfile, 1, 3, 8, 9, gtk.EXPAND | gtk.FILL, gtk.SHRINK)
         
         separator = gtk.HSeparator()
         self.attach(separator, 0, 3, 10, 11, gtk.EXPAND | gtk.FILL, gtk.FILL)
                         
-        #FILTERS
+        #RULES
         label = gtk.Label("<b>"+_("Rules")+"</b>")
         label.set_use_markup(True)
         self.attach(label, 0, 3, 11, 12, gtk.EXPAND | gtk.FILL, gtk.FILL)
-        #LOAD GROUPS
         self.LSfilter = gtk.ListStore(str,str,str,str,int)
         
-        # create the TreeView using liststore
+        #Treeview of the Liststore
         self.TVfilter = gtk.TreeView(self.LSfilter)
         self.TMfilter = self.TVfilter.get_model()
         
-        # Camps de filter
+        #Filter fields
         cell = gtk.CellRendererText()
         cell.set_property('editable', True)
-        cell.connect('edited', self.Cfiltertitle_edited)
+        cell.connect('edited', self.__Cfiltertitle_edited)
         tv = gtk.TreeViewColumn(_("Name"),cell,text=0)
         self.TVfilter.append_column(tv)
-        tv.set_sort_column_id(0)
         tv.set_expand(True)
         tv.set_resizable(True)
         
         cell = gtk.CellRendererText()
         cell.set_property('editable', True)
-        cell.connect('edited', self.Cfilter_edited)
+        cell.connect('edited', self.__Cfilter_edited)
         tv = gtk.TreeViewColumn(_("Filter"),cell,text=1)
         self.TVfilter.append_column(tv)
-        tv.set_sort_column_id(1)
         tv.set_expand(True)
         tv.set_resizable(True)
         
         cellpb = gtk.CellRendererPixbuf()
-               
+        
+        #The action has two fields: the text, the pixmap and
         cell = gtk.CellRendererCombo()
         cell.set_property("model",self.mother.LSactions)
         cell.set_property('text-column', 1)
@@ -120,10 +142,9 @@ class profileTab(gtk.Table):
         tv.pack_start(cell, True)
         tv.set_attributes(cell, text=3)
         
-        cell.connect('changed', self.Cfilter_changed)
+        cell.connect('changed', self.__Cfilter_changed)
         
         self.TVfilter.append_column(tv)
-        tv.set_sort_column_id(3)
         
         self.TVfilter.set_search_column(0)
         
@@ -133,45 +154,49 @@ class profileTab(gtk.Table):
         
         self.attach(scroll, 0, 2, 12, 17, gtk.EXPAND | gtk.FILL, gtk.EXPAND | gtk.FILL)
         
+        #Buttons to change order, add and delete
         image = gtk.Image()
         image.set_from_stock(gtk.STOCK_ADD,gtk.ICON_SIZE_BUTTON)
         button = gtk.Button()
         button.add(image)
-        button.connect("clicked", self.add_filter)
+        button.connect("clicked", self.__add_filter)
         self.attach(button, 2, 3, 12, 13, gtk.FILL, gtk.SHRINK)
         
         image = gtk.Image()
         image.set_from_stock(gtk.STOCK_REMOVE,gtk.ICON_SIZE_BUTTON)
         button = gtk.Button()
         button.add(image)
-        button.connect("clicked", self.remove_filter)
+        button.connect("clicked", self.__remove_filter)
         self.attach(button, 2, 3, 13, 14, gtk.FILL, gtk.SHRINK)
         
         image = gtk.Image()
         image.set_from_stock(gtk.STOCK_GO_UP,gtk.ICON_SIZE_BUTTON)
         button = gtk.Button()
         button.add(image)
-        button.connect("clicked", self.up_filter)
+        button.connect("clicked", self.__up_filter)
         self.attach(button, 2, 3, 14, 15, gtk.FILL, gtk.SHRINK)
         
         image = gtk.Image()
         image.set_from_stock(gtk.STOCK_GO_DOWN,gtk.ICON_SIZE_BUTTON)
         button = gtk.Button()
         button.add(image)
-        button.connect("clicked", self.down_filter)
+        button.connect("clicked", self.__down_filter)
         self.attach(button, 2, 3, 15, 16, gtk.FILL, gtk.SHRINK)
         
+        #Lost and found deposit
         label = gtk.Label(_("Deposit for Lost+Found"))
         self.attach(label, 0, 1, 17, 18, gtk.FILL, gtk.FILL)
         
+        #Sexy entry
         self.Edeposit = sexy.IconEntry()
         image = gtk.Image()
         image.set_from_stock(gtk.STOCK_OPEN,gtk.ICON_SIZE_BUTTON)
         self.Edeposit.set_icon(sexy.ICON_ENTRY_PRIMARY, image)
-        self.Edeposit.connect("icon-pressed", self.choose_deposit)
+        self.Edeposit.connect("icon-pressed", self.__choose_deposit)
         self.Edeposit.add_clear_button()
         self.attach(self.Edeposit, 1, 3, 17, 18, gtk.EXPAND | gtk.FILL, gtk.FILL)
         
+        #Some help...
         label = gtk.Label("<i>"+_("Enter ~ to replace the home directory of the user")+"</i>")
         label.set_use_markup(True)
         self.attach(label, 0, 3, 18, 19, gtk.FILL, gtk.FILL)
@@ -185,56 +210,67 @@ class profileTab(gtk.Table):
         self.show_all()
         
             
-    def RBfile_toggled(self, widget, data=None):
+    def __RBfile_toggled(self, widget, data=None):
+        "Enable/disable the repo comboBox when the radiobutton is togled"
         self.CBfile.set_sensitive(widget.get_active())
     
-    def CBfile_changed(self, widget, data=None):
+    def __CBfile_changed(self, widget, data=None):
+        "If the resource is deleted, togle RBfile/RBhome"
         if self.CBfile.get_active() == -1:
             self.RBhome.set_active(True)
         
-    def Cfilter_changed(self, cell, path, iter):
+    def __Cfilter_changed(self, cell, path, iter):
+        "When a filter has changed, change the image and all the fields"
         state = cell.get_property("model").get_value(iter,2)
         self.TMfilter[path][2] = self.mother.LSactions[state][0]
         self.TMfilter[path][3] = self.mother.LSactions[state][1]
         self.TMfilter[path][4] = self.mother.LSactions[state][2]
         
-    def Cfilter_edited(self,cellrenderertext, path, new_text):
+    def __Cfilter_edited(self,cellrenderertext, path, new_text):
+        "When the regular expression is edited, set it"
         self.LSfilter[path][1] = new_text
         
-    def Cfiltertitle_edited(self,cellrenderertext, path, new_text):
+    def __Cfiltertitle_edited(self,cellrenderertext, path, new_text):
+        "When the title is edited, set it"
         self.LSfilter[path][0] = new_text
         
-    def add_filter(self, widget=None, data=_("Eveything")):       
+    def __add_filter(self, widget=None, data=_("Eveything")):
+        "Adds a filter to the rules list"       
         self.LSfilter.append([data,".",self.mother.LSactions[ACTION_KEEP][0],self.mother.LSactions[ACTION_KEEP][1],ACTION_KEEP])
         
-    def remove_filter(self, widget=None):
+    def __remove_filter(self, widget=None):
+        "Removes the selected filter from the rules list"
         (view, iter) = self.TVfilter.get_selection().get_selected()
         if iter != None:
             self.LSfilter.remove(iter)
         
-    def up_filter(self, widget=None, data=_("New Filter")):
+    def __up_filter(self, widget=None, data=_("New Filter")):
+        "Moves upwards a filter in the rules list"
         (view, iter) = self.TVfilter.get_selection().get_selected()
         if iter != None:
             path = self.TMfilter.get_path(iter)[0] - 1
             if path < 0:
-                debug("The filter have reached the top of the list",DEBUG_HIGH)
                 return
             iterPrev = self.TMfilter.get_iter(self.TMfilter.get_path(iter)[0] - 1)
             self.LSfilter.move_before(iter, iterPrev)
         
-    def down_filter(self, widget=None):
+    def __down_filter(self, widget=None):
+        "Moves downwards a filter in the rules list"
         (view, iter) = self.TVfilter.get_selection().get_selected()
         if iter != None:
             path = self.TMfilter.get_path(iter)[0] + 1
             if path >= self.TMfilter.iter_n_children(None):
-                debug("The filter have reached the bottom of the list",DEBUG_HIGH)
                 return
             iterNext = self.TMfilter.get_iter(path)
             self.LSfilter.move_after(iter, iterNext)
     
-    def choose_deposit(self,widget=None,button=None,data=None):
+    def __choose_deposit(self,widget=None,button=None,data=None):
+        "Choose deposit for lost+found"
+        #Only the right button
         if button != sexy.ICON_ENTRY_PRIMARY:
             return
+        
+        #File chooser dialog for directories
         dialog = gtk.FileChooserDialog(_("Choose source file"),action=gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER,buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_OK,gtk.RESPONSE_OK),parent=self.mother)
         dialog.set_default_response(gtk.RESPONSE_OK)
         
@@ -242,18 +278,21 @@ class profileTab(gtk.Table):
         if response == gtk.RESPONSE_OK:
             depositfile = dialog.get_filename()
             
-            #If deposit file is inside a home directory, it will be inside each home
+            #If deposit file is inside a home directory, it ask to be inside each home
             userlist = passwd()
             for pwuser in userlist.getpwall():
                 uid = pwuser.pw_uid
                 if depositfile.startswith(pwuser.pw_dir):
+                    #Ask it!
                     warning = gtk.MessageDialog(parent=self.mother,type=gtk.MESSAGE_QUESTION, buttons=gtk.BUTTONS_YES_NO)
                     warning.set_markup(_("The folder you have selected is inside a home directory.\nDo you want to use create a deposit inside each home directory?"))
                     warning.show_all()
                     response = warning.run()
                     if response == gtk.RESPONSE_NO:
+                        #Response NO
                         warning.destroy()
                         break
+                    #Response YES
                     warning.destroy()
                     depositfile = "~/"+depositfile[len(pwuser.pw_dir)+1:]
                     break
@@ -264,9 +303,13 @@ class profileTab(gtk.Table):
         return
     
     def set_source(self, source):
+        "Sets the source file from the reposiroty"
+        
+        #If is nothing, deselect all
         if source == "":
             self.CBfile.set_active(-1)
             return
+        
         
         for path, sourceAux in enumerate(self.mother.LSsources):
             if sourceAux[1] == source:
@@ -277,6 +320,8 @@ class profileTab(gtk.Table):
         return
     
     def get_config(self):
+        "Gets the current profile config for this tab"
+        
         p = profile(self.Ename.get_text())
         p.saved_source = self.RBfile.get_active()
         
@@ -287,7 +332,7 @@ class profileTab(gtk.Table):
             p.source = ""
             
         p.deposit = self.Edeposit.get_text()
-
+        
         for row in self.LSfilter:
             r = rule(row[0], row[1], row[4])
             p.rules.append(r)
@@ -295,5 +340,6 @@ class profileTab(gtk.Table):
         return p
     
     def is_source_in_use(self, path):
+        "To know if the selected source is in use for any profile"
         return self.CBfile.get_active() == path
     

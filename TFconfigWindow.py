@@ -26,16 +26,82 @@ import gtk
 
 import paramiko, binascii
 
-import os
+import os, shutil
 import pwd
 
 import tarfile
 
 _ = load_locale()
 
+def copy(src,dst):
+    "Copies a file to a directory without overwritting them"
+    
+    auxPath = 0
+    #Take the filename and the extension
+    fileName = os.path.basename(src)
+    (file,extension) = fileName.split(".",1)
+    
+    #Destination
+    dstComplete = os.path.join (dst, fileName)
+    #If it exists, appends a number 
+    while os.path.exists(dstComplete):
+        fileName = file + "_" + str(auxPath) + "." + extension
+        dstComplete = os.path.join (dst, fileName)
+        auxPath = auxPath + 1     
+    
+    #When decided the destination, copy it
+    shutil.copy(src, dstComplete)
+    return fileName
+
 class configWindow(gtk.Dialog):
+    "Config window class"
+    
+    #Sources to erase when applying the form
+    sources_to_erase = []
+    #Tab to config the profiles
+    profiles = None
+    #Tab to config the sources
+    sources = None
+    #Tab to config the server and remote tasks
+    remote = None
+    #Tab to config the about
+    about = None
+    
+    #ListStore of the actions in the profiles
+    LSactions = None
+    #Profile tabs
+    tabs = None
+    
+    #ListStore with the sources of the repository
+    LSsources = None
+    #Treeview for the sources of the repository
+    TVsources = None
+    #TreeModel from the sources of the repository
+    TMsources = None
+    
+    #ComboBox to enable/disable the LDAP support
+    CBldapenable = None
+    #Server path
+    Eserver = None
+    #Distinguished name of the server
+    Edn = None
+    #Button to test the server
+    Btest = None
+    #Label with the result of the test
+    Ltest = None
+    #RadioButton, works as a client?
+    RBclient = None
+    #Button to adquire the key
+    Bkeys = None
+    #Label with the result of the adquisition
+    Lkeys = None
+    #RadioButton, works as a server?
+    RBserver = None
     
     def __init__(self, config, win):
+        "Inits all the window"
+        
+        #This window is treated as a dialog
         gtk.Dialog.__init__(self,title="Trivial Freezer"+_(" - Settings"),
                                  parent=win,
                                  flags=0,
@@ -47,6 +113,7 @@ class configWindow(gtk.Dialog):
         
         mainBox = gtk.HBox()
         
+        #Toolbar buttons on the left
         toolbar = gtk.Toolbar()
         toolbar.set_orientation(gtk.ORIENTATION_VERTICAL)
         toolbar.set_style(gtk.TOOLBAR_BOTH)
@@ -87,30 +154,36 @@ class configWindow(gtk.Dialog):
         
         mainBox.pack_start(toolbar, False)
         
-        self.init_profiles()
+        #Init all the "tabs"
+        self.__init_profiles()
         mainBox.pack_start(self.profiles, True)
         self.profiles.show_all()
         
-        self.init_sources()
+        self.__init_sources()
         mainBox.pack_start(self.sources, True)
         
-        self.init_remote()
+        self.__init_remote()
         mainBox.pack_start(self.remote, True)
         
-        self.init_about()
+        self.__init_about()
         mainBox.pack_start(self.about, True)
         
+        #Load configuration
         self.load(config)
         
         self.get_content_area().add(mainBox)
         mainBox.show()
         self.show()
     
-    def init_profiles(self):
+    def __init_profiles(self):
+        "Inits the profile tab"
+        
+        #Treated as a Vertical Box
         self.profiles = gtk.VBox()
         self.profiles.set_spacing(5)
         self.profiles.set_border_width(5)
         
+        #Title
         label = gtk.Label("<b>"+_("Freeze profiles")+"</b>")
         label.set_use_markup(True)
         self.profiles.pack_start(label,False)
@@ -137,12 +210,15 @@ class configWindow(gtk.Dialog):
         self.LSactions.append([gtk.STOCK_DELETE,_("Erase"),ACTION_ERASE])
         self.LSactions.append([gtk.STOCK_FIND,_("Move to Lost+Found"),ACTION_LOST])
         
-        #Config tabs
+        #Config tabs, empty because it will be filled on load
         self.tabs = gtk.Notebook()
         self.tabs.set_scrollable(True)
         self.profiles.pack_start(self.tabs, True)
     
-    def init_sources(self):
+    def __init_sources(self):
+        "Inits the sources tab"
+        
+        #Treated as a Vertical Box
         self.sources = gtk.VBox()
         self.sources.set_spacing(5)
         self.sources.set_border_width(5)
@@ -153,11 +229,11 @@ class configWindow(gtk.Dialog):
         
         self.LSsources = gtk.ListStore(str,str)
         
-        # create the TreeView using liststore
+        #Create the TreeView using liststore
         self.TVsources = gtk.TreeView(self.LSsources)
         self.TMsources = self.TVsources.get_model()
         
-        # Camps de filter
+        #Fields of the repository
         cell = gtk.CellRendererText()
         tv = gtk.TreeViewColumn(_("Name"),cell,text=0)
         cell.set_property('editable', True)
@@ -167,7 +243,6 @@ class configWindow(gtk.Dialog):
         tv.set_expand(True)
         tv.set_resizable(True)
         
-        # Camps de filter
         cell = gtk.CellRendererText()
         tv = gtk.TreeViewColumn(_("Source"),cell,text=1)
         self.TVsources.append_column(tv)
@@ -177,10 +252,12 @@ class configWindow(gtk.Dialog):
         
         tv.set_sort_column_id(0)
         
+        #Can search in the name column
         self.TVsources.set_search_column(0)
         
         self.sources.pack_start(self.TVsources)
         
+        #Buttons to add and delete sources
         image = gtk.Image()
         image.set_from_stock(gtk.STOCK_DIRECTORY,gtk.ICON_SIZE_BUTTON)
         button = gtk.Button(_("Add from a directory"))
@@ -202,13 +279,15 @@ class configWindow(gtk.Dialog):
         button.connect("clicked", self.remove_source)
         self.sources.pack_start(button,False)
         
-    def init_remote(self):
-        
+    def __init_remote(self):
+        "Inits the server and remote tasks tab"
+        #Treated as a table"
         self.remote = gtk.Table()
         self.remote.set_row_spacings(5)
         self.remote.set_col_spacings(5)
         self.remote.set_border_width(5)
         
+        #Remote users configuration"
         label = gtk.Label("<b>"+_("Remote users configuration")+"</b>")
         label.set_use_markup(True)
         self.remote.attach(label, 0, 3, 0, 1, gtk.FILL, gtk.FILL)
@@ -270,8 +349,10 @@ class configWindow(gtk.Dialog):
         self.RBserver.set_sensitive(False)
         self.remote.attach(self.RBserver, 0, 3, 11, 12, gtk.FILL, gtk.FILL)
     
-    def init_about(self):
+    def __init_about(self):
+        "Inits the about tab"
         
+        #Treated as a table"
         self.about = gtk.Table()
         self.about.set_row_spacings(5)
         self.about.set_col_spacings(5)
@@ -307,12 +388,10 @@ class configWindow(gtk.Dialog):
         text += "any later version.\n\n"
         text += "Copyright (C) 2009  Pau Ferrer Ocaña"
         
-        
         label = gtk.Label(text)
         label.set_use_markup(True)
         self.about.attach(label, 1, 2, 1, 2, gtk.FILL, gtk.FILL)
 
-    
     def load(self, config):
         
         for source in config.sources:
@@ -496,7 +575,8 @@ class configWindow(gtk.Dialog):
                 tar = tarfile.open(sourcefile,'r')
                 tar.close()
                 dst = copy(sourcefile,repo)
-            except:
+            except Exception, e:
+                print e
                 warning = gtk.MessageDialog(parent=self,
                                       type=gtk.MESSAGE_WARNING,
                                       buttons=gtk.BUTTONS_OK,
@@ -564,7 +644,7 @@ class configWindow(gtk.Dialog):
         
     def test_ldap(self, widget=None):
         from TFpasswd import ldap_tester
-        if ldap_tester().try_ldap(self.Eserver.get_text(),self.Edn.get_text()):
+        if ldap_tester.try_ldap(self.Eserver.get_text(),self.Edn.get_text()):
             self.Ltest.set_markup('<span foreground="#007700" size="large">' + _("Connection successfully established")+ '</span>')
             return True
         else:

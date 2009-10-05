@@ -27,26 +27,10 @@ from TFtar_thread import *
 import pygtk
 import gtk
 
-import shutil, os
+import os
 
 _ = load_locale()
 
-
-#COPY A FILE TO A DIRECTORY WITHOUT OVERWRITTING THEM
-def copy(src,dst):
-    
-    auxPath = 0
-    fileName = os.path.basename(src)
-    (file,extension) = fileName.split(".",1)
-                 
-    dstComplete = os.path.join (dst, fileName)     
-    while os.path.exists(dstComplete):
-        fileName = file + "_" + str(auxPath) + "." + extension
-        dstComplete = os.path.join (dst, fileName)
-        auxPath = auxPath + 1     
-        
-    shutil.copy(src, dstComplete)
-    return fileName
 
 def recursive_delete(dirname):
     if not os.path.exists(dirname):
