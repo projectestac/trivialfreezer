@@ -138,7 +138,7 @@ class user_frozen ():
                 self.deposit = DEFAULT_DEPOSIT
             
             #If the deposit is in the home directory, replace with the correct home
-            self.deposit.replace('~',self.homedir,1)
+            self.deposit = self.deposit.replace('~',self.homedir,1)
             
             #Create the deposit directory, if exists, doesn't matter...
             try:

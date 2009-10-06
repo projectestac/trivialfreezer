@@ -78,7 +78,7 @@ class profileTab(gtk.Table):
         label.set_use_markup(True)
         self.attach(label, 0, 3, 6, 7, gtk.EXPAND | gtk.FILL, gtk.FILL)
         
-        self.RBhome = gtk.RadioButton(None, _("Use the actual home directory"))
+        self.RBhome = gtk.RadioButton(None, _("Use the current home directory"))
         self.attach(self.RBhome, 0, 3, 7, 8, gtk.EXPAND |gtk.FILL, gtk.FILL)
         
         self.RBfile = gtk.RadioButton(self.RBhome, _("Use this source from the repository"))

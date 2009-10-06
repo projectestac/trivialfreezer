@@ -98,6 +98,13 @@ class configWindow(gtk.Dialog):
     #RadioButton, works as a server?
     RBserver = None
     
+    #Connecting info
+    #Host and port
+    hostname = ""
+    port = ""
+    #Has key?
+    key = False
+    
     def __init__(self, config, win):
         "Inits all the window"
         
@@ -122,21 +129,21 @@ class configWindow(gtk.Dialog):
         item.set_label(_('Profiles'))
         item.set_tooltip_text(_('Configure profiles'))
         item.set_is_important(True)
-        item.connect("toggled",self.show_hide_profiles)
+        item.connect("toggled",self.__show_hide_profiles)
         toolbar.insert(item,0)
         
         item = gtk.RadioToolButton(item,gtk.STOCK_COLOR_PICKER)
         item.set_label(_('Sources'))
         item.set_tooltip_text(_('Configure sources'))
         item.set_is_important(True)
-        item.connect("toggled",self.show_hide_sources)
+        item.connect("toggled",self.__show_hide_sources)
         toolbar.insert(item,1)
         
         item = gtk.RadioToolButton(item,gtk.STOCK_CONNECT)
         item.set_label(_('Remote users'))
         item.set_tooltip_text(_('Configure Remote users'))
         item.set_is_important(True)
-        item.connect("toggled",self.show_hide_remote)
+        item.connect("toggled",self.__show_hide_remote)
         toolbar.insert(item,2)
         
         sep =  gtk.ToolItem()
@@ -147,7 +154,7 @@ class configWindow(gtk.Dialog):
         item.set_label(_('About'))
         item.set_tooltip_text(_('About Trivial Freezer'))
         item.set_is_important(True)
-        item.connect("toggled",self.show_hide_about)
+        item.connect("toggled",self.__show_hide_about)
         toolbar.insert(item,4)
         
         toolbar.show_all()
@@ -193,12 +200,12 @@ class configWindow(gtk.Dialog):
         
         item = gtk.Button(_('Add profile'), gtk.STOCK_ADD)
         item.set_tooltip_text(_('Adds a new Frozen Profile'))
-        item.connect("clicked",self.add_tab)
+        item.connect("clicked",self.__add_tab)
         toolbar.pack_start(item)
         
         item = gtk.Button(_('Remove profile'), gtk.STOCK_REMOVE)
         item.set_tooltip_text(_('Removes the selected Frozen Profile'))
-        item.connect("clicked",self.remove_tab)
+        item.connect("clicked",self.__remove_tab)
         toolbar.pack_start(item)
         
         self.profiles.pack_start(toolbar, False)
@@ -237,7 +244,7 @@ class configWindow(gtk.Dialog):
         cell = gtk.CellRendererText()
         tv = gtk.TreeViewColumn(_("Name"),cell,text=0)
         cell.set_property('editable', True)
-        cell.connect('edited', self.Cname_edited)
+        cell.connect('edited', self.__Cname_edited)
         self.TVsources.append_column(tv)
         tv.set_sort_column_id(0)
         tv.set_expand(True)
@@ -262,21 +269,21 @@ class configWindow(gtk.Dialog):
         image.set_from_stock(gtk.STOCK_DIRECTORY,gtk.ICON_SIZE_BUTTON)
         button = gtk.Button(_("Add from a directory"))
         button.set_image(image)
-        button.connect("clicked", self.add_from_directory)
+        button.connect("clicked", self.__add_from_directory)
         self.sources.pack_start(button,False)
         
         image = gtk.Image()
         image.set_from_stock(gtk.STOCK_HARDDISK,gtk.ICON_SIZE_BUTTON)
         button = gtk.Button(_("Add from a tar file"))
         button.set_image(image)
-        button.connect("clicked", self.add_from_tar)
+        button.connect("clicked", self.__add_from_tar)
         self.sources.pack_start(button,False)
         
         image = gtk.Image()
         image.set_from_stock(gtk.STOCK_REMOVE,gtk.ICON_SIZE_BUTTON)
         button = gtk.Button(_("Remove a source"))
         button.set_image(image)
-        button.connect("clicked", self.remove_source)
+        button.connect("clicked", self.__remove_source)
         self.sources.pack_start(button,False)
         
     def __init_remote(self):
@@ -293,7 +300,7 @@ class configWindow(gtk.Dialog):
         self.remote.attach(label, 0, 3, 0, 1, gtk.FILL, gtk.FILL)
         
         self.CBldapenable = gtk.CheckButton(_("Enable LDAP support"))
-        self.CBldapenable.connect("toggled",self.CBldapenable_toggled)
+        self.CBldapenable.connect("toggled",self.__CBldapenable_toggled)
         self.remote.attach(self.CBldapenable, 0, 3, 1, 2, gtk.FILL, gtk.SHRINK)
         
         label = gtk.Label(_("LDAP Server"))
@@ -314,7 +321,7 @@ class configWindow(gtk.Dialog):
         image.set_from_stock(gtk.STOCK_CONNECT,gtk.ICON_SIZE_BUTTON)
         self.Btest = gtk.Button(_("Test connection"))
         self.Btest.set_image(image)
-        self.Btest.connect("clicked", self.test_ldap)
+        self.Btest.connect("clicked", self.__test_ldap)
         self.Btest.set_sensitive(False)
         self.remote.attach(self.Btest, 0, 3, 4, 5, gtk.EXPAND | gtk.FILL, gtk.FILL)
         
@@ -329,14 +336,14 @@ class configWindow(gtk.Dialog):
         
         self.RBclient = gtk.RadioButton(None,_("Work as a client"))
         self.RBclient.set_sensitive(False)
-        self.RBclient.connect("toggled",self.RBclient_toggled)
+        self.RBclient.connect("toggled",self.__RBclient_toggled)
         self.remote.attach(self.RBclient, 0, 3, 7, 8, gtk.FILL, gtk.FILL)
         
         image = gtk.Image()
         image.set_from_stock(gtk.STOCK_DIALOG_AUTHENTICATION,gtk.ICON_SIZE_BUTTON)
         self.Bkeys = gtk.Button(_("Generate authorization keys"))
         self.Bkeys.set_image(image)
-        self.Bkeys.connect("clicked", self.generate_keys)
+        self.Bkeys.connect("clicked", self.__generate_keys)
         self.Bkeys.set_sensitive(False)
         self.remote.attach(self.Bkeys, 0, 3, 9, 10, gtk.EXPAND | gtk.FILL, gtk.FILL)
         
@@ -393,12 +400,15 @@ class configWindow(gtk.Dialog):
         self.about.attach(label, 1, 2, 1, 2, gtk.FILL, gtk.FILL)
 
     def load(self, config):
+        "Loads configuration from the config class"
         
+        #Load repository sources
         for source in config.sources:
             self.LSsources.append([source.name,source.file])
             
+        #Load profiles
         for profile in config.profiles:
-            newTab = self.add_tab(data = profile.title)
+            newTab = self.__add_tab(data = profile.title)
             newTab.set_sensitive(profile.could_be_edited)
             newTab.Edeposit.set_text(profile.deposit)
             
@@ -410,13 +420,15 @@ class configWindow(gtk.Dialog):
             newTab.RBfile.set_active(profile.saved_source)
             newTab.CBfile.set_sensitive(profile.saved_source)
             
+            #With their rules
             for rule in profile.rules:
                 newTab.LSfilter.append([rule.name,
                     rule.filter,
                     self.LSactions[rule.action][0],
                     self.LSactions[rule.action][1],
                     rule.action])
-                
+        
+        #Load server configuracion
         self.CBldapenable.set_active(config.ldap_enabled)
         self.Eserver.set_text(config.ldap_server)
         self.Edn.set_text(config.ldap_dn)
@@ -425,11 +437,16 @@ class configWindow(gtk.Dialog):
         self.hostname = config.home_server_ip
         self.port = config.home_server_port
         
-        self.test_home_server()
+        #Test the server configuration and ldap
+        self.__test_home_server()
+        self.__test_ldap()
         
         return
     
     def update_config(self, config):
+        "Saves configuration to the config class"
+        
+        #Save the profiles settings
         del config.profiles[:]
         
         config.load_profile_defaults()
@@ -438,7 +455,8 @@ class configWindow(gtk.Dialog):
         for i in range(numProfiles - BLOCKED_PROFILES):
             tab = self.tabs.get_nth_page(i + BLOCKED_PROFILES)
             config.profiles.append(tab.get_config())
-            
+        
+        #Save the sources repository
         del config.sources[:]
         
         for row in self.LSsources:
@@ -448,18 +466,21 @@ class configWindow(gtk.Dialog):
             config.sources.append(s)
             
         config.sources_to_erase.extend(self.sources_to_erase)
-            
+        
+        #Save the server configuration    
         config.ldap_dn = self.Edn.get_text()
         config.ldap_server = self.Eserver.get_text()
         
-        config.ldap_enabled = self.CBldapenable.get_active() and self.test_ldap()
+        config.ldap_enabled = self.CBldapenable.get_active() and self.__test_ldap()
         
         config.home_server = self.RBserver.get_active()
         config.home_server_ip = self.hostname
         config.home_server_port = self.port
             
             
-    def add_tab(self, widget=None, data=_("New Profile")):
+    def __add_tab(self, widget=None, data=_("New Profile")):
+        "Adds a tab profile"
+        
         newTab = profileTab(self,data)
         label = gtk.Label(data)
         page_num = self.tabs.append_page(newTab, label)
@@ -467,44 +488,61 @@ class configWindow(gtk.Dialog):
         
         return newTab
     
-    def remove_tab(self, widget=None):
+    def __remove_tab(self, widget=None):
+        "Removes the current tab"
+        
         i = self.tabs.get_current_page()
         if i >= BLOCKED_PROFILES:
             self.tabs.remove_page(i)
             
     def tab_name_modified(self, widget, data=None):
+        "On tab name modified event, change the tab label"
+        
         name = widget.get_text()
         tab = widget.get_parent()
         self.tabs.set_tab_label_text(tab, name)
 
-    def show_hide_sources(self,widget):
+    def __show_hide_sources(self,widget):
+        "Shows/Hides sources tab"
+        
         if widget.get_active():
             self.sources.show_all()
         else:
             self.sources.hide_all()
             
-    def show_hide_profiles(self,widget):
+    def __show_hide_profiles(self,widget):
+        "Shows/Hides profiles tab"
+        
         if widget.get_active():
             self.profiles.show_all()
         else:
             self.profiles.hide_all()
     
-    def show_hide_remote(self,widget):
+    def __show_hide_remote(self,widget):
+        "Shows/Hides server and remote config tab"
+        
         if widget.get_active():
             self.remote.show_all()
         else:
             self.remote.hide_all()
             
-    def show_hide_about(self,widget):
+    def __show_hide_about(self,widget):
+        "Shows/Hides about tab"
+        
         if widget.get_active():
             self.about.show_all()
         else:
             self.about.hide_all()
     
-    def Cname_edited(self,cellrenderertext, path, new_text):
+    def __Cname_edited(self,cellrenderertext, path, new_text):
+        "Event handler for editing the name of a resource"
+        
         self.LSsources[path][0] = new_text
     
-    def add_from_directory(self, widget=None):
+    def __add_from_directory(self, widget=None):
+        "Adds a source from a repository and creates the tar"
+        
+        #Choose the directory
         dialog = gtk.FileChooserDialog(_("Choose source file"),action=gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER,buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_OK,gtk.RESPONSE_OK))
         dialog.set_default_response(gtk.RESPONSE_OK)
         
@@ -514,7 +552,10 @@ class configWindow(gtk.Dialog):
             
             dir = sourcefile.rsplit("/",1)[1]
             
+            #Choose the name
             fileName = dir + TAR_EXTENSION
+            
+            #Where to save the tar
             repo = os.path.join (TAR_DIRECTORY, TAR_REPOSITORY)
             dst = os.path.join (repo, fileName)
             auxPath = 0
@@ -523,12 +564,14 @@ class configWindow(gtk.Dialog):
                 os.makedirs(repo,0755)
             except OSError as (errno, strerror):
                 debug(repo + " " + strerror,DEBUG_HIGH)
-                
+            
+            #Not to overwrite another tar...
             while os.path.exists(dst):
                 fileName = dir + "_" + str(auxPath) + TAR_EXTENSION
                 dst = os.path.join (repo, fileName)
                 auxPath = auxPath + 1   
-                
+            
+            #Create the tar file
             try:
                 tar = tarfile.open(dst,'w:gz')
             except:
@@ -536,11 +579,12 @@ class configWindow(gtk.Dialog):
                 warning = gtk.MessageDialog(parent=self,
                                       type=gtk.MESSAGE_WARNING,
                                       buttons=gtk.BUTTONS_OK,
-                                      message_format= _("The freezer is unable to create the tar file")
+                                      message_format= _("The freezer was unable to create the tar file")
                                       )
                 res = warning.run()
                 warning.destroy()
             else:
+                #arcname = "" to avoid parent folders to be included
                 tar.add(sourcefile,arcname="")
                 tar.close()
                 name = fileName.split(".",1)[0]
@@ -549,8 +593,10 @@ class configWindow(gtk.Dialog):
         dialog.destroy()
         return
     
-    def add_from_tar(self, widget=None):
+    def __add_from_tar(self, widget=None):
+        "Adds a source from a repository"
         
+        #Choose the tar file
         dialog = gtk.FileChooserDialog(_("Choose source file"),buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_OK,gtk.RESPONSE_OK))
         dialog.set_default_response(gtk.RESPONSE_OK)
         
@@ -570,10 +616,11 @@ class configWindow(gtk.Dialog):
                 os.makedirs(repo,0755)
             except OSError as (errno, strerror):
                 debug(repo + " " + strerror,DEBUG_HIGH)
-                
+            
             try:
                 tar = tarfile.open(sourcefile,'r')
                 tar.close()
+                #Not to overwrite the tar
                 dst = copy(sourcefile,repo)
             except Exception, e:
                 print e
@@ -585,19 +632,23 @@ class configWindow(gtk.Dialog):
                 res = warning.run()
                 warning.destroy()
             else:
+                #Add it to source repository
                 name = dst.split(".",1)[0]
                 self.LSsources.append([name,dst])
             
         dialog.destroy()
         return
     
-    def remove_source(self, widget=None):
+    def __remove_source(self, widget=None):
+        "Removes a source of the repository"
+        
         (view, iter) = self.TVsources.get_selection().get_selected()
         if iter != None:
             path = self.TMsources.get_path(iter)[0]
             repo = os.path.join (TAR_DIRECTORY, TAR_REPOSITORY)
             file = os.path.join (repo, self.LSsources[path][1])
             
+            #Search for the profiles that use the selected source
             tabs_in_use = []
             for i in range(self.tabs.get_n_pages()):
                 tab = self.tabs.get_nth_page(i)
@@ -605,6 +656,7 @@ class configWindow(gtk.Dialog):
                     tabs_in_use.append(i)
             
             if len(tabs_in_use) > 0:
+                #Warn the user
                 d = gtk.MessageDialog(parent=self,
                                       type=gtk.MESSAGE_QUESTION,
                                       buttons=gtk.BUTTONS_YES_NO,
@@ -613,7 +665,7 @@ class configWindow(gtk.Dialog):
                 response = d.run()
                 if response == gtk.RESPONSE_YES:
                     #WARN because is in use
-                    #mark to erase
+                    #Mark to erase when applying
                     self.sources_to_erase.append(file)
                     
                     for i in tabs_in_use:
@@ -622,13 +674,14 @@ class configWindow(gtk.Dialog):
                     
                     self.LSsources.remove(iter)
                 d.destroy()
-                
+            #Not in use
             else:
-                #mark to erase
+                #Mark to erase when applying
                 self.sources_to_erase.append(file)
                 self.LSsources.remove(iter)
             
-    def CBldapenable_toggled(self, widget):
+    def __CBldapenable_toggled(self, widget):
+        "Enables and disables options when toggling ldap support"
         self.Eserver.set_sensitive(widget.get_active())
         self.Edn.set_sensitive(widget.get_active())
         self.Ltest.set_sensitive(widget.get_active())
@@ -638,11 +691,13 @@ class configWindow(gtk.Dialog):
         self.Lkeys.set_sensitive(widget.get_active() and self.RBclient.get_active())
         self.Bkeys.set_sensitive(widget.get_active() and self.RBclient.get_active()) 
     
-    def RBclient_toggled(self, widget):
+    def __RBclient_toggled(self, widget):
+        "Enables and disables options when toggling the kind of working"
         self.Lkeys.set_sensitive(widget.get_active())
         self.Bkeys.set_sensitive(widget.get_active())  
         
-    def test_ldap(self, widget=None):
+    def __test_ldap(self, widget=None):
+        "Tests Ldap server by connecting it"
         from TFpasswd import ldap_tester
         if ldap_tester.try_ldap(self.Eserver.get_text(),self.Edn.get_text()):
             self.Ltest.set_markup('<span foreground="#007700" size="large">' + _("Connection successfully established")+ '</span>')
@@ -652,7 +707,9 @@ class configWindow(gtk.Dialog):
             return False
             
     
-    def test_home_server(self):
+    def __test_home_server(self):
+        "Tests Home directory server by connecting it"
+        
         roothome = pwd.getpwuid(0).pw_dir
         
         try:
@@ -672,8 +729,11 @@ class configWindow(gtk.Dialog):
         self.Lkeys.set_markup('<span foreground="#007700" size="large">' + _("Client connected to ") + self.hostname + '</span>')
         return True
     
-    def generate_keys(self, widget=None):
+    def __generate_keys(self, widget=None):
+        "Generates the keys to connect to the Home directory server"
+        
         if self.key == True:
+            #Warn that the key already exists
             warning = gtk.MessageDialog(parent=self,type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_YES_NO)
             warning.set_markup(_("The keys already exists, do you want to overwrite them?"))
             warning.show_all()
@@ -684,6 +744,7 @@ class configWindow(gtk.Dialog):
                 return
             warning.destroy()
         
+        #Take the root hom directory
         roothome = pwd.getpwuid(0).pw_dir
         #Private Key generation
         id_dsa = roothome + '/' + ID_DSA_PATH
@@ -711,7 +772,9 @@ class configWindow(gtk.Dialog):
         get_connect = False
         get_info = False
         while not get_connect:
+            #I don't have the info to connect
             if not get_info:
+                #Dialog to get information
                 dialog = gtk.Dialog(title=_("Configure the server"), parent=self, flags=0, buttons=(gtk.STOCK_CANCEL, gtk.RESPONSE_REJECT,
                                                   gtk.STOCK_OK, gtk.RESPONSE_ACCEPT))
                 
@@ -766,23 +829,29 @@ class configWindow(gtk.Dialog):
                     return
                 dialog.destroy()
             
+            #I've got the info
+            
+            #Load keys from known hosts
             try:
                 ssh.load_system_host_keys(roothome + '/' + KNOWN_HOSTS_PATH)
             except:
                 pass
             
+            #Connect
             try:
                 ssh.connect(hostname,int(port),user,passwd)
             except paramiko.AuthenticationException,e :
                 debug("AuthenticationException "+str(e), DEBUG_LOW)
+                #User/password error
                 warning = gtk.MessageDialog(parent=self, type=gtk.MESSAGE_WARNING,buttons=gtk.BUTTONS_OK)
-                warning.set_markup(_("Permission denied, please verify the username and password"))
+                warning.set_markup(_("Permission denied, please verify the user name and password"))
                 warning.show_all()
                 response = warning.run()
                 warning.destroy()
                 get_info = False
                 get_connect = False
             except (paramiko.BadHostKeyException, paramiko.SSHException), e:
+                #Ca'nt connect
                 get_info = True
                 get_connect = False
                 debug("SSHException or BadHostKeyException "+str(e), DEBUG_LOW)
@@ -790,6 +859,7 @@ class configWindow(gtk.Dialog):
                 t = ssh.get_transport()
                 key = t.get_remote_server_key() 
                 if not hosts.check(hostname,key):
+                    #Host key is not the same
                     warning = gtk.MessageDialog(parent=self,type=gtk.MESSAGE_WARNING, buttons=gtk.BUTTONS_YES_NO)
                     fingerprinthex = paramiko.util.hexify(key.get_fingerprint())
                     fingerprint = ""
@@ -814,8 +884,10 @@ class configWindow(gtk.Dialog):
                         return
                     warning.destroy()
             else:
+                #Connected!
                 get_connect = True
-
+        
+        #After connecting...
         try:
             #Send the public key to the server
             sftp = ssh.open_sftp()
@@ -827,6 +899,7 @@ class configWindow(gtk.Dialog):
             return
         
         try:
+            #Adds the key to authorized_keys
             stdin,stdout,stderr = ssh.exec_command("echo '#!/bin/bash\n cat /tmp/tfpubkey >> ~root/.ssh/authorized_keys\n rm -f /tmp/tfpubkey*' > /tmp/tfpubkey.sh")
             stdin,stdout,stderr = ssh.exec_command("chmod +x /tmp/tfpubkey.sh")
             stdin,stdout,stderr = ssh.exec_command("sudo /tmp/tfpubkey.sh")
@@ -837,10 +910,12 @@ class configWindow(gtk.Dialog):
             self.port = port
             self.key = True
         except:
+            #Close the connection and exit
             ssh.close()
             self.Lkeys.set_markup('<span foreground="#770000" size="large">' + _("Something executing commands goes wrong.")+ "\n" + _("Client not connected")+ '</span>')
             return
         
+        #Close the connection and exit
         ssh.close()
         
         return
