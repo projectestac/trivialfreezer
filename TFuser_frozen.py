@@ -55,6 +55,8 @@ class user_frozen ():
     source = ""
     #If specified, Lost+found directory, if not, use defaults
     deposit = DEFAULT_DEPOSIT
+    #Command to execute after restoring
+    execute = ""
     
     #User name
     username = ""
@@ -70,11 +72,12 @@ class user_frozen ():
     #If specified, Port of the ssh/nfs server where the user will be restored
     port = "22"
     
-    def __init__(self, title, deposit, rules, source = ""):
+    def __init__(self, title, deposit, rules, source = "", execute = ""):
         "Initializes a user_frozen with the selected options"
         
         self.name =  title
         self.source = source
+        self.execute = execute
         self.deposit = deposit
         for rule in rules:
             self.filters.append([rule.action,rule.filter])
@@ -138,7 +141,9 @@ class user_frozen ():
                 self.deposit = DEFAULT_DEPOSIT
             
             #If the deposit is in the home directory, replace with the correct home
-            self.deposit = self.deposit.replace('~',self.homedir,1)
+            self.deposit = str(self.deposit.replace('~',self.homedir,1))
+            if self.deposit.endswith("/"):
+                self.deposit = self.deposit[:-1]
             
             #Create the deposit directory, if exists, doesn't matter...
             try:
@@ -168,7 +173,13 @@ class user_frozen ():
                 name = os.path.join(self.homedir,file.name)
                 if os.path.exists(name):
                     os.chown(name, self.uid, self.gid)
-                    
+            
+            #Execute the command
+            debug ('EXECUTING: ' + self.execute,DEBUG_HIGH)
+            result = os.popen(self.execute).read()
+            for line in result.splitlines():
+                debug ('RESULT: ' + line , DEBUG_HIGH)
+                   
     def __restore_external_tar(self):
         "Restores a tar on an external server"
         
@@ -261,8 +272,8 @@ class user_frozen ():
     def __restore_or_erase(self,path):
         "Returns True to carry on or erase and False to maintain"
         
-       #Do nothing with the deposit if it's inside a home directory    
-        if self.deposit == path:
+        #Do nothing with the deposit if it's inside a home directory
+        if path.startswith(self.deposit):
             debug('Deposit path: ' + path,DEBUG_MEDIUM)
             return False
         

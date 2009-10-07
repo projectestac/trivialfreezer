@@ -55,6 +55,10 @@ class profile:
     source = ""
     #Where leave the lost+found files
     deposit = ""
+    #Is execution enabled
+    execute_enabled = False
+    #What to execute after restoring
+    execute = ""
     
     def __init__(self, title = ""):
         self.title = title
@@ -63,6 +67,8 @@ class profile:
         self.saved_source = False
         self.source = ""
         self.deposit = ""
+        self.execute = ""
+        execute_enabled = False
             
 class rule:
     "Filter rules for frozen profiles"
@@ -109,6 +115,7 @@ class config:
     sources = []
     #Sources to erase from disk when saving
     sources_to_erase = []
+    
     #Existing frozen profiles
     profiles = []
     #Time of restoring (session, will restore for every logged session
@@ -226,7 +233,14 @@ class config:
                 except:
                     print_error("Corrupted source tag, taking defaults",WARNING)
                     p.saved_source = False
-                
+                    
+                try:
+                    p.execute_enabled = str2bool(xProfile.getElementsByTagName("execute")[0].getAttribute("active"))
+                    p.execute = xProfile.getElementsByTagName("execute")[0].getAttribute("value")
+                except:
+                    print_error("Corrupted execute tag, taking defaults",WARNING)
+                    p.execute_enabled = False
+                    
                 try:
                     p.deposit = xProfile.getElementsByTagName("deposit")[0].getAttribute("value")
                 except:
@@ -506,13 +520,24 @@ class config:
             xProfile.setAttribute("name", prof.title)
                         
             xsource = xdoc.createElement("source")
-            xsource.setAttribute("active", str(prof.saved_source))
+            if prof.source == "":
+                xsource.setAttribute("active", str(False))
+            else:
+                xsource.setAttribute("active", str(prof.saved_source))
             xsource.setAttribute("value", prof.source)
             xProfile.appendChild(xsource)
             
             xdeposit = xdoc.createElement("deposit")
             xdeposit.setAttribute("value", prof.deposit)
             xProfile.appendChild(xdeposit)
+            
+            xexecute = xdoc.createElement("execute")
+            if prof.execute == "":
+                xexecute.setAttribute("active", str(False))
+            else:
+                xexecute.setAttribute("active", str(prof.execute_enabled))
+            xexecute.setAttribute("value", prof.execute)
+            xProfile.appendChild(xexecute)
             
             xrules = xdoc.createElement("rules")
               
@@ -597,8 +622,13 @@ class config:
             source = p.source
         else:
             source = ""
+        
+        if(p.execute_enabled):
+            execute = p.execute
+        else:
+            execute = ""
             
-        return user_frozen(p.title,p.deposit,p.rules,source)  
+        return user_frozen(p.title,p.deposit,p.rules,source,execute)  
     
     def __get_all_frozen(self, action):
         "Gets the profile configuration of all users in the system"

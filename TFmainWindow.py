@@ -398,13 +398,13 @@ class mainWindow:
         self.table.set_border_width(5)
         
         #Time of restoration
-        label = gtk.Label(_("Time of restoration"))
+        label = gtk.Label(_("Restoration mode"))
         self.table.attach(label, 0, 1, 0, 1, gtk.FILL, gtk.FILL)
         
         self.CBtime = gtk.combo_box_new_text()
         #self.CBtime.append_text(_("Manual"))
-        self.CBtime.append_text(_("At Session startup (GDM only)"))
-        self.CBtime.append_text(_("At System startup"))
+        self.CBtime.append_text(_("Every session (GDM only)"))
+        self.CBtime.append_text(_("Every restart"))
 
         self.CBtime.set_active(1)
         self.table.attach(self.CBtime, 1, 3, 0, 1, gtk.EXPAND | gtk.FILL, gtk.FILL)     

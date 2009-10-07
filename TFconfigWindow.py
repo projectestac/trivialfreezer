@@ -420,6 +420,10 @@ class configWindow(gtk.Dialog):
             newTab.RBfile.set_active(profile.saved_source)
             newTab.CBfile.set_sensitive(profile.saved_source)
             
+            newTab.Eexecute.set_text(profile.execute)
+            newTab.CBexecuteenable.set_active(profile.execute_enabled)
+            newTab.Eexecute.set_sensitive(profile.execute_enabled)
+            
             #With their rules
             for rule in profile.rules:
                 newTab.LSfilter.append([rule.name,

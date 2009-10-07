@@ -94,13 +94,27 @@ class profileTab(gtk.Table):
         self.CBfile.set_sensitive(False)
         self.attach(self.CBfile, 1, 3, 8, 9, gtk.EXPAND | gtk.FILL, gtk.SHRINK)
         
+        self.CBexecuteenable = gtk.CheckButton(_("Execute a command after restoring"))
+        self.CBexecuteenable.connect("toggled",self.__CBexecuteenable_toggled)
+        self.attach(self.CBexecuteenable, 0, 1, 10, 11, gtk.FILL, gtk.FILL)
+        
+                #Sexy entry
+        self.Eexecute = sexy.IconEntry()
+        image = gtk.Image()
+        image.set_from_stock(gtk.STOCK_OPEN,gtk.ICON_SIZE_BUTTON)
+        self.Eexecute.set_icon(sexy.ICON_ENTRY_PRIMARY, image)
+        self.Eexecute.connect("icon-pressed", self.__choose_execute)
+        self.Eexecute.add_clear_button()
+        self.Eexecute.set_sensitive(False)
+        self.attach(self.Eexecute, 1, 3, 10, 11, gtk.EXPAND | gtk.FILL, gtk.FILL)
+        
         separator = gtk.HSeparator()
-        self.attach(separator, 0, 3, 10, 11, gtk.EXPAND | gtk.FILL, gtk.FILL)
+        self.attach(separator, 0, 3, 11, 12, gtk.EXPAND | gtk.FILL, gtk.FILL)
                         
         #RULES
         label = gtk.Label("<b>"+_("Rules")+"</b>")
         label.set_use_markup(True)
-        self.attach(label, 0, 3, 11, 12, gtk.EXPAND | gtk.FILL, gtk.FILL)
+        self.attach(label, 0, 3, 12, 13, gtk.EXPAND | gtk.FILL, gtk.FILL)
         self.LSfilter = gtk.ListStore(str,str,str,str,int)
         
         #Treeview of the Liststore
@@ -152,7 +166,7 @@ class profileTab(gtk.Table):
         scroll.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
         scroll.add_with_viewport(self.TVfilter)
         
-        self.attach(scroll, 0, 2, 12, 17, gtk.EXPAND | gtk.FILL, gtk.EXPAND | gtk.FILL)
+        self.attach(scroll, 0, 2, 13, 18, gtk.EXPAND | gtk.FILL, gtk.EXPAND | gtk.FILL)
         
         #Buttons to change order, add and delete
         image = gtk.Image()
@@ -160,32 +174,32 @@ class profileTab(gtk.Table):
         button = gtk.Button()
         button.add(image)
         button.connect("clicked", self.__add_filter)
-        self.attach(button, 2, 3, 12, 13, gtk.FILL, gtk.SHRINK)
+        self.attach(button, 2, 3, 13, 14, gtk.FILL, gtk.SHRINK)
         
         image = gtk.Image()
         image.set_from_stock(gtk.STOCK_REMOVE,gtk.ICON_SIZE_BUTTON)
         button = gtk.Button()
         button.add(image)
         button.connect("clicked", self.__remove_filter)
-        self.attach(button, 2, 3, 13, 14, gtk.FILL, gtk.SHRINK)
+        self.attach(button, 2, 3, 14, 15, gtk.FILL, gtk.SHRINK)
         
         image = gtk.Image()
         image.set_from_stock(gtk.STOCK_GO_UP,gtk.ICON_SIZE_BUTTON)
         button = gtk.Button()
         button.add(image)
         button.connect("clicked", self.__up_filter)
-        self.attach(button, 2, 3, 14, 15, gtk.FILL, gtk.SHRINK)
+        self.attach(button, 2, 3, 15, 16, gtk.FILL, gtk.SHRINK)
         
         image = gtk.Image()
         image.set_from_stock(gtk.STOCK_GO_DOWN,gtk.ICON_SIZE_BUTTON)
         button = gtk.Button()
         button.add(image)
         button.connect("clicked", self.__down_filter)
-        self.attach(button, 2, 3, 15, 16, gtk.FILL, gtk.SHRINK)
+        self.attach(button, 2, 3, 16, 17, gtk.FILL, gtk.SHRINK)
         
         #Lost and found deposit
         label = gtk.Label(_("Deposit for Lost+Found"))
-        self.attach(label, 0, 1, 17, 18, gtk.FILL, gtk.FILL)
+        self.attach(label, 0, 1, 18, 19, gtk.FILL, gtk.FILL)
         
         #Sexy entry
         self.Edeposit = sexy.IconEntry()
@@ -194,18 +208,18 @@ class profileTab(gtk.Table):
         self.Edeposit.set_icon(sexy.ICON_ENTRY_PRIMARY, image)
         self.Edeposit.connect("icon-pressed", self.__choose_deposit)
         self.Edeposit.add_clear_button()
-        self.attach(self.Edeposit, 1, 3, 17, 18, gtk.EXPAND | gtk.FILL, gtk.FILL)
+        self.attach(self.Edeposit, 1, 3, 18, 19, gtk.EXPAND | gtk.FILL, gtk.FILL)
         
         #Some help...
         label = gtk.Label("<i>"+_("Enter ~ to replace the home directory of the user")+"</i>")
         label.set_use_markup(True)
-        self.attach(label, 0, 3, 18, 19, gtk.FILL, gtk.FILL)
+        self.attach(label, 0, 3, 19, 20, gtk.FILL, gtk.FILL)
                 
         label = gtk.Label()
-        self.attach(label, 1, 2, 16, 17, gtk.EXPAND | gtk.FILL, gtk.FILL)
+        self.attach(label, 1, 2, 17, 18, gtk.EXPAND | gtk.FILL, gtk.FILL)
         
         label = gtk.Label()
-        self.attach(label, 2, 3, 16, 17, gtk.FILL, gtk.EXPAND | gtk.FILL)
+        self.attach(label, 2, 3, 17, 18, gtk.FILL, gtk.EXPAND | gtk.FILL)
 
         self.show_all()
         
@@ -218,6 +232,9 @@ class profileTab(gtk.Table):
         "If the resource is deleted, togle RBfile/RBhome"
         if self.CBfile.get_active() == -1:
             self.RBhome.set_active(True)
+    def __CBexecuteenable_toggled(self, widget, data=None):
+        "Enable/disable the execution entry when the checkbox is togled"
+        self.Eexecute.set_sensitive(widget.get_active())
         
     def __Cfilter_changed(self, cell, path, iter):
         "When a filter has changed, change the image and all the fields"
@@ -302,6 +319,31 @@ class profileTab(gtk.Table):
         dialog.destroy()
         return
     
+    def __choose_execute(self,widget=None,button=None,data=None):
+        "Choose the command to execute"
+        #Only the right button
+        if button != sexy.ICON_ENTRY_PRIMARY:
+            return
+        
+        #File chooser dialog
+        dialog = gtk.FileChooserDialog(_("Choose a command to execute"),action=gtk.FILE_CHOOSER_ACTION_OPEN,buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_OK,gtk.RESPONSE_OK),parent=self.mother)
+        dialog.set_default_response(gtk.RESPONSE_OK)
+        
+        filter = gtk.FileFilter()
+        filter.set_name(_("Command files"))
+        filter.add_mime_type("application/x-shellscript")
+        filter.add_mime_type("application/x-executable")
+        dialog.add_filter(filter)
+        
+        response = dialog.run()
+        if response == gtk.RESPONSE_OK:
+            commandfile = dialog.get_filename()
+            
+            self.Eexecute.set_text(commandfile)
+            
+        dialog.destroy()
+        return
+    
     def set_source(self, source):
         "Sets the source file from the reposiroty"
         
@@ -332,6 +374,9 @@ class profileTab(gtk.Table):
             p.source = ""
             
         p.deposit = self.Edeposit.get_text()
+        
+        p.execute = self.Eexecute.get_text()
+        p.execute_enabled = self.CBexecuteenable.get_active()
         
         for row in self.LSfilter:
             r = rule(row[0], row[1], row[4])
