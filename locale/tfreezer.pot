@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2009-10-06 13:52+0200\n"
+"POT-Creation-Date: 2009-10-07 19:39+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,51 +16,51 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: TFconfig.py:148
+#: TFconfig.py:155
 msgid "Corrupted config file, taking defaults"
 msgstr ""
 
-#: TFconfig.py:162
+#: TFconfig.py:169
 msgid "Corrupted or empty sources tag, taking defaults"
 msgstr ""
 
-#: TFconfig.py:173
+#: TFconfig.py:180
 msgid "Corrupted source file tag, ignoring..."
 msgstr ""
 
-#: TFconfig.py:195 TFconfig.py:437
+#: TFconfig.py:202 TFconfig.py:451
 msgid "Unreadable tar file, ignoring..."
 msgstr ""
 
-#: TFconfig.py:346 TFconfig.py:350 TFconfig.py:356
+#: TFconfig.py:360 TFconfig.py:364 TFconfig.py:370
 msgid "Everything"
 msgstr ""
 
-#: TFconfig.py:354
+#: TFconfig.py:368
 msgid "Configuration"
 msgstr ""
 
-#: TFconfig.py:365
+#: TFconfig.py:379
 msgid "Total Unfrozen"
 msgstr ""
 
-#: TFconfig.py:368
+#: TFconfig.py:382
 msgid "Total Frozen"
 msgstr ""
 
-#: TFconfig.py:371
+#: TFconfig.py:385
 msgid "Configuration Frozen"
 msgstr ""
 
-#: TFconfig.py:374
+#: TFconfig.py:388
 msgid "Frozen in the server"
 msgstr ""
 
-#: TFconfig.py:377
+#: TFconfig.py:391
 msgid "Profile"
 msgstr ""
 
-#: TFconfig.py:564
+#: TFconfig.py:589
 msgid "Can't save the configuration file"
 msgstr ""
 
@@ -140,7 +140,7 @@ msgstr ""
 msgid "Sources repository"
 msgstr ""
 
-#: TFconfigWindow.py:245 TFprofileTab.py:114
+#: TFconfigWindow.py:245 TFprofileTab.py:128
 msgid "Name"
 msgstr ""
 
@@ -212,99 +212,99 @@ msgstr ""
 msgid "With the support of "
 msgstr ""
 
-#: TFconfigWindow.py:481
+#: TFconfigWindow.py:485
 msgid "New Profile"
 msgstr ""
 
-#: TFconfigWindow.py:546 TFconfigWindow.py:600 TFprofileTab.py:274
+#: TFconfigWindow.py:550 TFconfigWindow.py:604 TFprofileTab.py:291
 msgid "Choose source file"
 msgstr ""
 
-#: TFconfigWindow.py:582
+#: TFconfigWindow.py:586
 msgid "The freezer was unable to create the tar file"
 msgstr ""
 
-#: TFconfigWindow.py:604
+#: TFconfigWindow.py:608
 msgid "Tar files"
 msgstr ""
 
-#: TFconfigWindow.py:630
+#: TFconfigWindow.py:634
 msgid "The selected file is unreadable or malformed"
 msgstr ""
 
-#: TFconfigWindow.py:663
+#: TFconfigWindow.py:667
 msgid "This source is in use in some profiles, do you want to continue?"
 msgstr ""
 
-#: TFconfigWindow.py:703
+#: TFconfigWindow.py:707
 msgid "Connection successfully established"
 msgstr ""
 
-#: TFconfigWindow.py:706
+#: TFconfigWindow.py:710
 msgid "Connection failed"
 msgstr ""
 
-#: TFconfigWindow.py:724 TFconfigWindow.py:755 TFconfigWindow.py:767
-#: TFconfigWindow.py:898 TFconfigWindow.py:915
+#: TFconfigWindow.py:728 TFconfigWindow.py:759 TFconfigWindow.py:771
+#: TFconfigWindow.py:902 TFconfigWindow.py:919
 msgid "Client not connected"
 msgstr ""
 
-#: TFconfigWindow.py:729 TFconfigWindow.py:908
+#: TFconfigWindow.py:733 TFconfigWindow.py:912
 msgid "Client connected to "
 msgstr ""
 
-#: TFconfigWindow.py:738
+#: TFconfigWindow.py:742
 msgid "The keys already exists, do you want to overwrite them?"
 msgstr ""
 
-#: TFconfigWindow.py:755
+#: TFconfigWindow.py:759
 msgid "Error creating private key."
 msgstr ""
 
-#: TFconfigWindow.py:767
+#: TFconfigWindow.py:771
 msgid "Error creating public key."
 msgstr ""
 
-#: TFconfigWindow.py:778
+#: TFconfigWindow.py:782
 msgid "Configure the server"
 msgstr ""
 
-#: TFconfigWindow.py:786
+#: TFconfigWindow.py:790
 msgid "Server hostname"
 msgstr ""
 
-#: TFconfigWindow.py:793
+#: TFconfigWindow.py:797
 msgid "Port"
 msgstr ""
 
-#: TFconfigWindow.py:800
+#: TFconfigWindow.py:804
 msgid "Enter a username with privileges in the server"
 msgstr ""
 
-#: TFconfigWindow.py:803
+#: TFconfigWindow.py:807
 msgid "Username"
 msgstr ""
 
-#: TFconfigWindow.py:809
+#: TFconfigWindow.py:813
 msgid "Password"
 msgstr ""
 
-#: TFconfigWindow.py:847
+#: TFconfigWindow.py:851
 msgid "Permission denied, please verify the user name and password"
 msgstr ""
 
-#: TFconfigWindow.py:870
+#: TFconfigWindow.py:874
 #, python-format
 msgid ""
 "The authenticity of host '%(host)s' can't be established. %(key)s key "
 "fingerprint is %(fprint)s."
 msgstr ""
 
-#: TFconfigWindow.py:898
+#: TFconfigWindow.py:902
 msgid "Errors connecting to SFTP server."
 msgstr ""
 
-#: TFconfigWindow.py:915
+#: TFconfigWindow.py:919
 msgid "Something executing commands goes wrong."
 msgstr ""
 
@@ -333,15 +333,15 @@ msgid "WARNING: Stopped by the user"
 msgstr ""
 
 #: TFmainWindow.py:401
-msgid "Time of restoration"
+msgid "Restoration mode"
 msgstr ""
 
 #: TFmainWindow.py:406
-msgid "At Session startup (GDM only)"
+msgid "Every session (GDM only)"
 msgstr ""
 
 #: TFmainWindow.py:407
-msgid "At System startup"
+msgid "Every restart"
 msgstr ""
 
 #: TFmainWindow.py:417
@@ -440,38 +440,50 @@ msgstr ""
 msgid "Use this source from the repository"
 msgstr ""
 
-#: TFprofileTab.py:101
+#: TFprofileTab.py:97
+msgid "Execute a command after restoring"
+msgstr ""
+
+#: TFprofileTab.py:115
 msgid "Rules"
 msgstr ""
 
-#: TFprofileTab.py:122
+#: TFprofileTab.py:136
 msgid "Filter"
 msgstr ""
 
-#: TFprofileTab.py:135
+#: TFprofileTab.py:149
 msgid "Action"
 msgstr ""
 
-#: TFprofileTab.py:187
+#: TFprofileTab.py:201
 msgid "Deposit for Lost+Found"
 msgstr ""
 
-#: TFprofileTab.py:200
+#: TFprofileTab.py:214
 msgid "Enter ~ to replace the home directory of the user"
 msgstr ""
 
-#: TFprofileTab.py:237
+#: TFprofileTab.py:254
 msgid "Eveything"
 msgstr ""
 
-#: TFprofileTab.py:247
+#: TFprofileTab.py:264
 msgid "New Filter"
 msgstr ""
 
-#: TFprofileTab.py:288
+#: TFprofileTab.py:305
 msgid ""
 "The folder you have selected is inside a home directory.\n"
 "Do you want to use create a deposit inside each home directory?"
+msgstr ""
+
+#: TFprofileTab.py:329
+msgid "Choose a command to execute"
+msgstr ""
+
+#: TFprofileTab.py:333
+msgid "Command files"
 msgstr ""
 
 #: tfreezer.py:33
@@ -540,14 +552,14 @@ msgstr ""
 msgid "Frozen successfully done"
 msgstr ""
 
-#: TFuser_frozen.py:178
+#: TFuser_frozen.py:189
 msgid "Localhost external restoration not permitted to avoid loops"
 msgstr ""
 
-#: TFuser_frozen.py:198
+#: TFuser_frozen.py:209
 msgid "Can't connect to the server, please review your settings"
 msgstr ""
 
-#: TFuser_frozen.py:217
+#: TFuser_frozen.py:228
 msgid "Can't execute the command"
 msgstr ""
