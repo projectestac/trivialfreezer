@@ -58,6 +58,8 @@ class configWindow(gtk.Dialog):
     
     #Sources to erase when applying the form
     sources_to_erase = []
+    #Profiles to erase
+    profiles_to_erase = []
     #Tab to config the profiles
     profiles = None
     #Tab to config the sources
@@ -117,6 +119,7 @@ class configWindow(gtk.Dialog):
         self.set_icon_from_file(NORMAL_ICONS[FREEZE_ADV])
         
         self.sources_to_erase = []
+        self.profiles_to_erase = []
         
         mainBox = gtk.HBox()
         
@@ -178,7 +181,11 @@ class configWindow(gtk.Dialog):
         #Load configuration
         self.load(config)
         
-        self.get_content_area().add(mainBox)
+        #Pygtk 2.14 and above
+        #self.get_content_area().add(mainBox)
+        #Pygtk 2.12 and bellow
+        self.vbox.pack_start(mainBox)
+        
         mainBox.show()
         self.show()
     
@@ -471,6 +478,9 @@ class configWindow(gtk.Dialog):
             
         config.sources_to_erase.extend(self.sources_to_erase)
         
+        del config.profiles_to_erase[:]
+        config.profiles_to_erase.extend(self.profiles_to_erase)
+        
         #Save the server configuration    
         config.ldap_dn = self.Edn.get_text()
         config.ldap_server = self.Eserver.get_text()
@@ -498,6 +508,7 @@ class configWindow(gtk.Dialog):
         i = self.tabs.get_current_page()
         if i >= BLOCKED_PROFILES:
             self.tabs.remove_page(i)
+            self.profiles_to_erase.append(i)
             
     def tab_name_modified(self, widget, data=None):
         "On tab name modified event, change the tab label"

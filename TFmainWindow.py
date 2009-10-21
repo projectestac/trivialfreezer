@@ -25,6 +25,7 @@ from TFconfig import *
 from TFtar_thread import *
 
 import pygtk
+pygtk.require('2.0')
 import gtk
 
 import os
@@ -136,7 +137,6 @@ class mainWindow:
     def __init__(self):
         "Inits the window"
         
-        pygtk.require('2.0')
         debug("GTK version: " + str(gtk.gtk_version), DEBUG_MEDIUM)
         
         self.window = gtk.Window()
@@ -298,11 +298,11 @@ class mainWindow:
                                  group.ldap])
             else:
                 self.LSgroups.append([group.name,
-                                     group.id,
-                                     self.LSfreeze_settings[group.profile][0],
-                                     self.LSfreeze_settings[group.profile][1],
-                                     group.profile,
-                                     group.ldap])
+                     group.id,
+                     self.LSfreeze_settings[group.profile][0],
+                     self.LSfreeze_settings[group.profile][1],
+                     group.profile,
+                     group.ldap])
         self.CBgroups.set_active(0)
         
         self.__set_enabled_to_load(True)

@@ -115,6 +115,8 @@ class config:
     sources = []
     #Sources to erase from disk when saving
     sources_to_erase = []
+    #Profiles to erase when importing users
+    profiles_to_erase = []
     
     #Existing frozen profiles
     profiles = []
@@ -811,11 +813,19 @@ class config:
         oldusers = self.users[:]
         self.__load_users()
         
-        #Apply thw old profile
+        #Apply the old profile (if possible)
         for user in self.users:
             for olduser in oldusers:
                 if user.id == olduser.id and user.ldap == olduser.ldap:
-                    user.profile = olduser.profile
+                    erase = 0
+                    for prof in self.profiles_to_erase:
+                        if prof < olduser.profile:
+                            erase += 1
+                            
+                    if olduser.profile in self.profiles_to_erase:
+                        user.profile = FREEZE_NONE
+                    else:
+                        user.profile = olduser.profile - erase
                     break
                 
     def reload_groups(self):
@@ -824,11 +834,19 @@ class config:
         oldgroups = self.groups[:]
         self.__load_groups()
         
-        #Apply the old profile
+        #Apply the old profile (if possible)
         for group in self.groups:
             for oldgroup in oldgroups:
                 if group.id == oldgroup.id and group.ldap == oldgroup.ldap:
-                    group.profile = oldgroup.profile
+                    erase = 0
+                    for prof in self.profiles_to_erase:
+                        if prof < oldgroup.profile:
+                            erase += 1
+                            
+                    if oldgroup.profile in self.profiles_to_erase:
+                        group.profile = FREEZE_NONE
+                    else:
+                        group.profile = oldgroup.profile - erase
                     break
                         
     def __load_users(self):
