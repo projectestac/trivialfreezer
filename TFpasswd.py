@@ -107,6 +107,8 @@ class passwd():
         file = open("/etc/group", "r")
         for line in file:
             fields = line.split(':')
+            if fields[2] == '':
+                continue
             #Take the group GID
             gid = int(fields[2])
             if gid >= minUID and gid < maxUID:
@@ -120,6 +122,8 @@ class passwd():
         file = open("/etc/passwd", "r")
         for line in file:
             fields = line.split(':')
+            if fields[2] == '':
+                continue
             #Take the user UID
             uid = int(fields[2])
             if uid >= minUID and uid < maxUID:
