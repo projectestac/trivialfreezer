@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: PACKAGE VERSION\n"
 "Report-Msgid-Bugs-To: \n"
-"POT-Creation-Date: 2009-10-07 19:39+0200\n"
+"POT-Creation-Date: 2009-10-21 18:03+0200\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -16,295 +16,295 @@ msgstr ""
 "Content-Type: text/plain; charset=CHARSET\n"
 "Content-Transfer-Encoding: 8bit\n"
 
-#: TFconfig.py:155
+#: TFconfig.py:157
 msgid "Corrupted config file, taking defaults"
 msgstr ""
 
-#: TFconfig.py:169
+#: TFconfig.py:171
 msgid "Corrupted or empty sources tag, taking defaults"
 msgstr ""
 
-#: TFconfig.py:180
+#: TFconfig.py:182
 msgid "Corrupted source file tag, ignoring..."
 msgstr ""
 
-#: TFconfig.py:202 TFconfig.py:451
+#: TFconfig.py:204 TFconfig.py:453
 msgid "Unreadable tar file, ignoring..."
 msgstr ""
 
-#: TFconfig.py:360 TFconfig.py:364 TFconfig.py:370
+#: TFconfig.py:362 TFconfig.py:366 TFconfig.py:372
 msgid "Everything"
 msgstr ""
 
-#: TFconfig.py:368
+#: TFconfig.py:370
 msgid "Configuration"
 msgstr ""
 
-#: TFconfig.py:379
+#: TFconfig.py:381
 msgid "Total Unfrozen"
 msgstr ""
 
-#: TFconfig.py:382
+#: TFconfig.py:384
 msgid "Total Frozen"
 msgstr ""
 
-#: TFconfig.py:385
+#: TFconfig.py:387
 msgid "Configuration Frozen"
 msgstr ""
 
-#: TFconfig.py:388
+#: TFconfig.py:390
 msgid "Frozen in the server"
 msgstr ""
 
-#: TFconfig.py:391
+#: TFconfig.py:393
 msgid "Profile"
 msgstr ""
 
-#: TFconfig.py:589
+#: TFconfig.py:591
 msgid "Can't save the configuration file"
 msgstr ""
 
-#: TFconfigWindow.py:112
+#: TFconfigWindow.py:114
 msgid " - Settings"
 msgstr ""
 
-#: TFconfigWindow.py:129
+#: TFconfigWindow.py:132
 msgid "Profiles"
 msgstr ""
 
-#: TFconfigWindow.py:130
+#: TFconfigWindow.py:133
 msgid "Configure profiles"
 msgstr ""
 
-#: TFconfigWindow.py:136
+#: TFconfigWindow.py:139
 msgid "Sources"
 msgstr ""
 
-#: TFconfigWindow.py:137
+#: TFconfigWindow.py:140
 msgid "Configure sources"
 msgstr ""
 
-#: TFconfigWindow.py:143
+#: TFconfigWindow.py:146
 msgid "Remote users"
 msgstr ""
 
-#: TFconfigWindow.py:144
+#: TFconfigWindow.py:147
 msgid "Configure Remote users"
 msgstr ""
 
-#: TFconfigWindow.py:154
+#: TFconfigWindow.py:157
 msgid "About"
 msgstr ""
 
-#: TFconfigWindow.py:155 TFconfigWindow.py:368
+#: TFconfigWindow.py:158 TFconfigWindow.py:375
 msgid "About Trivial Freezer"
 msgstr ""
 
-#: TFconfigWindow.py:194
+#: TFconfigWindow.py:201
 msgid "Freeze profiles"
 msgstr ""
 
-#: TFconfigWindow.py:201
+#: TFconfigWindow.py:208
 msgid "Add profile"
 msgstr ""
 
-#: TFconfigWindow.py:202
+#: TFconfigWindow.py:209
 msgid "Adds a new Frozen Profile"
 msgstr ""
 
-#: TFconfigWindow.py:206
+#: TFconfigWindow.py:213
 msgid "Remove profile"
 msgstr ""
 
-#: TFconfigWindow.py:207
+#: TFconfigWindow.py:214
 msgid "Removes the selected Frozen Profile"
 msgstr ""
 
-#: TFconfigWindow.py:215
+#: TFconfigWindow.py:222
 msgid "Restore (Frozen)"
 msgstr ""
 
-#: TFconfigWindow.py:216
+#: TFconfigWindow.py:223
 msgid "Keep (Unfrozen)"
 msgstr ""
 
-#: TFconfigWindow.py:217
+#: TFconfigWindow.py:224
 msgid "Erase"
 msgstr ""
 
-#: TFconfigWindow.py:218
+#: TFconfigWindow.py:225
 msgid "Move to Lost+Found"
 msgstr ""
 
-#: TFconfigWindow.py:233
+#: TFconfigWindow.py:240
 msgid "Sources repository"
 msgstr ""
 
-#: TFconfigWindow.py:245 TFprofileTab.py:128
+#: TFconfigWindow.py:252 TFprofileTab.py:128
 msgid "Name"
 msgstr ""
 
-#: TFconfigWindow.py:254
+#: TFconfigWindow.py:261
 msgid "Source"
 msgstr ""
 
-#: TFconfigWindow.py:270
+#: TFconfigWindow.py:277
 msgid "Add from a directory"
 msgstr ""
 
-#: TFconfigWindow.py:277
+#: TFconfigWindow.py:284
 msgid "Add from a tar file"
 msgstr ""
 
-#: TFconfigWindow.py:284
+#: TFconfigWindow.py:291
 msgid "Remove a source"
 msgstr ""
 
-#: TFconfigWindow.py:298
+#: TFconfigWindow.py:305
 msgid "Remote users configuration"
 msgstr ""
 
-#: TFconfigWindow.py:302
+#: TFconfigWindow.py:309
 msgid "Enable LDAP support"
 msgstr ""
 
-#: TFconfigWindow.py:306
+#: TFconfigWindow.py:313
 msgid "LDAP Server"
 msgstr ""
 
-#: TFconfigWindow.py:313
+#: TFconfigWindow.py:320
 msgid "Distinguished Name (dn)"
 msgstr ""
 
-#: TFconfigWindow.py:322
+#: TFconfigWindow.py:329
 msgid "Test connection"
 msgstr ""
 
-#: TFconfigWindow.py:333
+#: TFconfigWindow.py:340
 msgid "Remote homes"
 msgstr ""
 
-#: TFconfigWindow.py:337
+#: TFconfigWindow.py:344
 msgid "Work as a client"
 msgstr ""
 
-#: TFconfigWindow.py:344
+#: TFconfigWindow.py:351
 msgid "Generate authorization keys"
 msgstr ""
 
-#: TFconfigWindow.py:355
+#: TFconfigWindow.py:362
 msgid "Work as a server"
 msgstr ""
 
-#: TFconfigWindow.py:378
+#: TFconfigWindow.py:385
 msgid "Version"
 msgstr ""
 
-#: TFconfigWindow.py:379
+#: TFconfigWindow.py:386
 msgid "Author"
 msgstr ""
 
-#: TFconfigWindow.py:381
+#: TFconfigWindow.py:388
 msgid "Special greetings"
 msgstr ""
 
-#: TFconfigWindow.py:384
+#: TFconfigWindow.py:391
 msgid "With the support of "
 msgstr ""
 
-#: TFconfigWindow.py:485
+#: TFconfigWindow.py:495
 msgid "New Profile"
 msgstr ""
 
-#: TFconfigWindow.py:550 TFconfigWindow.py:604 TFprofileTab.py:291
+#: TFconfigWindow.py:561 TFconfigWindow.py:615 TFprofileTab.py:291
 msgid "Choose source file"
 msgstr ""
 
-#: TFconfigWindow.py:586
+#: TFconfigWindow.py:597
 msgid "The freezer was unable to create the tar file"
 msgstr ""
 
-#: TFconfigWindow.py:608
+#: TFconfigWindow.py:619
 msgid "Tar files"
 msgstr ""
 
-#: TFconfigWindow.py:634
+#: TFconfigWindow.py:645
 msgid "The selected file is unreadable or malformed"
 msgstr ""
 
-#: TFconfigWindow.py:667
+#: TFconfigWindow.py:678
 msgid "This source is in use in some profiles, do you want to continue?"
 msgstr ""
 
-#: TFconfigWindow.py:707
+#: TFconfigWindow.py:718
 msgid "Connection successfully established"
 msgstr ""
 
-#: TFconfigWindow.py:710
+#: TFconfigWindow.py:721
 msgid "Connection failed"
 msgstr ""
 
-#: TFconfigWindow.py:728 TFconfigWindow.py:759 TFconfigWindow.py:771
-#: TFconfigWindow.py:902 TFconfigWindow.py:919
+#: TFconfigWindow.py:739 TFconfigWindow.py:770 TFconfigWindow.py:782
+#: TFconfigWindow.py:913 TFconfigWindow.py:930
 msgid "Client not connected"
 msgstr ""
 
-#: TFconfigWindow.py:733 TFconfigWindow.py:912
+#: TFconfigWindow.py:744 TFconfigWindow.py:923
 msgid "Client connected to "
 msgstr ""
 
-#: TFconfigWindow.py:742
+#: TFconfigWindow.py:753
 msgid "The keys already exists, do you want to overwrite them?"
 msgstr ""
 
-#: TFconfigWindow.py:759
+#: TFconfigWindow.py:770
 msgid "Error creating private key."
 msgstr ""
 
-#: TFconfigWindow.py:771
+#: TFconfigWindow.py:782
 msgid "Error creating public key."
 msgstr ""
 
-#: TFconfigWindow.py:782
+#: TFconfigWindow.py:793
 msgid "Configure the server"
 msgstr ""
 
-#: TFconfigWindow.py:790
+#: TFconfigWindow.py:801
 msgid "Server hostname"
 msgstr ""
 
-#: TFconfigWindow.py:797
+#: TFconfigWindow.py:808
 msgid "Port"
 msgstr ""
 
-#: TFconfigWindow.py:804
+#: TFconfigWindow.py:815
 msgid "Enter a username with privileges in the server"
 msgstr ""
 
-#: TFconfigWindow.py:807
+#: TFconfigWindow.py:818
 msgid "Username"
 msgstr ""
 
-#: TFconfigWindow.py:813
+#: TFconfigWindow.py:824
 msgid "Password"
 msgstr ""
 
-#: TFconfigWindow.py:851
+#: TFconfigWindow.py:862
 msgid "Permission denied, please verify the user name and password"
 msgstr ""
 
-#: TFconfigWindow.py:874
+#: TFconfigWindow.py:885
 #, python-format
 msgid ""
 "The authenticity of host '%(host)s' can't be established. %(key)s key "
 "fingerprint is %(fprint)s."
 msgstr ""
 
-#: TFconfigWindow.py:902
+#: TFconfigWindow.py:913
 msgid "Errors connecting to SFTP server."
 msgstr ""
 
-#: TFconfigWindow.py:919
+#: TFconfigWindow.py:930
 msgid "Something executing commands goes wrong."
 msgstr ""
 
