@@ -355,7 +355,7 @@ class mainWindow:
         
         try:   
             os.makedirs(dir,0755)
-        except OSError as (errno, strerror):
+        except OSError, (errno, strerror):
             print_error(dir + " " + strerror,WARNING)
         
         #Start

@@ -577,7 +577,7 @@ class configWindow(gtk.Dialog):
             
             try:   
                 os.makedirs(repo,0755)
-            except OSError as (errno, strerror):
+            except OSError , (errno, strerror):
                 debug(repo + " " + strerror,DEBUG_HIGH)
             
             #Not to overwrite another tar...
@@ -629,7 +629,7 @@ class configWindow(gtk.Dialog):
             
             try:   
                 os.makedirs(repo,0755)
-            except OSError as (errno, strerror):
+            except OSError , (errno, strerror):
                 debug(repo + " " + strerror,DEBUG_HIGH)
             
             try:

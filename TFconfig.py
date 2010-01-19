@@ -160,7 +160,7 @@ class config:
         dirname = os.path.join (TAR_DIRECTORY, TAR_REPOSITORY)
         try:   
             os.makedirs(dirname,0755)
-        except OSError as (errno, strerror):
+        except OSError , (errno, strerror):
             debug(dirname + " " + strerror,DEBUG_HIGH)
             
         del self.sources [:]
@@ -439,7 +439,7 @@ class config:
         dirname = os.path.join (TAR_DIRECTORY, TAR_REPOSITORY)
         try:   
             os.makedirs(dirname,0755)
-        except OSError as (errno, strerror):
+        except OSError , (errno, strerror):
             debug(dirname + " " + strerror,DEBUG_HIGH)
         
         files = os.listdir(dirname)
@@ -580,7 +580,7 @@ class config:
         #Save the file
         try:   
             os.makedirs(CONFIG_DIRECTORY,0755)
-        except OSError as (errno, strerror):
+        except OSError , (errno, strerror):
             debug(CONFIG_DIRECTORY + " " + strerror,DEBUG_HIGH)
         
         try:

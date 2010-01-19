@@ -148,7 +148,7 @@ class user_frozen ():
             #Create the deposit directory, if exists, doesn't matter...
             try:
                 os.makedirs(self.deposit,0755)
-            except OSError as (errno, strerror):
+            except OSError , (errno, strerror):
                 pass
             else:
                 #If the deposit is inside a home directory, change the owner to the user
@@ -204,7 +204,7 @@ class user_frozen ():
                 pass
             #Connect to the server with the root user. Do not look for keys, use the specified pkey
             ssh.connect(self.hostname,int(self.port),username="root",pkey=pkey,look_for_keys=False)
-        except Exception as e:
+        except Exception , e:
             debug("Exception " + str(type(e)) + ": " + str(e), DEBUG_LOW)
             print_error(_("Can't connect to the server, please review your settings"))
             return
@@ -223,7 +223,7 @@ class user_frozen ():
             for line in stdout.readlines():
                 debug("Server: " + line,DEBUG_MEDIUM)
             stdout.close() 
-        except Exception as e:
+        except Exception , e:
             debug("Exception " + str(type(e)) + ": " + str(e), DEBUG_LOW)
             print_error(_("Can't execute the command"))
             
