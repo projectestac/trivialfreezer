@@ -44,7 +44,7 @@ def move(src,dst):
 
     shutil.move(src, dstComplete)
 
-class user_frozen ():
+class user_frozen:
     "Class to create and restore the user frozen profiles"
     
     #Profile Name
