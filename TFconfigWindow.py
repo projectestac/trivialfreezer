@@ -22,6 +22,9 @@
 from TFglobals import *
 from TFprofileTab import *
 from TFconfig import *
+
+import pygtk
+pygtk.require('2.0')
 import gtk
 
 import paramiko, binascii
@@ -130,21 +133,30 @@ class configWindow(gtk.Dialog):
         
         item = gtk.RadioToolButton(None,gtk.STOCK_SELECT_COLOR)
         item.set_label(_('Profiles'))
-        item.set_tooltip_text(_('Configure profiles'))
+        try:
+            item.set_tooltip_text(_('Configure profiles'))
+        except:
+            pass
         item.set_is_important(True)
         item.connect("toggled",self.__show_hide_profiles)
         toolbar.insert(item,0)
         
         item = gtk.RadioToolButton(item,gtk.STOCK_COLOR_PICKER)
         item.set_label(_('Sources'))
-        item.set_tooltip_text(_('Configure sources'))
+        try:
+            item.set_tooltip_text(_('Configure sources'))
+        except:
+            pass
         item.set_is_important(True)
         item.connect("toggled",self.__show_hide_sources)
         toolbar.insert(item,1)
         
         item = gtk.RadioToolButton(item,gtk.STOCK_CONNECT)
         item.set_label(_('Remote users'))
-        item.set_tooltip_text(_('Configure Remote users'))
+        try:
+            item.set_tooltip_text(_('Configure Remote users'))
+        except:
+            pass
         item.set_is_important(True)
         item.connect("toggled",self.__show_hide_remote)
         toolbar.insert(item,2)
@@ -155,7 +167,10 @@ class configWindow(gtk.Dialog):
         
         item = gtk.RadioToolButton(item,gtk.STOCK_ABOUT)
         item.set_label(_('About'))
-        item.set_tooltip_text(_('About Trivial Freezer'))
+        try:
+            item.set_tooltip_text(_('About Trivial Freezer'))
+        except:
+            pass
         item.set_is_important(True)
         item.connect("toggled",self.__show_hide_about)
         toolbar.insert(item,4)
@@ -206,12 +221,18 @@ class configWindow(gtk.Dialog):
         toolbar = gtk.HBox()
         
         item = gtk.Button(_('Add profile'), gtk.STOCK_ADD)
-        item.set_tooltip_text(_('Adds a new Frozen Profile'))
+        try:
+            item.set_tooltip_text(_('Adds a new Frozen Profile'))
+        except:
+            pass
         item.connect("clicked",self.__add_tab)
         toolbar.pack_start(item)
         
         item = gtk.Button(_('Remove profile'), gtk.STOCK_REMOVE)
-        item.set_tooltip_text(_('Removes the selected Frozen Profile'))
+        try:
+            item.set_tooltip_text(_('Removes the selected Frozen Profile'))
+        except:
+            pass
         item.connect("clicked",self.__remove_tab)
         toolbar.pack_start(item)
         
@@ -400,7 +421,7 @@ class configWindow(gtk.Dialog):
         text += "Foundation, either version 3 of\n"
         text += "the License, or (at your option)\n"
         text += "any later version.\n\n"
-        text += "Copyright (C) 2009  Pau Ferrer Ocaña"
+        text += "Copyright (C) 2010  Pau Ferrer Ocaña"
         
         label = gtk.Label(text)
         label.set_use_markup(True)

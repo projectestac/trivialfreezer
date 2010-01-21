@@ -468,7 +468,10 @@ class mainWindow:
         tv.pack_start(cell, True)
         tv.set_attributes(cell, text=3)
         
-        cell.connect('changed', self.__Cuser_changed)
+        try:
+            cell.connect('changed', self.__Cuser_changed)
+        except:
+            cell.connect('edited', self.__Cuser_edit)
         cell.connect('editing-started', self.__Cuser_edited)
         
         self.TVusers.append_column(tv)
@@ -544,7 +547,10 @@ class mainWindow:
         tv.pack_start(cell, True)
         tv.set_attributes(cell, text=3)
         
-        cell.connect('changed', self.__Cgroup_changed)
+        try:
+            cell.connect('changed', self.__Cgroup_changed)
+        except:
+            cell.connect('edited', self.__Cgroup_edit)
         cell.connect('editing-started', self.__Cgroup_edited)
         
         self.TVgroups.append_column(tv)
@@ -594,7 +600,10 @@ class mainWindow:
         self.RTBall = gtk.RadioToolButton()
         self.RTBall.set_icon_widget(iconw)
         self.RTBall.set_label(_('Freeze All'))
-        self.RTBall.set_tooltip_text(_('Freezes All the system'))
+        try:
+            self.RTBall.set_tooltip_text(_('Freezes All the system'))
+        except:
+            pass
         self.RTBall.set_is_important(True)
         self.RTBall.set_expand(True)
         self.Sall = self.RTBall.connect("clicked",self.__set_freeze_all,1)
@@ -607,7 +616,10 @@ class mainWindow:
         self.RTBnone = gtk.RadioToolButton(self.RTBall)
         self.RTBnone.set_icon_widget(iconw)
         self.RTBnone.set_label(_('Unfreeze All'))
-        self.RTBnone.set_tooltip_text(_('Unfreezes All the system'))
+        try:
+            self.RTBnone.set_tooltip_text(_('Unfreezes All the system'))
+        except:
+            pass
         self.RTBnone.set_is_important(True)
         self.RTBnone.set_expand(True)
         self.Snone = self.RTBnone.connect("clicked",self.__set_freeze_all,0)
@@ -620,7 +632,10 @@ class mainWindow:
         self.RTBadvanced = gtk.RadioToolButton(self.RTBall)
         self.RTBadvanced.set_icon_widget(iconw)
         self.RTBadvanced.set_label(_('Advanced'))
-        self.RTBadvanced.set_tooltip_text(_('Advanced freeze'))
+        try:
+            self.RTBadvanced.set_tooltip_text(_('Advanced freeze'))
+        except:
+            pass
         self.RTBadvanced.set_is_important(True)
         self.RTBadvanced.set_expand(True)
         self.Sadv = self.RTBadvanced.connect("clicked",self.__set_freeze_all,2)
@@ -633,7 +648,10 @@ class mainWindow:
         
         self.RTBsettings = gtk.ToolButton(gtk.STOCK_EDIT)
         self.RTBsettings.set_label(_('Settings'))
-        self.RTBsettings.set_tooltip_text(_('Shows the settings window'))
+        try:
+            self.RTBsettings.set_tooltip_text(_('Shows the settings window'))
+        except:
+            pass
         self.RTBsettings.set_is_important(True)
         self.RTBsettings.connect("clicked",self.__show_settings)
         self.TBtoolbar.insert(self.RTBsettings,4)
@@ -703,14 +721,26 @@ class mainWindow:
         state = cell.get_property("model").get_path(iter)[0]
         self.__set_state(self.TMusers,path,None,state)
         for user in self.config.users:
-            if str(self.TMusers[path][1]) == str(user.id):
-                user.profile = state
-                break
+           if str(self.TMusers[path][1]) == str(user.id):
+               user.profile = state
+               break
+           
+    def __Cuser_edit(self, cell, path, text):    
+        "User state cell edited"
         
+        state = self.__get_state(cell,text)
+        if state == None:
+            return
         
+        self.__set_state(self.TMusers,path,None,state)
+        for user in self.config.users:
+           if str(self.TMusers[path][1]) == str(user.id):
+               user.profile = state
+               break
+           
     def __Cuser_edited(self, cell, editable, path):
         "User state cell changed, but is LDAP"
-        
+
         if self.TMusers[path][4] == FREEZE_LDAP:
             editable.set_model()
             
@@ -723,12 +753,36 @@ class mainWindow:
             if str(self.TMgroups[path][1]) == str(group.id):
                 group.profile = state
                 break
+            
+    def __Cgroup_edit(self, cell, path, text):    
+        "Group state cell edited"
+        
+        state = self.__get_state(cell,text)
+        if state == None:
+            return
+        
+        self.__set_state(self.TMgroups,path,None,state)
+        for group in self.config.groups:
+            if str(self.TMgroups[path][1]) == str(group.id):
+                group.profile = state
+                break
         
     def __Cgroup_edited(self, cell, editable, path):
         "Group state cell changed, but is LDAP"
-        if self.TMusers[path][4] == FREEZE_LDAP:
+        if self.TMgroups[path][4] == FREEZE_LDAP:
             editable.set_model()
-            
+         
+    def __get_state(self,cell,text):
+        
+        model = cell.get_property("model")
+        iter = model.get_iter_first()
+        while iter != None :
+            state = model.get_path(iter)[0]
+            if self.LSfreeze_settings[state][1] == text:
+                return state
+            iter = model.iter_next(iter)
+        return None
+    
     def __set_state(self, model, path, iter, state):
         "Sets selected state to the selected row"
         #If not LDAP...

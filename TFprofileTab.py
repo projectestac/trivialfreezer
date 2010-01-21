@@ -23,12 +23,13 @@ from TFglobals import *
 from TFconfig import rule,profile
 from TFpasswd import *
 
+import pygtk
+pygtk.require('2.0')
 import gtk
 try:
     import sexy
-    sexy_style = True
 except:
-    sexy_style = False
+    pass
 
 _ = load_locale()
 
@@ -50,7 +51,7 @@ class profileTab(gtk.Table):
     TVfilter = None
     #TreeModel of the filter rules
     TMfilter = None
-    #SexyEntry for the lost+found deposit
+    #SexyEntry  or Entry for the lost+found deposit
     Edeposit = None
     
     def __init__(self, parent, name):
@@ -101,7 +102,7 @@ class profileTab(gtk.Table):
         self.CBexecuteenable.connect("toggled",self.__CBexecuteenable_toggled)
         self.attach(self.CBexecuteenable, 0, 1, 10, 11, gtk.FILL, gtk.FILL)
         
-        if sexy_style:
+        try:
             #Sexy entry
             self.Eexecute = sexy.IconEntry()
             image = gtk.Image()
@@ -111,7 +112,7 @@ class profileTab(gtk.Table):
             self.Eexecute.add_clear_button()
             self.Eexecute.set_sensitive(False)
             self.attach(self.Eexecute, 1, 3, 10, 11, gtk.EXPAND | gtk.FILL, gtk.FILL)
-        else:
+        except:
             #No sexy entry
             self.Eexecute = gtk.Entry()
             self.Eexecute.set_sensitive(False)
@@ -172,7 +173,10 @@ class profileTab(gtk.Table):
         tv.pack_start(cell, True)
         tv.set_attributes(cell, text=3)
         
-        cell.connect('changed', self.__Cfilter_changed)
+        try:
+            cell.connect('changed', self.__Cfilter_changed)
+        except:
+            cell.connect('edited', self.__Cfilter_edit)
         
         self.TVfilter.append_column(tv)
         
@@ -217,14 +221,26 @@ class profileTab(gtk.Table):
         label = gtk.Label(_("Deposit for Lost+Found"))
         self.attach(label, 0, 1, 18, 19, gtk.FILL, gtk.FILL)
         
-        #Sexy entry
-        self.Edeposit = sexy.IconEntry()
-        image = gtk.Image()
-        image.set_from_stock(gtk.STOCK_OPEN,gtk.ICON_SIZE_BUTTON)
-        self.Edeposit.set_icon(sexy.ICON_ENTRY_PRIMARY, image)
-        self.Edeposit.connect("icon-pressed", self.__choose_deposit)
-        self.Edeposit.add_clear_button()
-        self.attach(self.Edeposit, 1, 3, 18, 19, gtk.EXPAND | gtk.FILL, gtk.FILL)
+        try:
+            #Sexy entry
+            self.Edeposit = sexy.IconEntry()
+            image = gtk.Image()
+            image.set_from_stock(gtk.STOCK_OPEN,gtk.ICON_SIZE_BUTTON)
+            self.Edeposit.set_icon(sexy.ICON_ENTRY_PRIMARY, image)
+            self.Edeposit.connect("icon-pressed", self.__choose_deposit)
+            self.Edeposit.add_clear_button()
+            self.attach(self.Edeposit, 1, 3, 18, 19, gtk.EXPAND | gtk.FILL, gtk.FILL)
+        except:
+            #No sexy entry
+            self.Edeposit = gtk.Entry()
+            self.attach(self.Edeposit, 1, 2, 18, 19, gtk.EXPAND | gtk.FILL, gtk.FILL)
+            image = gtk.Image()
+            image.set_from_stock(gtk.STOCK_OPEN,gtk.ICON_SIZE_BUTTON)
+            self.Bdeposit = gtk.Button()
+            self.Bdeposit.add(image)
+            self.Bdeposit.connect("clicked", self.__choose_deposit)
+            self.attach(self.Bdeposit, 2, 3, 18, 19, gtk.FILL, gtk.SHRINK)
+
         
         #Some help...
         label = gtk.Label("<i>"+_("Enter ~ to replace the home directory of the user")+"</i>")
@@ -251,15 +267,31 @@ class profileTab(gtk.Table):
     def __CBexecuteenable_toggled(self, widget, data=None):
         "Enable/disable the execution entry when the checkbox is togled"
         self.Eexecute.set_sensitive(widget.get_active())
-        if not sexy_style:
+        try:
             self.Bexecute.set_sensitive(widget.get_active())
-        
+        except:
+            pass
+     
     def __Cfilter_changed(self, cell, path, iter):
         "When a filter has changed, change the image and all the fields"
         state = cell.get_property("model").get_value(iter,2)
         self.TMfilter[path][2] = self.mother.LSactions[state][0]
         self.TMfilter[path][3] = self.mother.LSactions[state][1]
         self.TMfilter[path][4] = self.mother.LSactions[state][2]
+
+    def __Cfilter_edit(self, cell, path, text):
+        "When a filter has changed, change the image and all the fields"
+        model = cell.get_property("model")
+        iter = model.get_iter_first()
+        while iter != None :
+            state = model.get_value(iter,2)
+            if self.mother.LSactions[state][1] == text:
+                break
+            iter = model.iter_next(iter)
+        if iter != None:
+            self.TMfilter[path][2] = self.mother.LSactions[state][0]
+            self.TMfilter[path][3] = self.mother.LSactions[state][1]
+            self.TMfilter[path][4] = self.mother.LSactions[state][2]
         
     def __Cfilter_edited(self,cellrenderertext, path, new_text):
         "When the regular expression is edited, set it"
@@ -302,8 +334,11 @@ class profileTab(gtk.Table):
     def __choose_deposit(self,widget=None,button=None,data=None):
         "Choose deposit for lost+found"
         #Only the right button
-        if button != sexy.ICON_ENTRY_PRIMARY:
-            return
+        try:
+            if button != sexy.ICON_ENTRY_PRIMARY:
+                return
+        except:
+            pass
         
         #File chooser dialog for directories
         dialog = gtk.FileChooserDialog(_("Choose source file"),action=gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER,buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_OK,gtk.RESPONSE_OK),parent=self.mother)
@@ -340,8 +375,11 @@ class profileTab(gtk.Table):
     def __choose_execute(self,widget=None,button=None,data=None):
         "Choose the command to execute"
         #Only the right button
-        if sexy_style and button != sexy.ICON_ENTRY_PRIMARY:
-            return
+        try:
+            if button != sexy.ICON_ENTRY_PRIMARY:
+                return
+        except:
+            pass
         
         #File chooser dialog
         dialog = gtk.FileChooserDialog(_("Choose a command to execute"),action=gtk.FILE_CHOOSER_ACTION_OPEN,buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_OK,gtk.RESPONSE_OK),parent=self.mother)
