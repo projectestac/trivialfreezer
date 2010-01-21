@@ -22,7 +22,7 @@
 from TFglobals import *
 import ldap
 
-class pwduser():
+class pwduser:
     "System user class"
     
     #User name
@@ -40,7 +40,7 @@ class pwduser():
         self.pw_gid = int(gid)
         self.pw_dir = homedir
         
-class pwdgroup():
+class pwdgroup:
     "System group class"
     
     #Group name
@@ -91,7 +91,7 @@ class ldap_tester(object):
     try_ldap = staticmethod(try_ldap)
 
 
-class passwd():
+class passwd:
     "Class that lists the users and groups of the system"
     
     #Dictonary list of users
@@ -163,7 +163,7 @@ class passwd():
         return self.groups.get(gid).users.itervalues()
     
     
-class ldappasswd():
+class ldappasswd:
     "Class that lists the users and groups in the ldap server, analog of passwd class"
     
     #Dictonary list of users

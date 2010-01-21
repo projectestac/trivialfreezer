@@ -24,8 +24,11 @@ from TFconfig import rule,profile
 from TFpasswd import *
 
 import gtk
-#TODO remove libsexy when the used feature is enabled in pygtk
-import sexy
+try:
+    import sexy
+    sexy_style = True
+except:
+    sexy_style = False
 
 _ = load_locale()
 
@@ -98,15 +101,28 @@ class profileTab(gtk.Table):
         self.CBexecuteenable.connect("toggled",self.__CBexecuteenable_toggled)
         self.attach(self.CBexecuteenable, 0, 1, 10, 11, gtk.FILL, gtk.FILL)
         
-                #Sexy entry
-        self.Eexecute = sexy.IconEntry()
-        image = gtk.Image()
-        image.set_from_stock(gtk.STOCK_OPEN,gtk.ICON_SIZE_BUTTON)
-        self.Eexecute.set_icon(sexy.ICON_ENTRY_PRIMARY, image)
-        self.Eexecute.connect("icon-pressed", self.__choose_execute)
-        self.Eexecute.add_clear_button()
-        self.Eexecute.set_sensitive(False)
-        self.attach(self.Eexecute, 1, 3, 10, 11, gtk.EXPAND | gtk.FILL, gtk.FILL)
+        if sexy_style:
+            #Sexy entry
+            self.Eexecute = sexy.IconEntry()
+            image = gtk.Image()
+            image.set_from_stock(gtk.STOCK_OPEN,gtk.ICON_SIZE_BUTTON)
+            self.Eexecute.set_icon(sexy.ICON_ENTRY_PRIMARY, image)
+            self.Eexecute.connect("icon-pressed", self.__choose_execute)
+            self.Eexecute.add_clear_button()
+            self.Eexecute.set_sensitive(False)
+            self.attach(self.Eexecute, 1, 3, 10, 11, gtk.EXPAND | gtk.FILL, gtk.FILL)
+        else:
+            #No sexy entry
+            self.Eexecute = gtk.Entry()
+            self.Eexecute.set_sensitive(False)
+            self.attach(self.Eexecute, 1, 2, 10, 11, gtk.EXPAND | gtk.FILL, gtk.FILL)
+            image = gtk.Image()
+            image.set_from_stock(gtk.STOCK_OPEN,gtk.ICON_SIZE_BUTTON)
+            self.Bexecute = gtk.Button()
+            self.Bexecute.add(image)
+            self.Bexecute.connect("clicked", self.__choose_execute)
+            self.Bexecute.set_sensitive(False)
+            self.attach(self.Bexecute, 2, 3, 10, 11, gtk.FILL, gtk.SHRINK)
         
         separator = gtk.HSeparator()
         self.attach(separator, 0, 3, 11, 12, gtk.EXPAND | gtk.FILL, gtk.FILL)
@@ -235,6 +251,8 @@ class profileTab(gtk.Table):
     def __CBexecuteenable_toggled(self, widget, data=None):
         "Enable/disable the execution entry when the checkbox is togled"
         self.Eexecute.set_sensitive(widget.get_active())
+        if not sexy_style:
+            self.Bexecute.set_sensitive(widget.get_active())
         
     def __Cfilter_changed(self, cell, path, iter):
         "When a filter has changed, change the image and all the fields"
@@ -322,7 +340,7 @@ class profileTab(gtk.Table):
     def __choose_execute(self,widget=None,button=None,data=None):
         "Choose the command to execute"
         #Only the right button
-        if button != sexy.ICON_ENTRY_PRIMARY:
+        if sexy_style and button != sexy.ICON_ENTRY_PRIMARY:
             return
         
         #File chooser dialog
