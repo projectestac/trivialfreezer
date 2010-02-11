@@ -71,6 +71,8 @@ class user_frozen:
     hostname = ""
     #If specified, Port of the ssh/nfs server where the user will be restored
     port = "22"
+    #If specified, user of the ssh/nfs server who has privileges to execute tfreezer
+    server_user = "tfreezer"
     
     def __init__(self, title, deposit, rules, source = "", execute = ""):
         "Initializes a user_frozen with the selected options"
@@ -203,7 +205,7 @@ class user_frozen:
             except:
                 pass
             #Connect to the server with the root user. Do not look for keys, use the specified pkey
-            ssh.connect(self.hostname,int(self.port),username="root",pkey=pkey,look_for_keys=False)
+            ssh.connect(self.hostname,int(self.port),username=self.server_user,pkey=pkey,look_for_keys=False)
         except Exception , e:
             debug("Exception " + str(type(e)) + ": " + str(e), DEBUG_LOW)
             print_error(_("Can't connect to the server, please review your settings"))
@@ -240,6 +242,9 @@ class user_frozen:
         "Applies the KEEP, ERASE, and RESTORE filters"
         "Returns True to exlude and False to include"
         
+        if get_thread_killed():
+            return False
+        
         #Cut the path over the home directory
         path = path[len(self.homedir)+1:]
         
@@ -249,6 +254,9 @@ class user_frozen:
         
         #Apply every filter
         for filter in self.filters:
+            #if get_thread_killed():
+            #    return False
+
             #If the path matches the filter
             if re.search(filter[1],path) != None:
                 #Take the action of the filter

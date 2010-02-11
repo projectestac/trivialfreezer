@@ -336,7 +336,7 @@ class mainWindow:
             self.config.groups.append(g)
             
         #Save the file and create the user tars
-        try:   
+        try:
             self.config.save()
         except:
             self.PBprogress.set_text(_('WARNING: Errors in the fridge'))
@@ -381,13 +381,15 @@ class mainWindow:
             self.TTtar.kill()
         except:
             debug("No threads to kill",DEBUG_MEDIUM)
-        
+            
         #Reenable options
         self.Bstop.set_sensitive(False)
         self.table.set_sensitive(True)
         self.TBtoolbar.set_sensitive(True)
         self.Hbuttons.set_sensitive(True)
         self.PBprogress.set_text(_("WARNING: Stopped by the user"))
+        
+        
         
     def __init_form(self):
         "Initializes the form with the advanced config"

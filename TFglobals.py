@@ -110,6 +110,9 @@ ERROR = 1
 
 debug_level = DEBUG_DISABLED
 
+#To know if we want to kill the thread
+thread_killed = False
+
 ## i18n
 def load_locale():
     "Loads the locale"
@@ -117,6 +120,14 @@ def load_locale():
     gettext.textdomain(LOCALE_DOMAIN)
     return gettext.gettext
 
+def get_thread_killed():
+    global thread_killed
+    return thread_killed
+
+def set_thread_killed(killed):
+    global thread_killed
+    thread_killed = killed
+    
 def set_debug_level(level):
     "Sets the debug level to be output in the terminal"
     global debug_level

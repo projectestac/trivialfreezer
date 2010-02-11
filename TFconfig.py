@@ -147,6 +147,8 @@ class config:
     home_server_ip = ""
     #To which port I have to connect to ssh?
     home_server_port = "22"
+    #Which user is going to connect to the server
+    home_server_user = "tfreezer"
         
     def load(self):
         "Loads from the XML the configuration from the file"
@@ -298,6 +300,7 @@ class config:
             self.home_server_ip = xHomeServer.getAttribute("ip")
             self.home_server_port = xHomeServer.getAttribute("port")
             self.home_server = str2bool(xHomeServer.getAttribute("server"))
+            self.home_server_user = xHomeServer.getAttribute("user")
         except:
             print_error("Corrupted ldap or homserver tag, taking defaults",WARNING)
             self.__load_ldap_defaults()
@@ -429,6 +432,7 @@ class config:
         self.home_server = False
         self.home_server_ip = ""
         self.home_server_port = "22"
+        self.home_server_user = "tfreezer"
     
     def __load_defaults(self):
         "Gets all the default configuration"
@@ -469,7 +473,7 @@ class config:
     
     def save(self):
         "Saves in XML the generated configuration"
-        
+          
         #Create the minidom document
         xdoc = minidom.Document()
         
@@ -575,6 +579,7 @@ class config:
         xHomeServer.setAttribute("ip", str(self.home_server_ip))
         xHomeServer.setAttribute("port", str(self.home_server_port))
         xHomeServer.setAttribute("server", str(self.home_server))
+        xHomeServer.setAttribute("user", str(self.home_server_user))
         xtf.appendChild(xHomeServer)
         
         #Save the file
@@ -676,6 +681,7 @@ class config:
             if action == TAR_RESTORE and not self.home_server:
                 prof.hostname = self.home_server_ip
                 prof.port = self.home_server_port
+                prof.server_user = self.home_server_user
             else:
                 prof.hostname = ""
         
@@ -737,6 +743,7 @@ class config:
                     if action == TAR_RESTORE and not self.home_server:
                         prof.hostname = self.home_server_ip
                         prof.port = self.home_server_port
+                        prof.server_user = self.home_server_user
                     else:
                         prof.hostname = ""
                         
@@ -798,6 +805,7 @@ class config:
                     if action == TAR_RESTORE and not self.home_server:
                         prof.hostname = self.home_server_ip
                         prof.port = self.home_server_port
+                        prof.server_user = self.home_server_user
                     else:
                         prof.hostname = ""
                         

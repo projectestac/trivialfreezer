@@ -35,6 +35,7 @@ class tar_thread ( threading.Thread ):
     #To stop the tars
     stopthread = None
     
+    
     def __init__(self,tars,win):
         
         #Create the subclass
@@ -44,6 +45,7 @@ class tar_thread ( threading.Thread ):
         
         self.tars = tars
         self.win = win
+        set_thread_killed(False)
         
     def run ( self ):
         "The run function creates the tar files of the frozen users"
@@ -52,18 +54,17 @@ class tar_thread ( threading.Thread ):
         
         #Indicates if an error exists
         errors = False
-        
-        
+        set_thread_killed(False)
         sys.settrace(self.globaltrace)
         
         #Number of steps to do (to indicate in the progress bar)
         max = float(len(self.tars) * 2)
         
-        
         #Create thread that create tars
         gtk.gdk.threads_enter()
         #For every frozen user
         for i, froze in enumerate(self.tars):
+            
             #Sets the status in the progress bar
             text = _("Freezing '%(username)s'") % {'username': froze.username}
             self.win.PBprogress.set_text(text)
@@ -84,6 +85,10 @@ class tar_thread ( threading.Thread ):
             #Run another thread instance to change the GUI
             gtk.gdk.threads_enter()
             
+            if get_thread_killed():
+                gtk.gdk.threads_leave()
+                return
+            
             text = _("User '%(username)s' frozen") % {'username': froze.username}
             self.win.PBprogress.set_text(text)
             self.win.PBprogress.set_fraction(i/max)
@@ -96,7 +101,6 @@ class tar_thread ( threading.Thread ):
         self.win.table.set_sensitive(True)
         self.win.TBtoolbar.set_sensitive(True)
         self.win.Hbuttons.set_sensitive(True)
-        
         
         if errors:
             self.win.PBprogress.set_text(_("WARNING: There were errors on frozen"))
@@ -121,6 +125,6 @@ class tar_thread ( threading.Thread ):
 
     def kill(self):
         "Function to kill the thread"
-        
+        set_thread_killed(True)
         debug("Killing tar_thread",DEBUG_MEDIUM)
         self.stopthread.set()
