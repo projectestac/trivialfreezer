@@ -27,7 +27,7 @@ path = os.path.split(os.path.realpath(sys.argv[0]))[0]+"/"
 
 ################## CONSTANTS ##################
 #Version of the Freezer
-VERSION = "v0.9.2 beta"
+VERSION = "v0.9.4 beta"
 
 #Exec directory
 EXEC_DIRECTORY = path

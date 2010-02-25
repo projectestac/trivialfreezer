@@ -894,7 +894,6 @@ class configWindow( gtk.Dialog ):
                 get_connect = False
             except ( paramiko.BadHostKeyException, paramiko.SSHException ), e:
                 #Ca'nt connect
-                passwd = ""
                 get_info = True
                 get_connect = False
                 debug( "SSHException or BadHostKeyException " + str( e ), DEBUG_LOW )
@@ -923,6 +922,7 @@ class configWindow( gtk.Dialog ):
                             debug( "Can't write in the known_hosts file", DEBUG_LOW )
                             ssh.set_missing_host_key_policy( paramiko.AutoAddPolicy() )
                     else:
+			passwd = ""
                         warning.destroy()
                         return
                     warning.destroy()
@@ -945,7 +945,7 @@ class configWindow( gtk.Dialog ):
 
         try:
             #Adds the key to authorized_keys
-            stdin, stdout, stderr = ssh.exec_command( "echo '#!/bin/bash\n cat /tmp/tfpubkey >> ~"+self.server_user+"/.ssh/authorized_keys\n rm -f /tmp/tfpubkey*' > /tmp/tfpubkey.sh" )
+            stdin, stdout, stderr = ssh.exec_command( "echo '#!/bin/bash\n if [ ! -d ~"+user+"/.ssh ]; then\n mkdir ~"+user+"/.ssh\n fi\n cat /tmp/tfpubkey >> ~"+user+"/.ssh/authorized_keys\n rm -f /tmp/tfpubkey*' > /tmp/tfpubkey.sh" )
             stdin, stdout, stderr = ssh.exec_command( "chmod +x /tmp/tfpubkey.sh" )
             stdin, stdout, stderr = ssh.exec_command( "/tmp/tfpubkey.sh" )
             errors = stderr.read()
@@ -962,8 +962,10 @@ class configWindow( gtk.Dialog ):
             self.key = True
 
         except:
+            if(len(errors) <= 0):
+		errors = stderr.read()
             #Close the connection and exit
-            debug(stderr.read(),DEBUG_LOW)
+            debug(errors,DEBUG_LOW)
             ssh.close()
             self.Lkeys.set_markup( '<span foreground="#770000" size="large">' + _( "Something executing commands goes wrong." ) + "\n" + _( "Client not connected" ) + '</span>' )
             return
