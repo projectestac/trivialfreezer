@@ -212,7 +212,10 @@ class user_frozen:
             return
 
         #Create the command line
-        command = 'tfreezer -a -r ' + self.username + ' -d ' + str(get_debug_level()) + ' 2>&1'  
+        if NEEDS_SUDO:
+            command = 'sudo tfreezer -a -r ' + self.username + ' -d ' + str(get_debug_level()) + ' 2>&1'
+        else:
+            command = 'tfreezer -a -r ' + self.username + ' -d ' + str(get_debug_level()) + ' 2>&1'
         debug("Executing command " +command + " on server", DEBUG_LOW)   
         
         #TOERASE 2

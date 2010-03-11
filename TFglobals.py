@@ -27,7 +27,9 @@ path = os.path.split(os.path.realpath(sys.argv[0]))[0]+"/"
 
 ################## CONSTANTS ##################
 #Version of the Freezer
-VERSION = "v0.9.4 beta"
+VERSION = "v0.9.5 beta"
+
+NEEDS_SUDO = True
 
 #Exec directory
 EXEC_DIRECTORY = path
@@ -140,22 +142,27 @@ def get_debug_level():
 
 def debug(text, level=DEBUG_LOW):
     "Prints a text in the terminal if the debug level is higher than the requested"
-    
-    if level <= debug_level:
-        if level == DEBUG_LOW:
-            print "Debug L: "+ str(text)
-        if level == DEBUG_MEDIUM:
-            print "Debug M: "+ str(text)
-        if level == DEBUG_HIGH:
-            print "Debug H: "+ str(text)
+    try:
+        if level <= debug_level:
+            if level == DEBUG_LOW:
+                print "Debug L: "+ str(text.encode('utf-8'))
+            if level == DEBUG_MEDIUM:
+                print "Debug M: "+ str(text.encode('utf-8'))
+            if level == DEBUG_HIGH:
+                print "Debug H: "+ str(text.encode('utf-8'))
+    except:
+        print_error("Can't print debug message")
 
 def print_error(text,level=ERROR):
     "Prints a error or warning message in the terminal"
-    if level == WARNING:
-        print "Warning: "+ str(text)
-        return
-    
-    print "Error  : "+ str(text)
+    try:
+        if level == WARNING:
+            print "Warning: "+ str(text.encode('utf-8'))
+            return
+        
+        print "Error  : "+ str(text.encode('utf-8'))
+    except:
+        print "Error  : Can't print error message"
     
 def str2bool(v):
     "Converts an string to boolean"    
