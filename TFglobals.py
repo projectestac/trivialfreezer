@@ -142,25 +142,47 @@ def get_debug_level():
 
 def debug(text, level=DEBUG_LOW):
     "Prints a text in the terminal if the debug level is higher than the requested"
+    
+    try:
+        text = str(text)
+    except:
+	    text = str(text.encode('utf-8'))
+
+    try:
+	    text = text.encode('utf-8')
+    except:
+	    pass
+
     try:
         if level <= debug_level:
             if level == DEBUG_LOW:
-                print "Debug L: "+ str(text.encode('utf-8'))
+                print "Debug L: "+ text
             if level == DEBUG_MEDIUM:
-                print "Debug M: "+ str(text.encode('utf-8'))
+                print "Debug M: "+ text
             if level == DEBUG_HIGH:
-                print "Debug H: "+ str(text.encode('utf-8'))
+                print "Debug H: "+ text
     except:
         print_error("Can't print debug message")
 
 def print_error(text,level=ERROR):
     "Prints a error or warning message in the terminal"
+
+    try:
+        text = str(text)
+    except:
+        text = str(text.encode('utf-8'))
+
+    try:
+        text = text.encode('utf-8')
+    except:
+        pass
+
     try:
         if level == WARNING:
-            print "Warning: "+ str(text.encode('utf-8'))
+            print "Warning: "+ text
             return
         
-        print "Error  : "+ str(text.encode('utf-8'))
+        print "Error  : "+ text
     except:
         print "Error  : Can't print error message"
     
