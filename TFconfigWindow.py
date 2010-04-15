@@ -298,6 +298,10 @@ class configWindow( gtk.Dialog ):
         image = gtk.Image()
         image.set_from_stock( gtk.STOCK_DIRECTORY, gtk.ICON_SIZE_BUTTON )
         button = gtk.Button( _( "Add from a directory" ) )
+        try:
+        	button.set_tooltip_text(_('Create a restoration point of the selected directory'))
+        except:
+            pass
         button.set_image( image )
         button.connect( "clicked", self.__add_from_directory )
         self.sources.pack_start( button, False )
@@ -305,6 +309,10 @@ class configWindow( gtk.Dialog ):
         image = gtk.Image()
         image.set_from_stock( gtk.STOCK_HARDDISK, gtk.ICON_SIZE_BUTTON )
         button = gtk.Button( _( "Add from a tar file" ) )
+        try:
+        	button.set_tooltip_text(_('Inserts the restoration point selected'))
+        except:
+            pass
         button.set_image( image )
         button.connect( "clicked", self.__add_from_tar )
         self.sources.pack_start( button, False )
@@ -337,6 +345,10 @@ class configWindow( gtk.Dialog ):
         self.remote.attach( label, 0, 1, 2, 3, gtk.FILL, gtk.FILL )
 
         self.Eserver = gtk.Entry()
+        try:
+        	self.Eserver.set_tooltip_text(_("LDAP address with the protocol specified\nExamples:\nldap://ldap.example.com:389\nldapi://example.com"))
+        except:
+            pass
         self.Eserver.set_sensitive( False )
         self.remote.attach( self.Eserver, 1, 3, 2, 3, gtk.EXPAND | gtk.FILL, gtk.FILL )
 
@@ -344,6 +356,10 @@ class configWindow( gtk.Dialog ):
         self.remote.attach( label, 0, 1, 3, 4, gtk.FILL, gtk.FILL )
 
         self.Edn = gtk.Entry()
+        try:
+        	self.Edn.set_tooltip_text(_("The distinguished name of the LDAP server\nExample:\ndc=ldap,dc=example,dc=com"))
+        except:
+            pass
         self.Edn.set_sensitive( False )
         self.remote.attach( self.Edn, 1, 3, 3, 4, gtk.EXPAND | gtk.FILL, gtk.FILL )
 
@@ -365,6 +381,10 @@ class configWindow( gtk.Dialog ):
         self.remote.attach( label, 0, 3, 6, 7, gtk.FILL, gtk.FILL )
 
         self.RBclient = gtk.RadioButton( None, _( "Work as a client" ) )
+        try:
+        	self.RBclient.set_tooltip_text(_("The remote users restoration points will not be created in this computer but  it will be restored on the server (Only works if Every session (GDM only) is selected)"))
+        except:
+            pass
         self.RBclient.set_sensitive( False )
         self.RBclient.connect( "toggled", self.__RBclient_toggled )
         self.remote.attach( self.RBclient, 0, 3, 7, 8, gtk.FILL, gtk.FILL )
@@ -372,6 +392,10 @@ class configWindow( gtk.Dialog ):
         image = gtk.Image()
         image.set_from_stock( gtk.STOCK_DIALOG_AUTHENTICATION, gtk.ICON_SIZE_BUTTON )
         self.Bkeys = gtk.Button( _( "Generate authorization keys" ) )
+        try:
+        	self.Bkeys.set_tooltip_text(_("Creates the keys to connect to the server. Provide a user with permissions to execute Trivial Freezer in the server"))
+        except:
+            pass
         self.Bkeys.set_image( image )
         self.Bkeys.connect( "clicked", self.__generate_keys )
         self.Bkeys.set_sensitive( False )
@@ -383,6 +407,10 @@ class configWindow( gtk.Dialog ):
         self.remote.attach( self.Lkeys, 0, 3, 10, 11, gtk.FILL, gtk.FILL )
 
         self.RBserver = gtk.RadioButton( self.RBclient, _( "Work as a server" ) )
+        try:
+        	self.RBserver.set_tooltip_text(_("This computer is the user file server and it will create and restore the remote users in this system"))
+        except:
+            pass
         self.RBserver.set_sensitive( False )
         self.remote.attach( self.RBserver, 0, 3, 11, 12, gtk.FILL, gtk.FILL )
 

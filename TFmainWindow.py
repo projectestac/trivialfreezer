@@ -146,6 +146,7 @@ class mainWindow:
         self.window.set_icon_from_file(NORMAL_ICONS[FREEZE_ALL])
         self.window.set_size_request(-1,-1)
         self.window.set_property("resizable",False)
+
         
         self.mainBox = gtk.VBox()
         self.mainBox.show()
@@ -392,202 +393,221 @@ class mainWindow:
         
         
     def __init_form(self):
-        "Initializes the form with the advanced config"
-        
-        self.table = gtk.Table()
-        self.table.set_row_spacings(5)
-        self.table.set_col_spacings(5)
-        self.table.set_border_width(5)
-        
-        #Time of restoration
-        label = gtk.Label(_("Restoration mode"))
-        self.table.attach(label, 0, 1, 0, 1, gtk.FILL, gtk.FILL)
-        
-        self.CBtime = gtk.combo_box_new_text()
-        #self.CBtime.append_text(_("Manual"))
-        self.CBtime.append_text(_("Every session (GDM only)"))
-        self.CBtime.append_text(_("Every restart"))
+		"Initializes the form with the advanced config"
 
-        self.CBtime.set_active(1)
-        self.table.attach(self.CBtime, 1, 3, 0, 1, gtk.EXPAND | gtk.FILL, gtk.FILL)     
+		self.table = gtk.Table()
+		self.table.set_row_spacings(5)
+		self.table.set_col_spacings(5)
+		self.table.set_border_width(5)
+
+		#Time of restoration
+		label = gtk.Label(_("Restoration mode"))
+		self.table.attach(label, 0, 1, 0, 1, gtk.FILL, gtk.FILL)
+
+		self.CBtime = gtk.combo_box_new_text()
+		#self.CBtime.append_text(_("Manual"))
+		self.CBtime.append_text(_("Every session (GDM only)"))
+		self.CBtime.append_text(_("Every restart"))
+		try:
+			self.CBtime.set_tooltip_text(_("Every session (GDM only)")+_(": will restore the logged in user (through GDM)")+"\n"+
+					_("Every restart")+_(": will restore all the users but not remote ones when the system starts"))
+		except:
+			pass
+
+
+		self.CBtime.set_active(1)
+		self.table.attach(self.CBtime, 1, 3, 0, 1, gtk.EXPAND | gtk.FILL, gtk.FILL)     
+
+		separator = gtk.HSeparator()
+		self.table.attach(separator, 0, 3, 1, 2, gtk.EXPAND | gtk.FILL, gtk.FILL)
+
+		#By system, user o group freezing
+		self.RBall = gtk.RadioButton(None, _("Freeze all the users"))
         
-        separator = gtk.HSeparator()
-        self.table.attach(separator, 0, 3, 1, 2, gtk.EXPAND | gtk.FILL, gtk.FILL)
+		try:
+			self.RBall.set_tooltip_text(_("Freeze all the local users with the selected profile. It will restore the remote users also."))
+		except:
+			pass
+		#SYSTEM
+		self.RBall.connect("toggled",self.__RBall_toggled)
+		self.table.attach(self.RBall, 0, 1, 2, 3, gtk.FILL, gtk.SHRINK)
         
-        #By system, user o group freezing
-        #SYSTEM
-        self.RBall = gtk.RadioButton(None, _("Freeze system"))
-        self.RBall.connect("toggled",self.__RBall_toggled)
-        self.table.attach(self.RBall, 0, 1, 2, 3, gtk.FILL, gtk.SHRINK)
-        
-        self.CBall = gtk.ComboBox(self.LSfreeze_settings)
-        cellpb = gtk.CellRendererPixbuf()
-        self.CBall.pack_start(cellpb, False)
-        self.CBall.set_attributes(cellpb, pixbuf=0)
-        cell = gtk.CellRendererText()
-        self.CBall.pack_start(cell, True)
-        self.CBall.set_attributes(cell, text=1)
-        self.CBall.set_active(0)
-        self.table.attach(self.CBall, 1, 3, 2, 3, gtk.EXPAND | gtk.FILL, gtk.SHRINK)
+		self.CBall = gtk.ComboBox(self.LSfreeze_settings)
+		cellpb = gtk.CellRendererPixbuf()
+		self.CBall.pack_start(cellpb, False)
+		self.CBall.set_attributes(cellpb, pixbuf=0)
+		cell = gtk.CellRendererText()
+		self.CBall.pack_start(cell, True)
+		self.CBall.set_attributes(cell, text=1)
+		self.CBall.set_active(0)
+		self.table.attach(self.CBall, 1, 3, 2, 3, gtk.EXPAND | gtk.FILL, gtk.SHRINK)
         
         #USERS
-        self.RBusers = gtk.RadioButton(self.RBall, _("Freeze by user"))
-        self.RBusers.connect("toggled",self.__RBusers_toggled)
-        self.table.attach(self.RBusers, 0, 3, 3, 4, gtk.EXPAND | gtk.FILL, gtk.SHRINK)
-        
-        self.LSusers = gtk.ListStore(str,str,gtk.gdk.Pixbuf,str,int,bool)
-            
-        # Create the TreeView using liststore
-        self.TVusers = gtk.TreeView(self.LSusers)
-        self.TVusers.set_sensitive(False)
-        self.TMusers = self.TVusers.get_model()
-        self.TSusers = self.TVusers.get_selection()
-        self.TSusers.set_mode(gtk.SELECTION_MULTIPLE)
+		self.RBusers = gtk.RadioButton(self.RBall, _("Freeze by user"))
+		try:
+			self.RBusers.set_tooltip_text(_("Freeze only the selected users with the selected profile"))
+		except:
+			pass
+		self.RBusers.connect("toggled",self.__RBusers_toggled)
+		self.table.attach(self.RBusers, 0, 3, 3, 4, gtk.EXPAND | gtk.FILL, gtk.SHRINK)
 
-        cell = gtk.CellRendererToggle()
-        tv = gtk.TreeViewColumn(_("LDAP"),cell,active=5)
-        self.TVusers.append_column(tv)
-        tv.set_sort_column_id(0)
-        
-        #USER FIELDS
-        cell = gtk.CellRendererText()
-        tv = gtk.TreeViewColumn(_("User"),cell,text=0)
-        self.TVusers.append_column(tv)
-        tv.set_sort_column_id(1)
-        
-        cellpb = gtk.CellRendererPixbuf()
-               
-        cell = gtk.CellRendererCombo()
-        cell.set_property("model",self.LSfreeze_settings)
-        cell.set_property('text-column', 1)
-        cell.set_property('editable', True)
-        cell.set_property('has-entry',False)
-        tv = gtk.TreeViewColumn(_("State"))
-        
-        tv.pack_start(cellpb, False)
-        tv.set_attributes(cellpb, pixbuf=2)
-        
-        tv.pack_start(cell, True)
-        tv.set_attributes(cell, text=3)
-        
-        try:
-            cell.connect('changed', self.__Cuser_changed)
-        except:
-            cell.connect('edited', self.__Cuser_edit)
-        cell.connect('editing-started', self.__Cuser_edited)
-        
-        self.TVusers.append_column(tv)
-        
-        # make treeview searchable
-        self.TVusers.set_search_column(1)
-        self.TVusers.show()
-        
-        scroll = gtk.ScrolledWindow()
-        scroll.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
-        scroll.add_with_viewport(self.TVusers)
-        
-        self.table.attach(scroll, 0, 3, 4, 6)
-        
-        self.CBusers = gtk.ComboBox(self.LSfreeze_settings)
-        cellpb = gtk.CellRendererPixbuf()
-        self.CBusers.pack_start(cellpb, False)
-        self.CBusers.set_attributes(cellpb, pixbuf=0)
-        cell = gtk.CellRendererText()
-        self.CBusers.pack_start(cell, True)
-        self.CBusers.set_attributes(cell, text=1)
-        self.CBusers.set_active(0)
-        self.CBusers.set_sensitive(False)
-        self.table.attach(self.CBusers, 0, 1, 6, 7, gtk.EXPAND | gtk.FILL, gtk.SHRINK)
-           
-        self.Ball_users = gtk.Button(_("Apply all"))
-        self.Ball_users.set_sensitive(False)
-        self.Ball_users.connect("clicked", self.__Ball_users_clicked)
-        self.table.attach(self.Ball_users, 1, 2, 6, 7, gtk.FILL, gtk.SHRINK)
-        
-        self.Bsel_users = gtk.Button(_("Apply selected"))
-        self.Bsel_users.set_sensitive(False)
-        self.Bsel_users.connect("clicked", self.__Bsel_users_clicked)
-        self.table.attach(self.Bsel_users, 2, 3, 6, 7, gtk.FILL, gtk.SHRINK)
-        
-        #GROUPS
-        self.RBgroups = gtk.RadioButton(self.RBall, _("Freeze by group"))
-        self.RBgroups.connect("toggled",self.__RBgroup_toggled)
-        self.table.attach(self.RBgroups, 0, 3, 7, 8, gtk.EXPAND | gtk.FILL, gtk.SHRINK)
-       
-        self.LSgroups = gtk.ListStore(str,str,gtk.gdk.Pixbuf,str,int,bool)
+		self.LSusers = gtk.ListStore(str,str,gtk.gdk.Pixbuf,str,int,bool)
+			
+		# Create the TreeView using liststore
+		self.TVusers = gtk.TreeView(self.LSusers)
+		self.TVusers.set_sensitive(False)
+		self.TMusers = self.TVusers.get_model()
+		self.TSusers = self.TVusers.get_selection()
+		self.TSusers.set_mode(gtk.SELECTION_MULTIPLE)
 
-        # create the TreeView using liststore
-        self.TVgroups = gtk.TreeView(self.LSgroups)
-        self.TVgroups.set_sensitive(False)
-        self.TMgroups = self.TVgroups.get_model()
-        self.TSgroups = self.TVgroups.get_selection()
-        self.TSgroups.set_mode(gtk.SELECTION_MULTIPLE)
-                
-        cell = gtk.CellRendererToggle()
-        tv = gtk.TreeViewColumn(_("LDAP"),cell,active=5)
-        self.TVgroups.append_column(tv)
-        tv.set_sort_column_id(0)
+		cell = gtk.CellRendererToggle()
+		tv = gtk.TreeViewColumn(_("LDAP"),cell,active=5)
+		self.TVusers.append_column(tv)
+		tv.set_sort_column_id(0)
+
+		#USER FIELDS
+		cell = gtk.CellRendererText()
+		tv = gtk.TreeViewColumn(_("User"),cell,text=0)
+		self.TVusers.append_column(tv)
+		tv.set_sort_column_id(1)
+
+		cellpb = gtk.CellRendererPixbuf()
+			   
+		cell = gtk.CellRendererCombo()
+		cell.set_property("model",self.LSfreeze_settings)
+		cell.set_property('text-column', 1)
+		cell.set_property('editable', True)
+		cell.set_property('has-entry',False)
+		tv = gtk.TreeViewColumn(_("State"))
+
+		tv.pack_start(cellpb, False)
+		tv.set_attributes(cellpb, pixbuf=2)
+
+		tv.pack_start(cell, True)
+		tv.set_attributes(cell, text=3)
         
-        #GROUP FIELDS
-        cell = gtk.CellRendererText()
-        tv = gtk.TreeViewColumn(_("Group"),cell,text=0)
-        self.TVgroups.append_column(tv)
-        tv.set_sort_column_id(1)
-        
-        cellpb = gtk.CellRendererPixbuf()
-               
-        cell = gtk.CellRendererCombo()
-        cell.set_property("model",self.LSfreeze_settings)
-        cell.set_property('text-column', 1)
-        cell.set_property('editable', True)
-        cell.set_property('has-entry',False)
-        tv = gtk.TreeViewColumn(_("State"))
-        
-        tv.pack_start(cellpb, False)
-        tv.set_attributes(cellpb, pixbuf=2)
-        
-        tv.pack_start(cell, True)
-        tv.set_attributes(cell, text=3)
-        
-        try:
-            cell.connect('changed', self.__Cgroup_changed)
-        except:
-            cell.connect('edited', self.__Cgroup_edit)
-        cell.connect('editing-started', self.__Cgroup_edited)
-        
-        self.TVgroups.append_column(tv)
-        
-        # make treeview searchable
-        self.TVgroups.set_search_column(1)
-        
-        scroll = gtk.ScrolledWindow()
-        scroll.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
-        scroll.add_with_viewport(self.TVgroups)
-        
-        self.table.attach(scroll, 0, 3, 8, 10)
-        
-        self.CBgroups = gtk.ComboBox(self.LSfreeze_settings)
-        cellpb = gtk.CellRendererPixbuf()
-        self.CBgroups.pack_start(cellpb, False)
-        self.CBgroups.set_attributes(cellpb, pixbuf=0)
-        cell = gtk.CellRendererText()
-        self.CBgroups.pack_start(cell, True)
-        self.CBgroups.set_attributes(cell, text=1)
-        self.CBgroups.set_active(0)
-        self.CBgroups.set_sensitive(False)
-        self.table.attach(self.CBgroups, 0, 1, 10, 11, gtk.EXPAND | gtk.FILL, gtk.SHRINK)
-           
-        self.Ball_groups = gtk.Button(_("Apply all"))
-        self.Ball_groups.set_sensitive(False)
-        self.Ball_groups.connect("clicked", self.__Ball_groups_clicked)
-        self.table.attach(self.Ball_groups, 1, 2, 10, 11, gtk.FILL, gtk.SHRINK)
-        
-        self.Bsel_groups = gtk.Button(_("Apply selected"))
-        self.Bsel_groups.set_sensitive(False)
-        self.Bsel_groups.connect("clicked", self.__Bsel_groups_clicked)
-        self.table.attach(self.Bsel_groups, 2, 3, 10, 11, gtk.FILL, gtk.SHRINK) 
-        
-        self.mainBox.pack_start(self.table, True) 
+		try:
+			cell.connect('changed', self.__Cuser_changed)
+		except:
+			cell.connect('edited', self.__Cuser_edit)
+		cell.connect('editing-started', self.__Cuser_edited)
+
+		self.TVusers.append_column(tv)
+
+		# make treeview searchable
+		self.TVusers.set_search_column(1)
+		self.TVusers.show()
+
+		scroll = gtk.ScrolledWindow()
+		scroll.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
+		scroll.add_with_viewport(self.TVusers)
+
+		self.table.attach(scroll, 0, 3, 4, 6)
+
+		self.CBusers = gtk.ComboBox(self.LSfreeze_settings)
+		cellpb = gtk.CellRendererPixbuf()
+		self.CBusers.pack_start(cellpb, False)
+		self.CBusers.set_attributes(cellpb, pixbuf=0)
+		cell = gtk.CellRendererText()
+		self.CBusers.pack_start(cell, True)
+		self.CBusers.set_attributes(cell, text=1)
+		self.CBusers.set_active(0)
+		self.CBusers.set_sensitive(False)
+		self.table.attach(self.CBusers, 0, 1, 6, 7, gtk.EXPAND | gtk.FILL, gtk.SHRINK)
+		   
+		self.Ball_users = gtk.Button(_("Apply all"))
+		self.Ball_users.set_sensitive(False)
+		self.Ball_users.connect("clicked", self.__Ball_users_clicked)
+		self.table.attach(self.Ball_users, 1, 2, 6, 7, gtk.FILL, gtk.SHRINK)
+
+		self.Bsel_users = gtk.Button(_("Apply selected"))
+		self.Bsel_users.set_sensitive(False)
+		self.Bsel_users.connect("clicked", self.__Bsel_users_clicked)
+		self.table.attach(self.Bsel_users, 2, 3, 6, 7, gtk.FILL, gtk.SHRINK)
+
+		#GROUPS
+		self.RBgroups = gtk.RadioButton(self.RBall, _("Freeze by group"))
+		try:
+			self.RBgroups.set_tooltip_text(_("Freeze only the selected group of users with the selected profile.\nWARNING: If a user is included in two frozen groups you could have unexpedted results."))
+		except:
+			pass
+		self.RBgroups.connect("toggled",self.__RBgroup_toggled)
+		self.table.attach(self.RBgroups, 0, 3, 7, 8, gtk.EXPAND | gtk.FILL, gtk.SHRINK)
+
+		self.LSgroups = gtk.ListStore(str,str,gtk.gdk.Pixbuf,str,int,bool)
+
+		# create the TreeView using liststore
+		self.TVgroups = gtk.TreeView(self.LSgroups)
+		self.TVgroups.set_sensitive(False)
+		self.TMgroups = self.TVgroups.get_model()
+		self.TSgroups = self.TVgroups.get_selection()
+		self.TSgroups.set_mode(gtk.SELECTION_MULTIPLE)
+				
+		cell = gtk.CellRendererToggle()
+		tv = gtk.TreeViewColumn(_("LDAP"),cell,active=5)
+		self.TVgroups.append_column(tv)
+		tv.set_sort_column_id(0)
+
+		#GROUP FIELDS
+		cell = gtk.CellRendererText()
+		tv = gtk.TreeViewColumn(_("Group"),cell,text=0)
+		self.TVgroups.append_column(tv)
+		tv.set_sort_column_id(1)
+
+		cellpb = gtk.CellRendererPixbuf()
+			   
+		cell = gtk.CellRendererCombo()
+		cell.set_property("model",self.LSfreeze_settings)
+		cell.set_property('text-column', 1)
+		cell.set_property('editable', True)
+		cell.set_property('has-entry',False)
+		tv = gtk.TreeViewColumn(_("State"))
+
+		tv.pack_start(cellpb, False)
+		tv.set_attributes(cellpb, pixbuf=2)
+
+		tv.pack_start(cell, True)
+		tv.set_attributes(cell, text=3)
+
+		try:
+			cell.connect('changed', self.__Cgroup_changed)
+		except:
+			cell.connect('edited', self.__Cgroup_edit)
+		cell.connect('editing-started', self.__Cgroup_edited)
+
+		self.TVgroups.append_column(tv)
+
+		# make treeview searchable
+		self.TVgroups.set_search_column(1)
+
+		scroll = gtk.ScrolledWindow()
+		scroll.set_policy(gtk.POLICY_NEVER, gtk.POLICY_AUTOMATIC)
+		scroll.add_with_viewport(self.TVgroups)
+
+		self.table.attach(scroll, 0, 3, 8, 10)
+
+		self.CBgroups = gtk.ComboBox(self.LSfreeze_settings)
+		cellpb = gtk.CellRendererPixbuf()
+		self.CBgroups.pack_start(cellpb, False)
+		self.CBgroups.set_attributes(cellpb, pixbuf=0)
+		cell = gtk.CellRendererText()
+		self.CBgroups.pack_start(cell, True)
+		self.CBgroups.set_attributes(cell, text=1)
+		self.CBgroups.set_active(0)
+		self.CBgroups.set_sensitive(False)
+		self.table.attach(self.CBgroups, 0, 1, 10, 11, gtk.EXPAND | gtk.FILL, gtk.SHRINK)
+		   
+		self.Ball_groups = gtk.Button(_("Apply all"))
+		self.Ball_groups.set_sensitive(False)
+		self.Ball_groups.connect("clicked", self.__Ball_groups_clicked)
+		self.table.attach(self.Ball_groups, 1, 2, 10, 11, gtk.FILL, gtk.SHRINK)
+
+		self.Bsel_groups = gtk.Button(_("Apply selected"))
+		self.Bsel_groups.set_sensitive(False)
+		self.Bsel_groups.connect("clicked", self.__Bsel_groups_clicked)
+		self.table.attach(self.Bsel_groups, 2, 3, 10, 11, gtk.FILL, gtk.SHRINK) 
+
+		self.mainBox.pack_start(self.table, True) 
     
     def __init_toolbar(self):
         "Inits the toolbar, huge by default"
@@ -603,7 +623,7 @@ class mainWindow:
         self.RTBall.set_icon_widget(iconw)
         self.RTBall.set_label(_('Freeze All'))
         try:
-            self.RTBall.set_tooltip_text(_('Freezes All the system'))
+            self.RTBall.set_tooltip_text(_("Freeze all the local and remote users and apply the changes. The users will be restored on log in"))
         except:
             pass
         self.RTBall.set_is_important(True)
@@ -619,7 +639,7 @@ class mainWindow:
         self.RTBnone.set_icon_widget(iconw)
         self.RTBnone.set_label(_('Unfreeze All'))
         try:
-            self.RTBnone.set_tooltip_text(_('Unfreezes All the system'))
+            self.RTBnone.set_tooltip_text(_("Unfreeze all the local and remote users and apply the changes"))
         except:
             pass
         self.RTBnone.set_is_important(True)
@@ -635,7 +655,7 @@ class mainWindow:
         self.RTBadvanced.set_icon_widget(iconw)
         self.RTBadvanced.set_label(_('Advanced'))
         try:
-            self.RTBadvanced.set_tooltip_text(_('Advanced freeze'))
+            self.RTBadvanced.set_tooltip_text(_('Select advance parameters to freeze the users'))
         except:
             pass
         self.RTBadvanced.set_is_important(True)

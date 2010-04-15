@@ -72,6 +72,10 @@ class profileTab(gtk.Table):
         self.Ename.set_text(name)
         self.Ename.connect("key-press-event",parent.tab_name_modified)
         self.Ename.connect("key-release-event",parent.tab_name_modified)
+        try:
+        	self.Ename.set_tooltip_text(_('Name to identify the profile'))
+        except:
+            pass
         self.attach(self.Ename, 1, 3, 0, 1, gtk.EXPAND | gtk.FILL, gtk.FILL)
         
         separator = gtk.HSeparator()
@@ -83,14 +87,26 @@ class profileTab(gtk.Table):
         self.attach(label, 0, 3, 6, 7, gtk.EXPAND | gtk.FILL, gtk.FILL)
         
         self.RBhome = gtk.RadioButton(None, _("Use the current home directory"))
+        try:
+        	self.RBhome.set_tooltip_text(_('A restoration point will be created when the changes are applied'))
+        except:
+            pass
         self.attach(self.RBhome, 0, 3, 7, 8, gtk.EXPAND |gtk.FILL, gtk.FILL)
         
         self.RBfile = gtk.RadioButton(self.RBhome, _("Use this source from the repository"))
+        try:
+        	self.RBfile.set_tooltip_text(_('The selected file will be used as a restoration point'))
+        except:
+            pass
         self.RBfile.connect("toggled",self.__RBfile_toggled)
         self.attach(self.RBfile, 0, 1, 8, 9, gtk.FILL, gtk.FILL)
         
         self.CBfile = gtk.ComboBox(parent.LSsources)
         self.CBfile.connect("changed",self.__CBfile_changed)
+        try:
+        	self.CBfile.set_tooltip_text(_('Create and insert restoration points in the sources tab'))
+        except:
+            pass
         cell = gtk.CellRendererText()
         self.CBfile.pack_start(cell, True)
         self.CBfile.set_attributes(cell, text=0)
@@ -99,6 +115,10 @@ class profileTab(gtk.Table):
         self.attach(self.CBfile, 1, 3, 8, 9, gtk.EXPAND | gtk.FILL, gtk.SHRINK)
         
         self.CBexecuteenable = gtk.CheckButton(_("Execute a command after restoring"))
+        try:
+        	self.CBexecuteenable.set_tooltip_text(_('After restoring each user this command will be executed'))
+        except:
+            pass
         self.CBexecuteenable.connect("toggled",self.__CBexecuteenable_toggled)
         self.attach(self.CBexecuteenable, 0, 1, 10, 11, gtk.FILL, gtk.FILL)
         
@@ -130,6 +150,10 @@ class profileTab(gtk.Table):
                         
         #RULES
         label = gtk.Label("<b>"+_("Rules")+"</b>")
+        try:
+        	label.set_tooltip_text(_('These rules define through regular expressions which action will be performed for every file. Default rule: ')+_( "Keep (Unfrozen)" ))
+        except:
+            pass
         label.set_use_markup(True)
         self.attach(label, 0, 3, 12, 13, gtk.EXPAND | gtk.FILL, gtk.FILL)
         self.LSfilter = gtk.ListStore(str,str,str,str,int)
@@ -240,7 +264,10 @@ class profileTab(gtk.Table):
             self.Bdeposit.add(image)
             self.Bdeposit.connect("clicked", self.__choose_deposit)
             self.attach(self.Bdeposit, 2, 3, 18, 19, gtk.FILL, gtk.SHRINK)
-
+        try:
+        	self.Edeposit.set_tooltip_text(_('If Move to Lost+Found action is defined, the files will be moved here. If the directory contains ~ a deposit will be created for each user. If not, a global deposit will be used.'))
+        except:
+            pass
         
         #Some help...
         label = gtk.Label("<i>"+_("Enter ~ to replace the home directory of the user")+"</i>")
