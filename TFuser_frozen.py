@@ -281,46 +281,47 @@ class user_frozen:
     
     
     def __restore_or_erase(self,path):
-        "Returns True to carry on or erase and False to maintain"
-        
-        #Do nothing with the deposit if it's inside a home directory
-        if path.startswith(self.deposit):
-            debug('Deposit path: ' + path,DEBUG_MEDIUM)
-            return False
+		"Returns True to carry on or erase and False to maintain"
 
-		if os.path.ismount(path):
+		#Do nothing with the deposit if it's inside a home directory
+		if path.startswith(self.deposit):
+			debug('Deposit path: ' + path,DEBUG_MEDIUM)
+			return False
+			
+		#Not erase the mount dirs different of homedir
+		if os.path.ismount(path) and path != self.homedir:
 			debug('Mount point: ' + path,DEBUG_MEDIUM)
 			return False
-        
-        #Cut the path over the home directory
-        path = path[len(self.homedir)+1:]
-         
-        #Go on with the home directory (not to be erased, but go on)
-        if len(path) <= 0: return True
-        
-        #For every filter
-        for filter in self.filters:
-            #If the path matches the filter
-            if re.search(filter[1],path) != None:
-                #Take the action of the filter
-                action = filter[0]
-                
-                #For KEEP action, do not remove it
-                if action == ACTION_KEEP:
-                    debug('Keep path: ' + path,DEBUG_HIGH)
-                    return False
-                #For LOST action, move it to deposit
-                elif action == ACTION_LOST:
-                    debug('Lost path: ' + path,DEBUG_HIGH)
-                    move(path, self.deposit)
-                    return False
-                #For RESTORE and ERASE action, remove
-                elif action == ACTION_RESTORE or action == ACTION_ERASE:
-                    return True
-                
-        #Default action is KEEP, so return false
-        debug('Keep path (default): ' + path,DEBUG_HIGH)
-        return False
+
+		#Cut the path over the home directory
+		path = path[len(self.homedir)+1:]
+		 
+		#Go on with the home directory (not to be erased, but go on)
+		if len(path) <= 0: return True
+
+		#For every filter
+		for filter in self.filters:
+			#If the path matches the filter
+			if re.search(filter[1],path) != None:
+				#Take the action of the filter
+				action = filter[0]
+				
+				#For KEEP action, do not remove it
+				if action == ACTION_KEEP:
+					debug('Keep path: ' + path,DEBUG_HIGH)
+					return False
+				#For LOST action, move it to deposit
+				elif action == ACTION_LOST:
+					debug('Lost path: ' + path,DEBUG_HIGH)
+					move(path, self.deposit)
+					return False
+				#For RESTORE and ERASE action, remove
+				elif action == ACTION_RESTORE or action == ACTION_ERASE:
+					return True
+				
+		#Default action is KEEP, so return false
+		debug('Keep path (default): ' + path,DEBUG_HIGH)
+		return False
              
     
     def __apply_filters(self, dirname):
