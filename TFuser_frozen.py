@@ -287,6 +287,10 @@ class user_frozen:
         if path.startswith(self.deposit):
             debug('Deposit path: ' + path,DEBUG_MEDIUM)
             return False
+
+		if os.path.ismount(path):
+			debug('Mount point: ' + path,DEBUG_MEDIUM)
+			return False
         
         #Cut the path over the home directory
         path = path[len(self.homedir)+1:]
@@ -315,6 +319,7 @@ class user_frozen:
                     return True
                 
         #Default action is KEEP, so return false
+        debug('Keep path (default): ' + path,DEBUG_HIGH)
         return False
              
     
