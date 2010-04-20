@@ -26,10 +26,6 @@ from TFpasswd import *
 import pygtk
 pygtk.require('2.0')
 import gtk
-try:
-    import sexy
-except:
-    pass
 
 _ = load_locale()
 
@@ -122,20 +118,16 @@ class profileTab(gtk.Table):
         self.CBexecuteenable.connect("toggled",self.__CBexecuteenable_toggled)
         self.attach(self.CBexecuteenable, 0, 1, 10, 11, gtk.FILL, gtk.FILL)
         
+        self.Eexecute = gtk.Entry()
+        self.Eexecute.set_sensitive(False)
         try:
-            #Sexy entry
-            self.Eexecute = sexy.IconEntry()
-            image = gtk.Image()
-            image.set_from_stock(gtk.STOCK_OPEN,gtk.ICON_SIZE_BUTTON)
-            self.Eexecute.set_icon(sexy.ICON_ENTRY_PRIMARY, image)
-            self.Eexecute.connect("icon-pressed", self.__choose_execute)
-            self.Eexecute.add_clear_button()
-            self.Eexecute.set_sensitive(False)
+            #Gtk >= 2.16 entry
+            self.Eexecute.set_property('primary-icon-stock', gtk.STOCK_OPEN)
+            self.Eexecute.set_property('secondary-icon-stock', gtk.STOCK_CLEAR)
+            self.Eexecute.connect("icon-press", self.__execute_icons)
             self.attach(self.Eexecute, 1, 3, 10, 11, gtk.EXPAND | gtk.FILL, gtk.FILL)
         except:
-            #No sexy entry
-            self.Eexecute = gtk.Entry()
-            self.Eexecute.set_sensitive(False)
+            #Gtk < 2.16 entry
             self.attach(self.Eexecute, 1, 2, 10, 11, gtk.EXPAND | gtk.FILL, gtk.FILL)
             image = gtk.Image()
             image.set_from_stock(gtk.STOCK_OPEN,gtk.ICON_SIZE_BUTTON)
@@ -244,19 +236,18 @@ class profileTab(gtk.Table):
         #Lost and found deposit
         label = gtk.Label(_("Deposit for Lost+Found"))
         self.attach(label, 0, 1, 18, 19, gtk.FILL, gtk.FILL)
-        
+
+        self.Edeposit = gtk.Entry()
         try:
-            #Sexy entry
-            self.Edeposit = sexy.IconEntry()
-            image = gtk.Image()
-            image.set_from_stock(gtk.STOCK_OPEN,gtk.ICON_SIZE_BUTTON)
-            self.Edeposit.set_icon(sexy.ICON_ENTRY_PRIMARY, image)
-            self.Edeposit.connect("icon-pressed", self.__choose_deposit)
-            self.Edeposit.add_clear_button()
+            #Gtk >= 2.16 entry
+            self.Edeposit.set_property('primary-icon-stock', gtk.STOCK_OPEN)
+            self.Edeposit.set_property('secondary-icon-stock', gtk.STOCK_CLEAR)
+            self.Edeposit.set_property('primary-icon-sensitive', True)
+            self.Edeposit.set_property('secondary-icon-sensitive', True)
+            self.Edeposit.connect("icon-press", self.__deposit_icons)
             self.attach(self.Edeposit, 1, 3, 18, 19, gtk.EXPAND | gtk.FILL, gtk.FILL)
         except:
-            #No sexy entry
-            self.Edeposit = gtk.Entry()
+            #Gtk < 2.16 entry
             self.attach(self.Edeposit, 1, 2, 18, 19, gtk.EXPAND | gtk.FILL, gtk.FILL)
             image = gtk.Image()
             image.set_from_stock(gtk.STOCK_OPEN,gtk.ICON_SIZE_BUTTON)
@@ -264,6 +255,7 @@ class profileTab(gtk.Table):
             self.Bdeposit.add(image)
             self.Bdeposit.connect("clicked", self.__choose_deposit)
             self.attach(self.Bdeposit, 2, 3, 18, 19, gtk.FILL, gtk.SHRINK)
+
         try:
         	self.Edeposit.set_tooltip_text(_('If Move to Lost+Found action is defined, the files will be moved here. If the directory contains ~ a deposit will be created for each user. If not, a global deposit will be used.'))
         except:
@@ -358,14 +350,17 @@ class profileTab(gtk.Table):
             iterNext = self.TMfilter.get_iter(path)
             self.LSfilter.move_after(iter, iterNext)
     
+    def __deposit_icons(self,widget=None,button=None, event=None,data=None):
+		try:
+			if button == gtk.ENTRY_ICON_SECONDARY:
+				self.Edeposit.set_text("")
+			else:
+				self.__choose_deposit()
+		except:
+			self.__choose_deposit()
+    
     def __choose_deposit(self,widget=None,button=None,data=None):
         "Choose deposit for lost+found"
-        #Only the right button
-        try:
-            if button != sexy.ICON_ENTRY_PRIMARY:
-                return
-        except:
-            pass
         
         #File chooser dialog for directories
         dialog = gtk.FileChooserDialog(_("Choose source file"),action=gtk.FILE_CHOOSER_ACTION_SELECT_FOLDER,buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_OK,gtk.RESPONSE_OK),parent=self.mother)
@@ -398,15 +393,18 @@ class profileTab(gtk.Table):
             
         dialog.destroy()
         return
-    
-    def __choose_execute(self,widget=None,button=None,data=None):
+        
+    def __execute_icons(self,widget=None,button=None, event=None,data=None):
+		try:
+			if button == gtk.ENTRY_ICON_SECONDARY:
+				self.Eexecute.set_text("")
+			else:
+				self.__choose_execute()
+		except:
+			self.__choose_execute()
+		
+    def __choose_execute(self,widget=None,button=None, data=None):
         "Choose the command to execute"
-        #Only the right button
-        try:
-            if button != sexy.ICON_ENTRY_PRIMARY:
-                return
-        except:
-            pass
         
         #File chooser dialog
         dialog = gtk.FileChooserDialog(_("Choose a command to execute"),action=gtk.FILE_CHOOSER_ACTION_OPEN,buttons=(gtk.STOCK_CANCEL,gtk.RESPONSE_CANCEL,gtk.STOCK_OK,gtk.RESPONSE_OK),parent=self.mother)
