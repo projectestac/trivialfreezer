@@ -1,6 +1,6 @@
 #-*- coding: utf-8 -*-
 #@authors: Pau Ferrer Ocaña
-
+#@authors: Modified TICxCAT 
 #This file is part of Trivial Freezer.
 
 #Trivial Freezer is an easy freezer for user profiles and desktop in linux.
@@ -816,6 +816,7 @@ class configWindow( gtk.Dialog ):
         roothome = pwd.getpwuid( 0 ).pw_dir
         #Private Key generation
         id_dsa = roothome + '/' + ID_DSA_PATH
+	debug( "Private Key generation directory" + id_dsa, DEBUG_HIGH ) #Line added by TICxCAT
         try:
             dss = paramiko.DSSKey.generate()
             dss.write_private_key_file( id_dsa, "" )
@@ -974,17 +975,34 @@ class configWindow( gtk.Dialog ):
         try:
             #Adds the key to authorized_keys
             stdin, stdout, stderr = ssh.exec_command( "echo '#!/bin/bash\n if [ ! -d ~"+user+"/.ssh ]; then\n mkdir ~"+user+"/.ssh\n fi\n cat /tmp/tfpubkey >> ~"+user+"/.ssh/authorized_keys\n rm -f /tmp/tfpubkey*' > /tmp/tfpubkey.sh" )
+	    debug(user,DEBUG_HIGH) #Line added by TICxCAT
+	    errors = stderr.read() #Line added by TICxCAT
+	    if(len(errors) > 0): #Line added by TICxCAT
+                debug(errors,DEBUG_HIGH) #Line added by TICxCAT	
+		#Close the connection and exit
+                ssh.close()
+                self.Lkeys.set_markup( '<span foreground="#770000" size="large">' + _( "Something executing commands goes wrong." ) + "\n" + _( "Client not connected" ) + '</span>' )
+                return		
             stdin, stdout, stderr = ssh.exec_command( "chmod +x /tmp/tfpubkey.sh" )
-            stdin, stdout, stderr = ssh.exec_command( "/tmp/tfpubkey.sh" )
+            errors = stderr.read() #Line added by TICxCAT
+	    if(len(errors) > 0): #Line added by TICxCAT
+                debug(errors,DEBUG_HIGH) #Line added by TICxCAT	
+		#Close the connection and exit
+                ssh.close()
+                self.Lkeys.set_markup( '<span foreground="#770000" size="large">' + _( "Something executing commands goes wrong." ) + "\n" + _( "Client not connected" ) + '</span>' )
+                return
+	    stdin, stdout, stderr = ssh.exec_command( "/tmp/tfpubkey.sh" )
             errors = stderr.read()
             if(len(errors) > 0):
-                debug(errors,DEBUG_LOW)
+                debug(errors,DEBUG_HIGH)
+		
                 #Close the connection and exit
                 ssh.close()
                 self.Lkeys.set_markup( '<span foreground="#770000" size="large">' + _( "Something executing commands goes wrong." ) + "\n" + _( "Client not connected" ) + '</span>' )
                 return
             self.Lkeys.set_markup( '<span foreground="#007700" size="large">' + _( "Client connected to " ) + hostname + '</span>' )
             self.hostname = hostname
+	    debug(self.hostname,DEBUG_HIGH)	
             self.port = port
             self.server_user = user
             self.key = True

@@ -1,6 +1,6 @@
 #-*- coding: utf-8 -*-
 #@authors: Pau Ferrer Ocaña
-
+#@authors: Modified TICxCAT 
 #This file is part of Trivial Freezer.
 
 #Trivial Freezer is an easy freezer for user profiles and desktop in linux.
@@ -30,18 +30,21 @@ import paramiko, pwd
 _ = load_locale()
 
 
-def move(src,dst):
+def move(src,dst,path): #path argument added by TICxCAT
     "Moves a file without overwritting it, appends a number at the end of the name"
     
     auxPath = 0 
         
     dstComplete = dst
+    dst = dst	+ '/' + path #Added by TICxCAT
     
     #If the destination already exists, change the filename appending a number
     while os.path.exists(dst):
         dstComplete = dst + "_" + str(auxPath)
         auxPath = auxPath + 1
-
+	debug(dst,DEBUG_HIGH) #Added by TICxCAT
+	dst=dstComplete #Added by TICxCAT to move out of while
+    
     shutil.move(src, dstComplete)
 
 class user_frozen:
@@ -76,14 +79,13 @@ class user_frozen:
     
     def __init__(self, title, deposit, rules, source = "", execute = ""):
         "Initializes a user_frozen with the selected options"
-        
+        self.filters = [] #Line added by TICxCAT to re-initialize filters for each user
         self.name =  title
         self.source = source
         self.execute = execute
         self.deposit = deposit
         for rule in rules:
             self.filters.append([rule.action,rule.filter])
-     
     def create_tar(self):
         "Creates a tar for the frozen user"
         
@@ -156,7 +158,7 @@ class user_frozen:
                 #If the deposit is inside a home directory, change the owner to the user
                 if self.deposit.startswith(self.homedir):
                     os.chown(self.deposit, self.uid, self.gid)
-            
+
             #Apply the MAINTAIN and LOST+FOUND filters
             self.__apply_filters(self.homedir)
             
@@ -213,9 +215,12 @@ class user_frozen:
 
         #Create the command line
         if NEEDS_SUDO:
-            command = 'sudo tfreezer -a -r ' + self.username + ' -d ' + str(get_debug_level()) + ' 2>&1'
+            #command = 'sudo tfreezer -a -r ' + self.username + ' -d ' + str(get_debug_level()) + ' 2>&1'
+	    command = 'sudo tfreezer -r ' + self.username + ' -d ' + str(get_debug_level()) + ' 2>&1' #Modified by TICxCAT
         else:
-            command = 'tfreezer -a -r ' + self.username + ' -d ' + str(get_debug_level()) + ' 2>&1'
+            #command = 'tfreezer -a -r ' + self.username + ' -d ' + str(get_debug_level()) + ' 2>&1'
+            command = 'tfreezer -r ' + self.username + ' -d ' + str(get_debug_level()) + ' 2>&1' #Modified by TICxCAT
+
         debug("Executing command " +command + " on server", DEBUG_LOW)   
         
         #TOERASE 2
@@ -292,7 +297,8 @@ class user_frozen:
 		if os.path.ismount(path) and path != self.homedir:
 			debug('Mount point: ' + path,DEBUG_MEDIUM)
 			return False
-
+		#Added by TICxCAT to maintain complete path for lost objects 
+		complete_path = path #TICxCAT modification
 		#Cut the path over the home directory
 		path = path[len(self.homedir)+1:]
 		 
@@ -305,7 +311,6 @@ class user_frozen:
 			if re.search(filter[1],path) != None:
 				#Take the action of the filter
 				action = filter[0]
-				
 				#For KEEP action, do not remove it
 				if action == ACTION_KEEP:
 					debug('Keep path: ' + path,DEBUG_HIGH)
@@ -313,7 +318,7 @@ class user_frozen:
 				#For LOST action, move it to deposit
 				elif action == ACTION_LOST:
 					debug('Lost path: ' + path,DEBUG_HIGH)
-					move(path, self.deposit)
+					move(complete_path, self.deposit,path) #Modified by TICxCAT to maintain complete path for lost objects
 					return False
 				#For RESTORE and ERASE action, remove
 				elif action == ACTION_RESTORE or action == ACTION_ERASE:

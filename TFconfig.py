@@ -1,5 +1,6 @@
 #-*- coding: utf-8 -*-
 #@authors: Pau Ferrer Ocaña
+#@authors: Modified TICxCAT 
 
 #This file is part of Trivial Freezer.
 
@@ -122,7 +123,7 @@ class config:
     profiles = []
     #Time of restoring (session, will restore for every logged session
     #or system for the whole system)
-    time = TIME_SESSION
+    time = TIME_SYSTEM #Value modified by TICxCAT from TIME_SESSION to TIME_SYSTEM
     
     #Option of freezing, all to freeze all the system together,
     #user to select each user or group for each group
@@ -417,7 +418,7 @@ class config:
         
     def __load_time_defaults(self):
         "Gets the default time of restoring"
-        self.time = TIME_SESSION
+        self.time = TIME_SYSTEM #Value modified by TICxCAT from TIME_SESSION to TIME_SYSTEM
         
     def __load_freeze_defaults(self):
         "Gets the default general freezing options"
@@ -484,7 +485,8 @@ class config:
         
         #Save the general options
         xFreeze = xdoc.createElement("freeze")
-        xFreeze.setAttribute("time", str(self.time))
+        #xFreeze.setAttribute("time", str(self.time))
+       	xFreeze.setAttribute("time", "0") #Modified by TICxCAT
         
         xall = xdoc.createElement("all")
         xall.setAttribute("active", str(self.option == OPTION_ALL))  

@@ -1,5 +1,6 @@
 #-*- coding: utf-8 -*-
 #@authors: Pau Ferrer Ocaña
+#@authors: Modified TICxCAT 
 
 #This file is part of Trivial Freezer.
 
@@ -82,8 +83,8 @@ OPTION_GROUPS = 2
 
 #Frozen Time
 TIME_INDEFFERENT = -1 #Unused
-TIME_SESSION = 0 #Frozen by session enabled
-TIME_SYSTEM = 1 #Frozen by system enabled
+TIME_SESSION = 1 #Frozen by session enabled. Value modified by TICxCAT from 0 to 1
+TIME_SYSTEM = 0 #Frozen by system enabled. Value modified by TICxCAT from 1 to 0
 
 #Action of the rules
 ACTION_RESTORE = 0

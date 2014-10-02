@@ -1,5 +1,6 @@
 #-*- coding: utf-8 -*-
 #@authors: Pau Ferrer Ocaña
+#@authors: Modified TICxCAT 
 
 #This file is part of Trivial Freezer.
 
@@ -402,11 +403,11 @@ class mainWindow:
 
 		#Time of restoration
 		label = gtk.Label(_("Restoration mode"))
-		self.table.attach(label, 0, 1, 0, 1, gtk.FILL, gtk.FILL)
+		#self.table.attach(label, 0, 1, 0, 1, gtk.FILL, gtk.FILL) #Modified by TICxCAT 
 
 		self.CBtime = gtk.combo_box_new_text()
 		#self.CBtime.append_text(_("Manual"))
-		self.CBtime.append_text(_("Every session (GDM only)"))
+		#self.CBtime.append_text(_("Every session (GDM only)")) #Value disabled by TICxCAT 
 		self.CBtime.append_text(_("Every restart"))
 		try:
 			self.CBtime.set_tooltip_text(_("Every session (GDM only)")+_(": will restore the logged in user (through GDM)")+"\n"+
@@ -416,7 +417,7 @@ class mainWindow:
 
 
 		self.CBtime.set_active(1)
-		self.table.attach(self.CBtime, 1, 3, 0, 1, gtk.EXPAND | gtk.FILL, gtk.FILL)     
+		#self.table.attach(self.CBtime, 1, 3, 0, 1, gtk.EXPAND | gtk.FILL, gtk.FILL)  #Modified by TICxCAT  
 
 		separator = gtk.HSeparator()
 		self.table.attach(separator, 0, 3, 1, 2, gtk.EXPAND | gtk.FILL, gtk.FILL)
