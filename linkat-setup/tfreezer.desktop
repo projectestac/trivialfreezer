@@ -1,0 +1,11 @@
+#!/usr/bin/env xdg-open
+[Desktop Entry]
+Name=Trivial Freezer
+Comment=Congelador d'escriptoris
+Exec=gksu /usr/bin/tfreezer
+Icon=/usr/share/tfreezer/pixmaps/ice.svg
+Terminal=false
+Type=Application
+StartupNotify=true
+Categories=GNOME;GTK;Utility;HardwareSettings;Settings;HardwareSettings;
+X-Ubuntu-Gettext-Domain=Trivial-Freezer

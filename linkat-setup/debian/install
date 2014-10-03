@@ -1,0 +1,8 @@
+tfreezer /usr/share/
+tfreezer.desktop /usr/share/applications/
+tfreezer-config.desktop /usr/share/applications/
+61-tfreezer.conf /usr/share/tfreezer/
+inici-sistema.sh /usr/share/tfreezer/
+inici-sessio.sh /usr/share/tfreezer/
+select-inici.sh /usr/share/tfreezer/
+tfreezer.sh /usr/share/tfreezer/
