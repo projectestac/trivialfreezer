@@ -8,9 +8,14 @@ INICI=""
 if [ -f /usr/share/lightdm/lightdm.conf.d/61-tfreezer.conf ] ; then
 	INICI="Inici de sessió"
 fi
+
 egrep tfreezer /etc/rc.local > /dev/null 2>&1
 if [ $? = 0 ] ; then
 	INICI="Inici de sistema"
+fi
+
+if [ "$INICI" == "" ] ; then
+        INICI="Sense inici automàtic"
 fi
 
 # Informar de l'inici actual i preguntar que es vol fer.
@@ -21,13 +26,16 @@ if [ ! $? = 0 ] ; then
 fi
 
 # Preguntar quin inici es vol configurar.
-res=$(zenity --list --title "Inici del Trivial Freezer" --text "On vols iniciar el Trivial Freezer?" --radiolist  --column "Seleccionar" --column "opcions" FALSE "Inici de sistema" FALSE "Inici de sessió")
+res=""
+res=$(zenity --list --title "Inici del Trivial Freezer" --text "On vols iniciar el Trivial Freezer?" --radiolist  --column "Seleccionar" --column "opcions" FALSE "Inici de sistema" FALSE "Inici de sessió" FALSE "Sense inici automàtic")
 
 if [ "$res" = "Inici de sistema" ]; then
 	/usr/share/tfreezer/inici-sistema.sh	
-elif
-	[ "$res" = "Inici de sessió" ]; then
+elif	[ "$res" = "Inici de sessió" ]; then
 	/usr/share/tfreezer/inici-sessio.sh
+elif	
+	[ "$res" = "Sense inici automàtic" ]; then
+        /usr/share/tfreezer/sense-inici.sh
 else
 	zenity --warning --text "Programa tancat per l'usuari"
 	exit 1

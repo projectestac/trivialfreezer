@@ -15,3 +15,5 @@ if [ $? -gt 0 ] ; then
         sed 's/^exit 0/#tfreezer \ndate >> \/var\/log\/tfreezer.log \n\/usr\/bin\/tfreezer -r -a >> \/var\/log\/tfreezer.log \n\nexit 0/g' /etc/rc.local.tf.bak > /etc/rc.local
 	chmod +x /etc/rc.local
 fi
+
+zenity --info --title "Trivial Freezer - Inici de sistema" --text "El Trivial Freezer s'iniciarà automàticament a l'inici de sistema."

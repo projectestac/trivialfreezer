@@ -13,3 +13,4 @@ fi
 # Afegint el Trivial Freezer a l'inici de sessió
 cp -av /usr/share/tfreezer/61-tfreezer.conf /usr/share/lightdm/lightdm.conf.d/
 
+zenity --info --title "Trivial Freezer - Inici de sessió" --text "El Trivial Freezer s'iniciarà automàticament a l'inici de sessió."

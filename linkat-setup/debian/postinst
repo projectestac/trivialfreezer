@@ -9,3 +9,6 @@ if [ $? -gt 0 ] ; then
 	chmod +x /etc/rc.local
 fi
 
+if [ ! -d /root/.ssh ] ; then
+	mkdir -p /root/.ssh
+fi

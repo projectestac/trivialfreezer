@@ -28,7 +28,7 @@ path = os.path.split(os.path.realpath(sys.argv[0]))[0]+"/"
 
 ################## CONSTANTS ##################
 #Version of the Freezer
-VERSION = "v0.9.7 beta"
+VERSION = "v1"
 
 NEEDS_SUDO = True
 
