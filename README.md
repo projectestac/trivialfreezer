@@ -1,5 +1,5 @@
 
-:truck: __[PROJECT MOVED](https://code.launchpad.net/~pvigo/+junk/tfreezer-16.04)__ :warning:
+:warning: __[PROJECT MOVED](https://code.launchpad.net/~pvigo/+junk/tfreezer-16.04)__
 
 __Trivial Freezer__ allows admins of GNU/Linux systems to take snapshoots of user files and configurations. Snapshoots can be automatically restored at next session start, thus "freezing" user settings between sessions.
 
